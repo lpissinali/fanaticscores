@@ -1,0 +1,77 @@
+/* ============================================================
+   Fanatic Scores — Core TypeScript types
+   Matches the shape expected by all UI components.
+   Real API adapters (src/adapters/*) must return these types.
+   ============================================================ */
+
+export type MatchStatus = 'LIVE' | 'HT' | 'FT' | 'SCHEDULED' | 'POSTPONED' | 'CANCELLED';
+
+export interface TeamInfo {
+  name: string;
+  short: string;
+  initial: string;
+  color: string;
+  score: number | null;
+  scorers?: Array<{ player: string; minute: string; xg?: number }>;
+}
+
+export interface MatchEvent {
+  min: string;
+  type: 'goal' | 'yellow' | 'red' | 'sub' | 'var';
+  team: 'home' | 'away';
+  player: string;
+  detail?: string;
+}
+
+export interface MatchStats {
+  possession: [number, number];
+  shots: [number, number];
+  shotsOnTarget?: [number, number];
+  xG: [number, number];
+  corners?: [number, number];
+  fouls?: [number, number];
+}
+
+export interface Match {
+  id: string;
+  status: MatchStatus;
+  minute?: string | number | null;
+  extra?: string;
+  home: TeamInfo;
+  away: TeamInfo;
+  venue?: string;
+  aggregate?: string;
+  kickoff?: string;
+  featured?: boolean;
+}
+
+export interface FeaturedMatch extends Match {
+  competition: string;
+  stats: MatchStats;
+  events: MatchEvent[];
+  aiPulse: string;
+  momentumSeries: number[];
+}
+
+export interface Competition {
+  id: string;
+  name: string;
+  country: string;
+  short: string;
+  stage?: string;
+  flag: string;   // hex color (placeholder) — replace with SVG flag in prod
+  matches: Match[];
+}
+
+export interface TrendingItem {
+  id: string;
+  tag: 'GOAL' | 'RED' | 'MOMENT' | 'RESULT';
+  text: string;
+  matchId?: string;
+}
+
+export interface FSData {
+  featuredMatch: FeaturedMatch;
+  competitions: Competition[];
+  trending?: TrendingItem[];
+}

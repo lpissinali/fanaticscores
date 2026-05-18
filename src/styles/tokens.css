@@ -1,0 +1,51 @@
+/* ============================================================
+   Fanatic Scores — Design Tokens
+   Source: design_handoff_fanatic_scores/app/styles.css
+   ============================================================ */
+
+:root {
+  /* surfaces */
+  --bg:            #0a0a0c;
+  --bg-elev:       #131318;
+  --surface:       #17171c;
+  --surface-2:     #1d1d23;
+  --border:        rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  /* text */
+  --text:       #f4f4f5;
+  --text-dim:   rgba(244, 244, 245, 0.62);
+  --text-faint: rgba(244, 244, 245, 0.38);
+
+  /* single accent */
+  --orange:      #fc8003;
+  --orange-soft: rgba(252, 128, 3, 0.14);
+  --orange-line: rgba(252, 128, 3, 0.35);
+
+  /* status */
+  --live:   #ff3b3b;
+  --green:  #25c264;
+  --yellow: #ffb547;
+
+  /* radius */
+  --radius-sm: 8px;
+  --radius:    14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  /* spacing base = 4px */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 28px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-14: 56px;
+
+  /* layout */
+  --sidebar-width:    240px;
+  --right-rail-width: 360px;
+}
