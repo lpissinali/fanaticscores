@@ -158,7 +158,7 @@ body {
 .match-row {
   display: grid;
   grid-template-columns: 56px 1fr auto;
-  align-items: center;
+  align-items: stretch;   /* stretch so score-col spans full height */
   gap: 12px;
   padding: 14px 16px;
   border-bottom: 1px solid var(--border);
@@ -167,6 +167,14 @@ body {
 }
 .match-row:hover { background: rgba(255, 255, 255, 0.02); }
 .match-row:last-child { border-bottom: none; }
+
+/* Time column — centred within its stretched cell */
+.match-row .time-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
 
 /* ---- section list header ---- */
 .list-header {
@@ -205,3 +213,45 @@ body {
   overflow-y: auto;
 }
 .screen .scroll::-webkit-scrollbar { display: none; }
+
+/* ---- match row sub-elements ---- */
+.match-row .teams {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.match-row .team-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;      /* crest → name gap */
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+
+.match-row .team-name {
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 0;
+  flex: 0 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.match-row .team-name.muted { color: var(--text-dim); }
+
+.match-row .score-col {
+  font-family: 'Archivo', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: flex-end;
+  line-height: 1;
+  min-width: 22px;
+}
+.match-row .score-col .num { display: block; }
+.match-row .score-col .num.muted { color: var(--text-dim); font-weight: 700; }

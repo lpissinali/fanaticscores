@@ -1,0 +1,22 @@
+[debug] [2026-05-19T06:48:17.868Z] ----------------------------------------------------------------------
+[debug] [2026-05-19T06:48:17.869Z] Command:       /usr/bin/node /tmp/fb/bin/firebase deploy --only hosting --project fanaticscores-b6af4 --non-interactive
+[debug] [2026-05-19T06:48:17.869Z] CLI Version:   15.18.0
+[debug] [2026-05-19T06:48:17.869Z] Platform:      linux
+[debug] [2026-05-19T06:48:17.869Z] Node Version:  v22.22.0
+[debug] [2026-05-19T06:48:17.869Z] Time:          Tue May 19 2026 06:48:17 GMT+0000 (Coordinated Universal Time)
+[debug] [2026-05-19T06:48:17.869Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-05-19T06:48:17.870Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-05-19T06:48:18.415Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-05-19T06:48:18.420Z] Error: Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.
+    at GoogleAuth.getApplicationDefaultAsync (/tmp/fb/lib/node_modules/firebase-tools/node_modules/google-auth-library/build/src/auth/googleauth.js:287:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async GoogleAuth._GoogleAuth_determineClient (/tmp/fb/lib/node_modules/firebase-tools/node_modules/google-auth-library/build/src/auth/googleauth.js:834:32)
+    at async GoogleAuth.getClient (/tmp/fb/lib/node_modules/firebase-tools/node_modules/google-auth-library/build/src/auth/googleauth.js:698:20)
+    at async GoogleAuth.getAccessToken (/tmp/fb/lib/node_modules/firebase-tools/node_modules/google-auth-library/build/src/auth/googleauth.js:722:24)
+    at async autoAuth (/tmp/fb/lib/node_modules/firebase-tools/lib/requireAuth.js:28:19)
+    at async requireAuth (/tmp/fb/lib/node_modules/firebase-tools/lib/requireAuth.js:90:20)
+    at async requirePermissions (/tmp/fb/lib/node_modules/firebase-tools/lib/requirePermissions.js:17:5)
+    at async /tmp/fb/lib/node_modules/firebase-tools/lib/command.js:271:17
+[error] 
+[error] Error: Failed to authenticate, have you run firebase login?
