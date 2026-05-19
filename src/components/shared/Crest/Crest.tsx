@@ -1,16 +1,16 @@
+import { useState } from 'react';
 import styles from './Crest.module.css';
 
 type CrestSize = 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
 
 const SIZE_MAP: Record<CrestSize, { px: number; fs: number }> = {
-  sm:  { px: 16, fs: 8  },
-  md:  { px: 20, fs: 10 },
-  lg:  { px: 28, fs: 12 },
-  xl:  { px: 44, fs: 16 },
-  xxl: { px: 64, fs: 22 },
+  sm:  { px: 18,  fs: 8  },
+  md:  { px: 20,  fs: 10 },
+  lg:  { px: 36,  fs: 13 },
+  xl:  { px: 52,  fs: 17 },
+  xxl: { px: 72,  fs: 24 },
 };
 
-/** Auto-contrast: returns black or white for a given hex color background. */
 function contrastColor(hex: string): string {
   const clean = hex.replace('#', '');
   const r = parseInt(clean.slice(0, 2), 16);
@@ -21,18 +21,16 @@ function contrastColor(hex: string): string {
 }
 
 interface CrestProps {
-  /** Team object or raw values */
-  team: { initial: string; color: string; name?: string };
+  team: { initial: string; color: string; name?: string; crest?: string };
   size?: CrestSize;
   className?: string;
 }
 
-/**
- * Circular team crest placeholder — colored circle with the team initial.
- * Replace with real SVG crests in production.
- */
 export default function Crest({ team, size = 'md', className }: CrestProps) {
   const { px, fs } = SIZE_MAP[size];
+  const [imgError, setImgError] = useState(false);
+  const showImg = !!team.crest && !imgError;
+
   return (
     <span
       className={[styles.crest, className].filter(Boolean).join(' ')}
@@ -40,13 +38,24 @@ export default function Crest({ team, size = 'md', className }: CrestProps) {
         width: px,
         height: px,
         fontSize: fs,
-        backgroundColor: team.color,
+        backgroundColor: showImg ? 'transparent' : team.color,
         color: contrastColor(team.color),
       }}
       title={team.name}
       aria-label={team.name}
     >
-      {team.initial}
+      {showImg ? (
+        <img
+          src={team.crest}
+          alt={team.name ?? ''}
+          width={px}
+          height={px}
+          onError={() => setImgError(true)}
+          style={{ objectFit: 'contain', display: 'block' }}
+        />
+      ) : (
+        team.initial
+      )}
     </span>
   );
 }

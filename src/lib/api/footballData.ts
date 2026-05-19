@@ -1,18 +1,30 @@
 /* ============================================================
    football-data.org v4  --  API service layer
-   All requests go through /api/fd (never directly from the
-   browser) to avoid CORS issues:
-     dev  -> Vite proxy -> api.football-data.org
-     prod -> Firebase Function -> api.football-data.org
+   Free tier (TIER_ONE) competitions only.
+   CLI (Copa Libertadores) is TIER_FOUR -- excluded.
    ============================================================ */
 
 import type { Match, TeamInfo, FeaturedMatch, Competition, MatchStatus } from '../types';
 
 const BASE = '/api/fd';
 
-// ── Football-data.org raw types ──────────────────────────────────────────────
+// -- Competitions to poll (all TIER_ONE on football-data.org free plan) ----------
 
-interface FDArea { name: string; flag: string | null; }
+const COMP_LIST = [
+  { code: 'CL',  name: 'UEFA Champions League', country: 'Europe',      short: 'UCL', flag: '#1a3a6b' },
+  { code: 'WC',  name: 'FIFA World Cup',         country: 'World',       short: 'WC',  flag: '#8b6914' },
+  { code: 'PL',  name: 'Premier League',         country: 'England',     short: 'PL',  flag: '#3d0d6b' },
+  { code: 'ELC', name: 'Championship',           country: 'England',     short: 'CH',  flag: '#2d0d5b' },
+  { code: 'BL1', name: 'Bundesliga',             country: 'Germany',     short: 'BL',  flag: '#cc0000' },
+  { code: 'FL1', name: 'Ligue 1',                country: 'France',      short: 'L1',  flag: '#003189' },
+  { code: 'SA',  name: 'Serie A',                country: 'Italy',       short: 'SA',  flag: '#003580' },
+  { code: 'PD',  name: 'Primera Division',       country: 'Spain',       short: 'LL',  flag: '#8b0000' },
+  { code: 'BSA', name: 'Campeonato Brasileiro',  country: 'Brazil',      short: 'BSA', flag: '#006400' },
+  { code: 'DED', name: 'Eredivisie',             country: 'Netherlands', short: 'ERE', flag: '#ff6600' },
+  { code: 'PPL', name: 'Primeira Liga',          country: 'Portugal',    short: 'PPL', flag: '#006600' },
+] as const;
+
+// -- football-data.org raw types -------------------------------------------------
 
 interface FDTeam {
   id: number;
@@ -28,7 +40,7 @@ interface FDCompetition {
   code: string;
   type: string;
   emblem: string;
-  area: FDArea;
+  area: { name: string; flag: string | null };
 }
 
 interface FDScore {
@@ -51,27 +63,7 @@ interface FDMatch {
   score: FDScore;
 }
 
-interface FDMatchesResponse {
-  matches: FDMatch[];
-}
-
-// ── Competition metadata lookup ───────────────────────────────────────────────
-
-const COMP_META: Record<string, { country: string; short: string; flag: string }> = {
-  CL:  { country: 'Europe',      short: 'UCL', flag: '#1a3a6b' },
-  PL:  { country: 'England',     short: 'PL',  flag: '#3d0d6b' },
-  PD:  { country: 'Spain',       short: 'LL',  flag: '#8b0000' },
-  SA:  { country: 'Italy',       short: 'SA',  flag: '#003580' },
-  BSA: { country: 'Brazil',      short: 'BSA', flag: '#006400' },
-  BL1: { country: 'Germany',     short: 'BL',  flag: '#333333' },
-  FL1: { country: 'France',      short: 'L1',  flag: '#00209f' },
-  PPL: { country: 'Portugal',    short: 'PPL', flag: '#006600' },
-  DED: { country: 'Netherlands', short: 'ERE', flag: '#ff4500' },
-  EC:  { country: 'Europe',      short: 'EURO',flag: '#003399' },
-  WC:  { country: 'World',       short: 'WC',  flag: '#333333' },
-};
-
-// ── Mapping helpers ───────────────────────────────────────────────────────────
+// -- Mapping helpers -------------------------------------------------------------
 
 function mapStatus(s: string): MatchStatus {
   switch (s) {
@@ -96,6 +88,7 @@ function mapTeam(fd: FDTeam, score: number | null): TeamInfo {
     short: name.split(' ')[0],
     initial: fd.tla || name.slice(0, 3).toUpperCase(),
     color: '#3a3a48',
+    crest: fd.crest || undefined,
     score,
   };
 }
@@ -116,15 +109,18 @@ function mapMatch(fd: FDMatch): Match {
   };
 }
 
+function formatStage(s: string): string {
+  return s.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
 function pickFeatured(fdMatches: FDMatch[]): FeaturedMatch | null {
   const priority = ['IN_PLAY', 'PAUSED', 'TIMED', 'SCHEDULED', 'FINISHED'];
   for (const s of priority) {
     const fd = fdMatches.find(m => m.status === s);
     if (fd) {
-      const base = mapMatch(fd);
       return {
-        ...base,
-        competition: fd.competition.name,
+        ...mapMatch(fd),
+        competition: fd.competition?.name ?? '',
         stats: { possession: [50, 50], shots: [0, 0], xG: [0.0, 0.0] },
         events: [],
         aiPulse: '',
@@ -135,51 +131,61 @@ function pickFeatured(fdMatches: FDMatch[]): FeaturedMatch | null {
   return null;
 }
 
-function formatStage(s: string): string {
-  return s.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+// -- Fetch one competition's matches, silently return [] on failure ---------------
+
+async function fetchCompMatches(code: string, dateFrom: string, dateTo: string): Promise<FDMatch[]> {
+  try {
+    const res = await fetch(`${BASE}/competitions/${code}/matches?dateFrom=${dateFrom}&dateTo=${dateTo}`);
+    if (res.status === 429) return [];
+    if (!res.ok) return [];
+    const data = (await res.json()) as { matches: FDMatch[] };
+    return data.matches ?? [];
+  } catch {
+    return [];
+  }
 }
 
-// ── Public API ────────────────────────────────────────────────────────────────
+const delay = (ms: number) => new Promise<void>(res => setTimeout(res, ms));
+
+// -- Public API ------------------------------------------------------------------
 
 export interface TodayData {
   competitions: Competition[];
   featured: FeaturedMatch | null;
 }
 
-export async function fetchTodayData(): Promise<TodayData> {
-  const today = new Date().toISOString().slice(0, 10);
-  const url = `${BASE}/matches?dateFrom=${today}&dateTo=${today}`;
-  const res = await fetch(url);
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`football-data.org ${res.status}: ${text || res.statusText}`);
+export async function fetchMatchesForDate(date: string): Promise<TodayData> {
+  // Sequential with 350ms stagger -- 11 comps x 350ms ~= 3.5s, ~5 req/min steady state.
+  const allResults: FDMatch[][] = [];
+  for (let i = 0; i < COMP_LIST.length; i++) {
+    if (i > 0) await delay(350);
+    allResults.push(await fetchCompMatches(COMP_LIST[i].code, date, date));
   }
 
-  const data = (await res.json()) as FDMatchesResponse;
-  const fdMatches = data.matches ?? [];
+  const competitions: Competition[] = [];
+  const allFdMatches: FDMatch[] = [];
 
-  const compMap = new Map<string, { fdComp: FDCompetition; stage: string | null; matches: Match[] }>();
-  for (const fd of fdMatches) {
-    const code = fd.competition.code;
-    if (!compMap.has(code)) {
-      compMap.set(code, { fdComp: fd.competition, stage: fd.stage, matches: [] });
-    }
-    compMap.get(code)!.matches.push(mapMatch(fd));
-  }
+  COMP_LIST.forEach((comp, i) => {
+    const fdMatches = allResults[i];
+    if (fdMatches.length === 0) return;
 
-  const competitions: Competition[] = Array.from(compMap.entries()).map(([code, { fdComp, stage, matches }]) => {
-    const meta = COMP_META[code] ?? { country: fdComp.area?.name ?? '', short: code, flag: '#444444' };
-    return {
-      id: String(fdComp.id),
-      name: fdComp.name,
-      country: meta.country,
-      short: meta.short,
-      flag: meta.flag,
+    const stage = fdMatches[0]?.stage;
+    allFdMatches.push(...fdMatches);
+
+    competitions.push({
+      id: comp.code,
+      name: comp.name,
+      country: comp.country,
+      short: comp.short,
+      flag: comp.flag,
       stage: stage ? formatStage(stage) : undefined,
-      matches,
-    };
+      matches: fdMatches.map(mapMatch),
+    });
   });
 
-  return { competitions, featured: pickFeatured(fdMatches) };
+  return { competitions, featured: pickFeatured(allFdMatches) };
+}
+
+export function fetchTodayData(): Promise<TodayData> {
+  return fetchMatchesForDate(new Date().toISOString().slice(0, 10));
 }

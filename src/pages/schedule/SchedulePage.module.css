@@ -1,0 +1,94 @@
+.page {
+  display: grid;
+  grid-template-columns: 240px 1fr 320px;
+  height: 100vh;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.main {
+  overflow-y: auto;
+  padding: 24px 32px;
+}
+.main::-webkit-scrollbar { display: none; }
+
+.rail {
+  border-left: 1px solid var(--border);
+  padding: 24px 22px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.rail::-webkit-scrollbar { display: none; }
+
+.pageHeader {
+  margin-bottom: 22px;
+}
+.eyebrow {
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+}
+.pageTitle {
+  margin: 4px 0 0;
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.matchesCol {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.compBlock {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.compHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.compStage {
+  color: var(--text-faint);
+  font-weight: 500;
+  font-size: 10px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 48px 24px;
+  color: var(--text-faint);
+  font-size: 13px;
+  text-align: center;
+}
+.emptyIcon {
+  font-size: 32px;
+  margin-bottom: 4px;
+}

@@ -1,6 +1,7 @@
 import styles from './HomePage.module.css';
 import { mockData } from '../../lib/mock';
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import type { SupportedLocale } from '../../i18n';
 import type { Competition, FeaturedMatch, Match, TrendingItem } from '../../lib/types';
 import { useMatches } from '../../lib/useMatches';
@@ -13,6 +14,7 @@ import LiveDot from '../../components/shared/LiveDot/LiveDot';
 import MatchRow from '../../components/shared/MatchRow/MatchRow';
 import MomentumGraph from '../../components/shared/MomentumGraph/MomentumGraph';
 import AIInsight from '../../components/shared/AIInsight/AIInsight';
+import ScheduleModal from '../../components/shared/ScheduleModal/ScheduleModal';
 
 interface HomePageProps {
   locale: SupportedLocale;
@@ -123,7 +125,7 @@ function DesktopMatchSection({ comp }: { comp: Competition }) {
       <div className={styles.compHeader}>
         <div className="lh-title">
           <span className="lh-flag" style={{ backgroundColor: comp.flag }} aria-hidden="true" />
-          {comp.name}
+          {comp.country} – {comp.name}
           {comp.stage && (
             <span className={styles.compStage}>&middot; {comp.stage}</span>
           )}
@@ -284,11 +286,31 @@ interface LayoutProps {
   competitions: Competition[];
   loading: boolean;
   error: string | null;
+  resolvedDate: string;  // YYYY-MM-DD
 }
 
-function DesktopLayout({ locale, featured, competitions, loading, error }: LayoutProps) {
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+function DesktopLayout({ locale, featured, competitions, loading, error, resolvedDate }: LayoutProps) {
+  const [showSchedule, setShowSchedule] = useState(false);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const tomorrow  = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+
+  let dateLabel: string;
+  let pageTitle: string;
+  if (resolvedDate === today) {
+    dateLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    pageTitle = "Today's matches";
+  } else if (resolvedDate === yesterday) {
+    dateLabel = new Date(resolvedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    pageTitle = "Yesterday's matches";
+  } else if (resolvedDate === tomorrow) {
+    dateLabel = new Date(resolvedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    pageTitle = "Tomorrow's matches";
+  } else {
+    dateLabel = new Date(resolvedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    pageTitle = `Matches · ${dateLabel}`;
+  }
 
   const display = competitions.length > 0 ? competitions : (loading ? [] : mockData.competitions);
   const pairs: [Competition, Competition | undefined][] = [];
@@ -296,13 +318,13 @@ function DesktopLayout({ locale, featured, competitions, loading, error }: Layou
 
   return (
     <div className={styles.desktop}>
-      <Sidebar locale={locale ?? 'en'} />
+      <Sidebar locale={locale ?? 'en'} onScheduleClick={() => setShowSchedule(true)} />
 
       <main className={styles.main}>
         <div className={styles.pageHeader}>
           <div>
-            <div className={styles.eyebrow}>{dateStr}</div>
-            <h1 className={styles.pageTitle}>Today's matches</h1>
+            <div className={styles.eyebrow}>{dateLabel}</div>
+            <h1 className={styles.pageTitle}>{pageTitle}</h1>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {error && (
@@ -350,6 +372,7 @@ function DesktopLayout({ locale, featured, competitions, loading, error }: Layou
         <ShareStudioPromo />
         {mockData.trending && <TrendingCard items={mockData.trending} />}
       </aside>
+      {showSchedule && <ScheduleModal locale={locale ?? 'en'} onClose={() => setShowSchedule(false)} />}
     </div>
   );
 }
@@ -509,7 +532,7 @@ function MobileLayout({ featured, competitions, loading }: LayoutProps) {
               <div className="list-header">
                 <div className="lh-title">
                   <span className="lh-flag" style={{ backgroundColor: comp.flag }} aria-hidden="true" />
-                  {comp.name}
+                  {comp.country} – {comp.name}
                   {comp.stage && (
                     <span style={{ color: 'var(--text-faint)', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>
                       &middot; {comp.stage}
@@ -558,14 +581,18 @@ function MobileLayout({ featured, competitions, loading }: LayoutProps) {
 // -----------------------------------------------------------------------
 
 export default function HomePage({ locale }: HomePageProps) {
-  const { featured, competitions, loading, error } = useMatches();
+  const { date: dateParam } = useParams<{ date?: string }>();
+  const today = new Date().toISOString().slice(0, 10);
+  const resolvedDate = (!dateParam || dateParam === 'today') ? today : dateParam;
+
+  const { featured, competitions, loading, error } = useMatches(resolvedDate);
   return (
     <>
       <div className={styles.desktopOnly}>
-        <DesktopLayout locale={locale} featured={featured} competitions={competitions} loading={loading} error={error} />
+        <DesktopLayout locale={locale} featured={featured} competitions={competitions} loading={loading} error={error} resolvedDate={resolvedDate} />
       </div>
       <div className={styles.mobileOnly}>
-        <MobileLayout featured={featured} competitions={competitions} loading={loading} error={error} />
+        <MobileLayout featured={featured} competitions={competitions} loading={loading} error={error} resolvedDate={resolvedDate} />
       </div>
     </>
   );

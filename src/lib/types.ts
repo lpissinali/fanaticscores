@@ -11,6 +11,7 @@ export interface TeamInfo {
   short: string;
   initial: string;
   color: string;
+  crest?: string;
   score: number | null;
   scorers?: Array<{ player: string; minute: string; xg?: number }>;
 }
