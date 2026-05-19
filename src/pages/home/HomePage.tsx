@@ -286,7 +286,9 @@ interface LayoutProps {
   competitions: Competition[];
   loading: boolean;
   error: string | null;
+  hadErrors: boolean;
   resolvedDate: string;  // YYYY-MM-DD
+  refresh: () => void;
 }
 
 function DesktopLayout({ locale, featured, competitions, loading, error, resolvedDate }: LayoutProps) {
@@ -312,7 +314,7 @@ function DesktopLayout({ locale, featured, competitions, loading, error, resolve
     pageTitle = `Matches · ${dateLabel}`;
   }
 
-  const display = competitions.length > 0 ? competitions : (loading ? [] : mockData.competitions);
+  const display = competitions;
   const pairs: [Competition, Competition | undefined][] = [];
   for (let i = 0; i < display.length; i += 2) pairs.push([display[i], display[i + 1]]);
 
@@ -329,9 +331,10 @@ function DesktopLayout({ locale, featured, competitions, loading, error, resolve
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {error && (
               <span style={{ fontSize: 11, color: 'var(--live)', fontFamily: 'JetBrains Mono, monospace' }}>
-                API error &mdash; retrying
+                {error}
               </span>
             )}
+
             <div className={styles.searchField}>
               <Icon name="search" size={14} style={{ color: 'var(--text-dim)', flexShrink: 0 }} />
               <span style={{ color: 'var(--text-faint)', fontSize: 13 }}>
@@ -351,6 +354,10 @@ function DesktopLayout({ locale, featured, competitions, loading, error, resolve
           {loading && display.length === 0 ? (
             <div style={{ color: 'var(--text-faint)', fontSize: 13, padding: '32px 0', textAlign: 'center', fontFamily: 'JetBrains Mono, monospace' }}>
               Loading matches&hellip;
+            </div>
+          ) : display.length === 0 ? (
+            <div style={{ color: 'var(--text-faint)', fontSize: 13, padding: '32px 0', textAlign: 'center', fontFamily: 'JetBrains Mono, monospace' }}>
+              {error ? 'Could not load matches — retrying' : 'No matches scheduled'}
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
@@ -451,9 +458,9 @@ function MobileFeatured({ featured }: { featured: FeaturedMatch | null }) {
   );
 }
 
-function MobileLayout({ featured, competitions, loading }: LayoutProps) {
+function MobileLayout({ featured, competitions, loading, error }: LayoutProps) {
   const [activeTab, setActiveTab] = useState('all');
-  const display = competitions.length > 0 ? competitions : (loading ? [] : mockData.competitions);
+  const display = competitions;
 
   const liveCount = display.reduce((n, c) => n + c.matches.filter(m => m.status === 'LIVE').length, 0);
   const allCount  = display.reduce((n, c) => n + c.matches.length, 0);
@@ -472,6 +479,7 @@ function MobileLayout({ featured, competitions, loading }: LayoutProps) {
           <button className="fs-btn ghost" style={{ width: 36, height: 36, padding: 0, borderColor: 'transparent' }}>
             <Icon name="search" size={18} />
           </button>
+
           <button className="fs-btn ghost" style={{ width: 36, height: 36, padding: 0, borderColor: 'transparent' }}>
             <Icon name="bell" size={18} />
           </button>
@@ -525,6 +533,10 @@ function MobileLayout({ featured, competitions, loading }: LayoutProps) {
         {loading && display.length === 0 ? (
           <div style={{ color: 'var(--text-faint)', fontSize: 13, padding: '32px 16px', textAlign: 'center', fontFamily: 'JetBrains Mono, monospace' }}>
             Loading matches&hellip;
+          </div>
+        ) : display.length === 0 ? (
+          <div style={{ color: 'var(--text-faint)', fontSize: 13, padding: '32px 16px', textAlign: 'center', fontFamily: 'JetBrains Mono, monospace' }}>
+            {error ? 'Could not load matches — retrying' : 'No matches scheduled'}
           </div>
         ) : (
           display.map((comp) => (
@@ -585,14 +597,14 @@ export default function HomePage({ locale }: HomePageProps) {
   const today = new Date().toISOString().slice(0, 10);
   const resolvedDate = (!dateParam || dateParam === 'today') ? today : dateParam;
 
-  const { featured, competitions, loading, error } = useMatches(resolvedDate);
+  const { featured, competitions, loading, error, hadErrors, refresh } = useMatches(resolvedDate);
   return (
     <>
       <div className={styles.desktopOnly}>
-        <DesktopLayout locale={locale} featured={featured} competitions={competitions} loading={loading} error={error} resolvedDate={resolvedDate} />
+        <DesktopLayout locale={locale} featured={featured} competitions={competitions} loading={loading} error={error} hadErrors={hadErrors} resolvedDate={resolvedDate} refresh={refresh} />
       </div>
       <div className={styles.mobileOnly}>
-        <MobileLayout featured={featured} competitions={competitions} loading={loading} error={error} resolvedDate={resolvedDate} />
+        <MobileLayout featured={featured} competitions={competitions} loading={loading} error={error} hadErrors={hadErrors} resolvedDate={resolvedDate} refresh={refresh} />
       </div>
     </>
   );

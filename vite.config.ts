@@ -16,6 +16,11 @@ export default defineConfig(({ mode }) => {
             'X-Auth-Token': env.VITE_FD_API_KEY ?? '',
           },
         },
+        '/api/fetchMatchday': {
+          target: 'https://us-central1-fanaticscores-b6af4.cloudfunctions.net',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/fetchMatchday/, '/fetchMatchdayHttp'),
+        },
       },
     },
   }

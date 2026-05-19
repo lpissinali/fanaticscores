@@ -60,6 +60,4 @@
 .noScore {
   color: var(--text-faint);
   font-size: 14px;
-  align-self: center;
-  line-height: 1;
 }

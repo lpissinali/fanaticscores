@@ -1,5 +1,5 @@
 /* ============================================================
-   Fanatic Scores — Core TypeScript types
+   Fanatic Scores -- Core TypeScript types
    Matches the shape expected by all UI components.
    Real API adapters (src/adapters/*) must return these types.
    ============================================================ */
@@ -7,6 +7,7 @@
 export type MatchStatus = 'LIVE' | 'HT' | 'FT' | 'SCHEDULED' | 'POSTPONED' | 'CANCELLED';
 
 export interface TeamInfo {
+  id?: string;
   name: string;
   short: string;
   initial: string;
@@ -60,7 +61,7 @@ export interface Competition {
   country: string;
   short: string;
   stage?: string;
-  flag: string;   // hex color (placeholder) — replace with SVG flag in prod
+  flag: string;
   matches: Match[];
 }
 

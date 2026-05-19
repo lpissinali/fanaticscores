@@ -32,7 +32,7 @@ export default function FSLogo({
         className={styles.mark}
       />
       {showWordmark && (
-        <div className={styles.wordmark} style={{ fontSize: size * 0.27 }}>
+        <div className={styles.wordmark} style={{ fontSize: size * 0.528 }}>
           <span className={styles.line1}>FANATIC</span>
           <span className={styles.line2}>SCORES</span>
         </div>

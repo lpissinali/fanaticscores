@@ -1,0 +1,266 @@
+/* ── Layout (mirrors HomePage desktop grid) ─────────────────────────────── */
+.desktop {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg);
+}
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 28px 32px 60px;
+  max-width: 860px;
+}
+.rail {
+  width: var(--rail-width, 280px);
+  flex-shrink: 0;
+  padding: 28px 20px 60px;
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Back button ────────────────────────────────────────────────────────── */
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 24px;
+  transition: color 0.12s;
+}
+.backBtn:hover { color: var(--text); }
+
+/* ── Featured card ──────────────────────────────────────────────────────── */
+.featured {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  overflow: hidden;
+  margin-bottom: 28px;
+}
+.featuredGlow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(252,128,3,0.07), transparent);
+  pointer-events: none;
+}
+.featuredTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.featuredMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.compLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+.matchday {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--surface-raised, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.scoreGrid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+}
+.teamLeft  { display: flex; align-items: center; gap: 14px; }
+.teamRight { display: flex; align-items: center; gap: 14px; justify-content: flex-end; }
+.teamRole  { font-size: 10px; color: var(--text-faint); font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+.teamName  { font-size: 18px; font-weight: 800; color: var(--text); margin-top: 2px; }
+.scoreBlock { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.score     { font-size: 52px; font-weight: 900; color: var(--text); font-family: 'JetBrains Mono', monospace; line-height: 1; }
+.scoreDash { font-size: 32px; font-weight: 300; color: var(--text-faint); }
+.htRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.htLabel { font-size: 11px; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; }
+.htScore { font-size: 13px; color: var(--text-dim); font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+
+/* ── Section wrapper ────────────────────────────────────────────────────── */
+.section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.sectionTitle {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+  margin: 0 0 16px;
+}
+
+/* ── H2H ────────────────────────────────────────────────────────────────── */
+.h2hBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.h2hTeam {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  width: 30px;
+  flex-shrink: 0;
+}
+.h2hTrack {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex;
+  background: var(--border);
+}
+.h2hHome { background: var(--orange); min-width: 4px; }
+.h2hDraw { background: var(--text-faint); min-width: 4px; }
+.h2hAway { background: var(--text-dim); min-width: 4px; }
+.h2hCounts {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 40px;
+  margin-bottom: 4px;
+}
+.h2hWin       { font-size: 11px; font-weight: 700; color: var(--text-dim); }
+.h2hDrawCount { font-size: 11px; color: var(--text-faint); }
+.h2hGoals {
+  font-size: 11px;
+  color: var(--text-faint);
+  text-align: center;
+  margin-bottom: 14px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.h2hList { display: flex; flex-direction: column; gap: 4px; }
+.h2hRow {
+  display: grid;
+  grid-template-columns: 72px 1fr 60px 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.h2hRow:hover { background: var(--bg); }
+.h2hDate   { color: var(--text-faint); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+.h2hName   { color: var(--text-dim); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.h2hResult { color: var(--text); font-weight: 800; text-align: center; font-family: 'JetBrains Mono', monospace; }
+
+/* ── Standings table ────────────────────────────────────────────────────── */
+.table { width: 100%; }
+.tableHead, .tableRow {
+  display: grid;
+  grid-template-columns: 28px 1fr 32px 32px 32px 32px 40px 36px;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+.tableHead {
+  color: var(--text-faint);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.tableRow {
+  border-radius: 6px;
+  color: var(--text-dim);
+  transition: background 0.1s;
+}
+.tableRow:hover    { background: var(--bg); }
+.highlighted {
+  background: rgba(252, 128, 3, 0.06);
+  color: var(--text);
+}
+.highlighted .colPts { color: var(--orange); font-weight: 800; }
+.colPos { color: var(--text-faint); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+.colTeam {
+  display: flex; align-items: center; gap: 7px;
+  font-weight: 600; overflow: hidden;
+  white-space: nowrap; text-overflow: ellipsis;
+}
+.colNum { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+.colPts { text-align: center; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text); }
+
+/* ── Rail cards ─────────────────────────────────────────────────────────── */
+.infoCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+.infoTitle {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 12px;
+}
+.infoRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.infoRow:last-child { border-bottom: none; }
+.infoLabel { font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.08em; font-family: 'JetBrains Mono', monospace; }
+.infoValue { font-size: 13px; font-weight: 600; color: var(--text-dim); }
+
+/* ── Form ───────────────────────────────────────────────────────────────── */
+.formRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.formRow:last-child { border-bottom: none; }
+.formTeam { font-size: 12px; font-weight: 600; color: var(--text-dim); }
+.formDots { display: flex; gap: 4px; align-items: center; }
+
+/* ── Loading placeholder ────────────────────────────────────────────────── */
+.placeholder {
+  color: var(--text-faint);
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 48px 0;
+  text-align: center;
+}
