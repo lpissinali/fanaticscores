@@ -5,6 +5,7 @@
    ============================================================ */
 
 import type { Match, TeamInfo, FeaturedMatch, Competition, MatchStatus } from '../types';
+import { getFollowedNames } from '../useFollowing';
 
 const BASE = '/api/fd';
 
@@ -113,20 +114,55 @@ function formatStage(s: string): string {
   return s.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
 }
 
+
+// Higher number = higher priority in featured card selection.
+const COMP_TIER: Record<string, number> = {
+  CL:  10,  // UEFA Champions League
+  WC:   9,  // FIFA World Cup
+  PL:   8,  // Premier League
+  PD:   8,  // La Liga
+  SA:   8,  // Serie A
+  BL1:  7,  // Bundesliga
+  FL1:  7,  // Ligue 1
+  BSA:  5,  // Brasileirao
+  ELC:  4,  // Championship
+  DED:  4,  // Eredivisie
+  PPL:  4,  // Primeira Liga
+};
+
+function compTier(fd: FDMatch): number {
+  return COMP_TIER[fd.competition?.code ?? ''] ?? 0;
+}
+
+function hasFollowedTeam(fd: FDMatch, followed: Set<string>): boolean {
+  if (followed.size === 0) return false;
+  const home = fd.homeTeam.shortName || fd.homeTeam.name;
+  const away = fd.awayTeam.shortName || fd.awayTeam.name;
+  return followed.has(home) || followed.has(away);
+}
+
 function pickFeatured(fdMatches: FDMatch[]): FeaturedMatch | null {
-  const priority = ['IN_PLAY', 'PAUSED', 'TIMED', 'SCHEDULED', 'FINISHED'];
-  for (const s of priority) {
-    const fd = fdMatches.find(m => m.status === s);
-    if (fd) {
-      return {
-        ...mapMatch(fd),
-        competition: fd.competition?.name ?? '',
-        stats: { possession: [50, 50], shots: [0, 0], xG: [0.0, 0.0] },
-        events: [],
-        aiPulse: '',
-        momentumSeries: [],
-      };
-    }
+  const followed = getFollowedNames();
+  // Status priority: live > half-time > upcoming > finished.
+  // Within each bucket: followed teams first, then highest competition tier.
+  const statusPriority = ['IN_PLAY', 'PAUSED', 'TIMED', 'SCHEDULED', 'FINISHED'];
+  for (const s of statusPriority) {
+    const candidates = fdMatches.filter(m => m.status === s);
+    if (candidates.length === 0) continue;
+    const fd = candidates.reduce((best, m) => {
+      const mFollowed   = hasFollowedTeam(m, followed)    ? 1 : 0;
+      const bestFollowed = hasFollowedTeam(best, followed) ? 1 : 0;
+      if (mFollowed !== bestFollowed) return mFollowed > bestFollowed ? m : best;
+      return compTier(m) >= compTier(best) ? m : best;
+    });
+    return {
+      ...mapMatch(fd),
+      competition: fd.competition?.name ?? '',
+      stats: { possession: [50, 50], shots: [0, 0], xG: [0.0, 0.0] },
+      events: [],
+      aiPulse: '',
+      momentumSeries: [],
+    };
   }
   return null;
 }

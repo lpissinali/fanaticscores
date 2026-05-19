@@ -3,6 +3,7 @@ import styles from './Sidebar.module.css';
 import FSLogo from '../../shared/FSLogo/FSLogo';
 import Icon from '../../shared/Icon/Icon';
 import Crest from '../../shared/Crest/Crest';
+import { useAllFollowed } from '../../../lib/useFollowing';
 import type { SupportedLocale } from '../../../i18n';
 
 interface NavItem {
@@ -13,19 +14,14 @@ interface NavItem {
   accent?: boolean;
 }
 
-interface FollowedTeam {
-  name: string;
-  initial: string;
-  color: string;
-}
-
 interface SidebarProps {
   locale: SupportedLocale;
-  followedTeams?: FollowedTeam[];
   onScheduleClick?: () => void;
 }
 
-export default function Sidebar({ locale, followedTeams = [], onScheduleClick }: SidebarProps) {
+export default function Sidebar({ locale, onScheduleClick }: SidebarProps) {
+  const followedTeams = useAllFollowed();
+
   const navItems: NavItem[] = [
     { id: 'today',        label: 'Today',        icon: 'home',     path: `/${locale}/` },
     { id: 'schedule',     label: 'Schedule',     icon: 'calendar', path: `/${locale}/schedule` },

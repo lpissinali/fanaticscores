@@ -62,7 +62,9 @@
 
 /* Following section */
 .following {
-  margin-top: 24px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   gap: 2px;

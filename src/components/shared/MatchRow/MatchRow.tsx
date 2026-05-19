@@ -1,23 +1,29 @@
 import styles from './MatchRow.module.css';
 import Crest from '../Crest/Crest';
 import { useFollowing } from '../../../lib/useFollowing';
-import type { Match } from '../../../lib/types';
+import type { Match, TeamInfo } from '../../../lib/types';
 
-// ── Follow star ──────────────────────────────────────────────────────────────
-function FollowStar({ teamName }: { teamName: string }) {
-  const [followed, toggle] = useFollowing(teamName);
+// -- Follow star -------------------------------------------------------------
+function FollowStar({ team }: { team: TeamInfo }) {
+  const [followed, toggle] = useFollowing({
+    name:    team.name,
+    initial: team.initial,
+    color:   team.color,
+    crest:   team.crest,
+  });
   return (
     <button
       className={styles.followBtn}
       onClick={(e) => toggle(e)}
-      title={followed ? `Unfollow ${teamName}` : `Follow ${teamName}`}
-      aria-label={followed ? `Unfollow ${teamName}` : `Follow ${teamName}`}
+      title={followed ? `Unfollow ${team.name}` : `Follow ${team.name}`}
+      aria-label={followed ? `Unfollow ${team.name}` : `Follow ${team.name}`}
       aria-pressed={followed}
+      style={{ color: followed ? 'var(--orange)' : undefined }}
     >
       <svg
         width="14" height="14" viewBox="0 0 24 24"
-        fill={followed ? 'currentColor' : 'none'}
-        stroke="currentColor"
+        fill={followed ? 'var(--orange)' : 'none'}
+        stroke={followed ? 'var(--orange)' : 'currentColor'}
         strokeWidth="2"
         strokeLinejoin="round"
         aria-hidden="true"
@@ -28,7 +34,7 @@ function FollowStar({ teamName }: { teamName: string }) {
   );
 }
 
-// ── Time column ──────────────────────────────────────────────────────────────
+// -- Time column -------------------------------------------------------------
 function TimeCol({ match }: { match: Match }) {
   if (match.status === 'LIVE') {
     const min = String(match.minute ?? '').replace(/'/g, '');
@@ -44,7 +50,7 @@ function TimeCol({ match }: { match: Match }) {
   return <span className={styles.timeScheduled}>{match.kickoff ?? ''}</span>;
 }
 
-// ── Match row ────────────────────────────────────────────────────────────────
+// -- Match row ---------------------------------------------------------------
 interface MatchRowProps {
   match: Match;
   featured?: boolean;
@@ -54,7 +60,6 @@ interface MatchRowProps {
 export default function MatchRow({ match, featured = false, onClick }: MatchRowProps) {
   const { home, away } = match;
   const hasScore = home.score !== null && away.score !== null;
-
   const homeWins = hasScore && (home.score as number) > (away.score as number);
   const awayWins = hasScore && (away.score as number) > (home.score as number);
 
@@ -67,26 +72,23 @@ export default function MatchRow({ match, featured = false, onClick }: MatchRowP
       onClick={() => onClick?.(match)}
       onKeyDown={(e) => e.key === 'Enter' && onClick?.(match)}
     >
-      {/* Time / status */}
       <div className="time-col">
         <TimeCol match={match} />
       </div>
 
-      {/* Teams */}
       <div className="teams">
         <div className="team-line">
           <Crest team={home} size="md" />
           <span className={`team-name${awayWins ? ' muted' : ''}`}>{home.name}</span>
-          <FollowStar teamName={home.name} />
+          <FollowStar team={home} />
         </div>
         <div className="team-line">
           <Crest team={away} size="md" />
           <span className={`team-name${homeWins ? ' muted' : ''}`}>{away.name}</span>
-          <FollowStar teamName={away.name} />
+          <FollowStar team={away} />
         </div>
       </div>
 
-      {/* Score */}
       <div className="score-col">
         {!hasScore ? (
           <span className={styles.noScore}>&#8212;</span>
