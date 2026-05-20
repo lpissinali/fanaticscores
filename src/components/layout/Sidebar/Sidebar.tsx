@@ -61,10 +61,19 @@ export default function Sidebar({ locale, onScheduleClick }: SidebarProps) {
         <div className={styles.following}>
           <span className={styles.followLabel}>Following</span>
           {followedTeams.map((team) => (
-            <div key={team.name} className={styles.followRow}>
-              <Crest team={team} size="md" />
-              <span className={styles.followName}>{team.name}</span>
-            </div>
+            team.id ? (
+              <NavLink key={team.name} to={`/${locale}/team/${team.id}`} className={({ isActive }) =>
+                [styles.followRow, isActive ? styles.followRowActive : ''].filter(Boolean).join(' ')
+              }>
+                <Crest team={team} size="md" />
+                <span className={styles.followName}>{team.name}</span>
+              </NavLink>
+            ) : (
+              <div key={team.name} className={styles.followRow}>
+                <Crest team={team} size="md" />
+                <span className={styles.followName}>{team.name}</span>
+              </div>
+            )
           ))}
         </div>
       )}

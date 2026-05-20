@@ -1,5 +1,6 @@
-import styles from './Footer.module.css';
+import { Link } from 'react-router-dom';
 import FSLogo from '../../shared/FSLogo/FSLogo';
+import styles from './Footer.module.css';
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -9,17 +10,19 @@ export default function Footer() {
       <div className={styles.grid}>
 
         {/* Brand column */}
-        <div className={styles.brand}>
-          <FSLogo size={28} />
-          <p className={styles.tagline}>Scores for fanatics.</p>
+        <div>
+          <FSLogo size={56} />
+          <p className={styles.tagline}>
+            Live scores, AI Pulse and Share Studio for football fans.
+          </p>
           <div className={styles.social}>
-            {['X', 'Instagram', 'Threads'].map((s) => (
-              <a key={s} href="#" className={styles.socialLink}>{s}</a>
+            {[['X', 'x'], ['IG', 'instagram'], ['TT', 'tiktok']].map(([label, id]) => (
+              <a key={id} href="#" className={styles.socialIcon}>{label}</a>
             ))}
           </div>
         </div>
 
-        {/* SEO content — spans the space previously used by Product, Company and Get the app */}
+        {/* SEO block */}
         <div className={styles.seoBlock}>
           <p className={styles.seoPara}>
             Fanatic Scores delivers real-time football scores, live match updates and full-time results
@@ -37,23 +40,18 @@ export default function Footer() {
           </p>
         </div>
 
-        {/* Get the app — commented out until native apps are ready
-        <div className={styles.col}>
-          <span className={styles.colHeading}>Get the app</span>
-          <a href="#" className={styles.appBtn}>App Store</a>
-          <a href="#" className={styles.appBtn}>Google Play</a>
+        {/* Bottom bar */}
+        <div className={styles.bottom}>
+          <span className={styles.copy}>
+            &copy; {year} Fanatic Scores &middot; Not affiliated with any league or club
+          </span>
+          <div className={styles.legalLinks}>
+            <Link to="/en/terms"   className={styles.legalLink}>Terms</Link>
+            <Link to="/en/privacy" className={styles.legalLink}>Privacy</Link>
+            <Link to="/en/cookies" className={styles.legalLink}>Cookies</Link>
+          </div>
         </div>
-        */}
 
-      </div>
-
-      <div className={styles.bottom}>
-        <span className={styles.copy}>© {year} Fanatic Scores</span>
-        <div className={styles.legalLinks}>
-          {['Terms', 'Privacy', 'Cookies', 'Data sources', 'Status'].map((l) => (
-            <a key={l} href="#" className={styles.legalLink}>{l}</a>
-          ))}
-        </div>
       </div>
     </footer>
   );

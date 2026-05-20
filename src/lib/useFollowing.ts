@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 
 export interface FollowedTeam {
+  id?: string;
   name: string;
   initial: string;
   color: string;
@@ -78,6 +79,7 @@ export function useFollowing(
       store.delete(team.name);
     } else {
       store.set(team.name, {
+        id:      team.id,
         name:    team.name,
         initial: team.initial,
         color:   team.color,

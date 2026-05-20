@@ -56,6 +56,16 @@
 .followBtn:active { transform: scale(0.85); }
 .followBtn[aria-pressed="true"] { color: var(--orange); }
 
+/* ── Team name link ── */
+.teamLink {
+  text-decoration: none;
+  color: inherit;
+}
+.teamLink:hover {
+  color: var(--orange);
+  text-decoration: none;
+}
+
 /* ── Scheduled score placeholder ── */
 .noScore {
   color: var(--text-faint);

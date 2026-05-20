@@ -1,8 +1,9 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useMatchDetails } from '../../lib/useMatchDetails';
 import type { MatchDetailData, StandingRow } from '../../lib/api/matchDetails';
 import type { SupportedLocale } from '../../i18n';
 import Sidebar from '../../components/layout/Sidebar/Sidebar';
+import Footer from '../../components/layout/Footer/Footer';
 import Crest from '../../components/shared/Crest/Crest';
 import LiveDot from '../../components/shared/LiveDot/LiveDot';
 import Icon from '../../components/shared/Icon/Icon';
@@ -140,7 +141,7 @@ function FormCard({ d, rows }: { d: MatchDetailData; rows: StandingRow[] }) {
 }
 
 // ── Desktop featured card ─────────────────────────────────────────────────────
-function MatchCard({ d }: { d: MatchDetailData }) {
+function MatchCard({ d, locale }: { d: MatchDetailData; locale: string }) {
   return (
     <div className={styles.featured}>
       <div className={styles.featuredGlow} aria-hidden="true" />
@@ -164,25 +165,25 @@ function MatchCard({ d }: { d: MatchDetailData }) {
       </div>
 
       <div className={styles.scoreGrid}>
-        <div className={styles.teamLeft}>
+        <Link to={`/${locale}/team/${d.home.id}`} className={styles.teamLeft} style={{ textDecoration: 'none' }}>
           <Crest team={d.home} size="xl" />
           <div>
             <div className={styles.teamRole}>Home</div>
             <div className={styles.teamName}>{d.home.name}</div>
           </div>
-        </div>
+        </Link>
         <div className={styles.scoreBlock}>
           <span className={styles.score}>{d.home.score ?? '–'}</span>
           <span className={styles.scoreDash}>–</span>
           <span className={styles.score}>{d.away.score ?? '–'}</span>
         </div>
-        <div className={styles.teamRight}>
+        <Link to={`/${locale}/team/${d.away.id}`} className={styles.teamRight} style={{ textDecoration: 'none' }}>
           <div style={{ textAlign: 'right' }}>
             <div className={styles.teamRole}>Away</div>
             <div className={styles.teamName}>{d.away.name}</div>
           </div>
           <Crest team={d.away} size="xl" />
-        </div>
+        </Link>
       </div>
 
       {(d.status === 'FT' || d.status === 'HT') && d.halfTime.home !== null && (
@@ -198,7 +199,7 @@ function MatchCard({ d }: { d: MatchDetailData }) {
 }
 
 // ── Mobile featured card ──────────────────────────────────────────────────────
-function MobMatchCard({ d }: { d: MatchDetailData }) {
+function MobMatchCard({ d, locale }: { d: MatchDetailData; locale: string }) {
   return (
     <div className={styles.mobFeatured}>
       <div className={styles.featuredGlow} aria-hidden="true" />
@@ -216,24 +217,24 @@ function MobMatchCard({ d }: { d: MatchDetailData }) {
           <span className={styles.compLabel}>{d.compCountry ? `${d.compCountry} · ` : ''}{d.competition}</span>
         </div>
         <button className="fs-btn ghost" style={{ height: 28, padding: '0 10px', fontSize: 12 }}>
-          <Icon name="share" size={13} /> Share
+          <Icon name="share" size={13} /> Share Studio
         </button>
       </div>
 
       <div className={styles.mobScoreGrid}>
-        <div className={styles.mobTeamLeft}>
+        <Link to={`/${locale}/team/${d.home.id}`} className={styles.mobTeamLeft} style={{ textDecoration: 'none' }}>
           <Crest team={d.home} size="lg" />
           <div className={styles.mobTeamName}>{d.home.short || d.home.name}</div>
-        </div>
+        </Link>
         <div className={styles.mobScoreBlock}>
           <span className={styles.mobScore}>{d.home.score ?? '–'}</span>
           <span className={styles.mobScoreDash}>–</span>
           <span className={styles.mobScore}>{d.away.score ?? '–'}</span>
         </div>
-        <div className={styles.mobTeamRight}>
+        <Link to={`/${locale}/team/${d.away.id}`} className={styles.mobTeamRight} style={{ textDecoration: 'none' }}>
           <Crest team={d.away} size="lg" />
           <div className={styles.mobTeamName}>{d.away.short || d.away.name}</div>
-        </div>
+        </Link>
       </div>
 
       {(d.status === 'FT' || d.status === 'HT') && d.halfTime.home !== null && (
@@ -278,7 +279,7 @@ export default function MatchPage({ locale }: MatchPageProps) {
             )}
             {data && (
               <>
-                <MatchCard d={data} />
+                <MatchCard d={data} locale={locale} />
                 <H2HSection d={data} />
                 <StandingsSection
                   rows={data.standings}
@@ -288,6 +289,7 @@ export default function MatchPage({ locale }: MatchPageProps) {
                 />
               </>
             )}
+            <Footer />
           </main>
 
           <aside className={styles.rail}>
@@ -326,7 +328,7 @@ export default function MatchPage({ locale }: MatchPageProps) {
             )}
             {data && (
               <>
-                <MobMatchCard d={data} />
+                <MobMatchCard d={data} locale={locale} />
                 <H2HSection d={data} />
                 <StandingsSection
                   rows={data.standings}
@@ -338,6 +340,7 @@ export default function MatchPage({ locale }: MatchPageProps) {
                 <FormCard d={data} rows={data.standings} />
               </>
             )}
+            <Footer />
           </div>
         </div>
       </div>

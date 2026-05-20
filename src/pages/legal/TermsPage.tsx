@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import type { SupportedLocale } from '../../i18n';
+import Footer from '../../components/layout/Footer/Footer';
 import Sidebar from '../../components/layout/Sidebar/Sidebar';
 import Icon from '../../components/shared/Icon/Icon';
 import styles from './LegalPage.module.css';
@@ -104,6 +105,7 @@ export default function TermsPage({ locale }: Props) {
               <Icon name="chevron-left" size={14} /> Back
             </button>
             <Content />
+            <Footer />
           </main>
         </div>
       </div>
@@ -115,7 +117,7 @@ export default function TermsPage({ locale }: Props) {
             </button>
             <span className={styles.mobTopTitle}>Terms &amp; Conditions</span>
           </div>
-          <div className={styles.mobContent}><Content /></div>
+          <div className={styles.mobContent}><Content /><Footer /></div>
         </div>
       </div>
     </>

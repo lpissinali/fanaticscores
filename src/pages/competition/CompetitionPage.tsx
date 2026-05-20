@@ -1,8 +1,9 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useCompetitionDetails } from '../../lib/useCompetitionDetails';
 import type { CompStandingRow, CompScorer, CompInfo } from '../../lib/api/competitionDetails';
 import type { SupportedLocale } from '../../i18n';
 import Sidebar from '../../components/layout/Sidebar/Sidebar';
+import Footer from '../../components/layout/Footer/Footer';
 import Icon from '../../components/shared/Icon/Icon';
 import styles from './CompetitionPage.module.css';
 
@@ -63,7 +64,7 @@ function HeroCard({ info }: { info: CompInfo }) {
 }
 
 // ── Standings table ───────────────────────────────────────────────────────────
-function StandingsTable({ rows }: { rows: CompStandingRow[] }) {
+function StandingsTable({ rows, locale }: { rows: CompStandingRow[]; locale: string }) {
   if (rows.length === 0) return null;
   return (
     <div className={styles.section}>
@@ -84,13 +85,13 @@ function StandingsTable({ rows }: { rows: CompStandingRow[] }) {
         {rows.map(r => (
           <div key={r.teamId} className={styles.tableRow}>
             <span className={styles.colPos}>{r.position}</span>
-            <span className={styles.colTeam}>
+            <Link to={`/${locale}/team/${r.teamId}`} className={styles.colTeam} style={{ textDecoration: 'none' }}>
               <img src={r.teamCrest} alt={r.teamName} width={16} height={16}
                 style={{ objectFit: 'contain', flexShrink: 0 }}
                 onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
               />
               {r.teamName}
-            </span>
+            </Link>
             <span className={styles.colNum}>{r.played}</span>
             <span className={styles.colNum}>{r.won}</span>
             <span className={styles.colNum}>{r.draw}</span>
@@ -107,8 +108,40 @@ function StandingsTable({ rows }: { rows: CompStandingRow[] }) {
 }
 
 // ── Top scorers ───────────────────────────────────────────────────────────────
-function ScorersTable({ scorers }: { scorers: CompScorer[] }) {
+function ScorersTable({ scorers, compact = false }: { scorers: CompScorer[]; compact?: boolean }) {
   if (scorers.length === 0) return null;
+
+  if (compact) {
+    return (
+      <div className={styles.railScorerCard}>
+        <div className={styles.railCardTitle}>Top Scorers</div>
+        <div className={styles.railScorerHead}>
+          <span className={styles.scorerRank}>#</span>
+          <span>Player</span>
+          <span className={styles.railScorerNum}>G</span>
+          <span className={styles.railScorerNum}>A</span>
+        </div>
+        {scorers.slice(0, 10).map((s, i) => (
+          <div key={i} className={styles.railScorerRow}>
+            <span className={styles.scorerRank}>{i + 1}</span>
+            <span className={styles.railScorerInfo}>
+              <img src={s.teamCrest} alt={s.teamName} width={14} height={14}
+                style={{ objectFit: 'contain', flexShrink: 0 }}
+                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+              <span>
+                <span className={styles.railScorerName}>{s.playerName}</span>
+                <span className={styles.railScorerTeam}>{s.teamName}</span>
+              </span>
+            </span>
+            <span className={styles.railScorerNum}>{s.goals}</span>
+            <span className={styles.railScorerNum}>{s.assists ?? '–'}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className={styles.section}>
       <h2 className={styles.sectionTitle}>Top Scorers</h2>
@@ -171,11 +204,15 @@ export default function CompetitionPage({ locale }: CompetitionPageProps) {
             {data && (
               <>
                 <HeroCard info={data.info} />
-                <StandingsTable rows={data.standings} />
-                <ScorersTable scorers={data.scorers} />
+                <StandingsTable rows={data.standings} locale={locale} />
               </>
             )}
+            <Footer />
           </main>
+
+          <aside className={styles.rail}>
+            {data && <ScorersTable scorers={data.scorers} compact />}
+          </aside>
         </div>
       </div>
 
@@ -195,10 +232,11 @@ export default function CompetitionPage({ locale }: CompetitionPageProps) {
             {data && (
               <>
                 <HeroCard info={data.info} />
-                <StandingsTable rows={data.standings} />
+                <StandingsTable rows={data.standings} locale={locale} />
                 <ScorersTable scorers={data.scorers} />
               </>
             )}
+            <Footer />
           </div>
         </div>
       </div>

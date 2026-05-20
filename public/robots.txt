@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# Internal API proxy — no public value
+Disallow: /api/
+
+Sitemap: https://fanaticstore.com/sitemap.xml

@@ -2,7 +2,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { DEFAULT_LOCALE } from './i18n';
 import HomePage        from './pages/home/HomePage';
 import MatchPage       from './pages/match/MatchPage';
-import CompetitionPage from './pages/competition/CompetitionPage';
+import CompetitionPage  from './pages/competition/CompetitionPage';
+import CompetitionsPage from './pages/competitions/CompetitionsPage';
+import TeamPage         from './pages/team/TeamPage';
 import TermsPage       from './pages/legal/TermsPage';
 import PrivacyPage     from './pages/legal/PrivacyPage';
 import CookiesPage     from './pages/legal/CookiesPage';
@@ -16,7 +18,9 @@ function App() {
           <Route index element={<Navigate to="today" replace />} />
           <Route path="today"                element={<HomePage        locale="en" />} />
           <Route path="match/:matchId"        element={<MatchPage       locale="en" />} />
-          <Route path="competition/:compCode" element={<CompetitionPage locale="en" />} />
+          <Route path="competitions"          element={<CompetitionsPage locale="en" />} />
+          <Route path="competition/:compCode" element={<CompetitionPage  locale="en" />} />
+          <Route path="team/:teamId"         element={<TeamPage          locale="en" />} />
           <Route path="terms"                element={<TermsPage       locale="en" />} />
           <Route path="privacy"              element={<PrivacyPage     locale="en" />} />
           <Route path="cookies"              element={<CookiesPage     locale="en" />} />

@@ -61,3 +61,32 @@ export function cacheCompetitions(comps: Competition[]): void {
 export function getCachedMatch(matchId: string): CachedMatch | null {
   return store.get(matchId) ?? null;
 }
+
+export interface CachedTeam {
+  id: string;
+  name: string;
+  crest?: string;
+  compCode: string;
+  compName: string;
+  compCountry: string;
+}
+
+/** Returns all unique teams seen across cached matches (deduped by team id). */
+export function getAllCachedTeams(): CachedTeam[] {
+  const seen = new Map<string, CachedTeam>();
+  for (const { match, compCode, competition, compCountry } of store.values()) {
+    for (const side of [match.home, match.away]) {
+      if (!seen.has(side.id)) {
+        seen.set(side.id, {
+          id:          side.id,
+          name:        side.name,
+          crest:       side.crest,
+          compCode,
+          compName:    competition,
+          compCountry,
+        });
+      }
+    }
+  }
+  return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
+}

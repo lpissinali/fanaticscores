@@ -6,6 +6,7 @@ import type { Competition, FeaturedMatch, Match, TrendingItem } from '../../lib/
 import { useMatches } from '../../lib/useMatches';
 
 import Sidebar from '../../components/layout/Sidebar/Sidebar';
+import Footer from '../../components/layout/Footer/Footer';
 import FSLogo from '../../components/shared/FSLogo/FSLogo';
 import Crest from '../../components/shared/Crest/Crest';
 import Icon from '../../components/shared/Icon/Icon';
@@ -14,6 +15,7 @@ import MatchRow from '../../components/shared/MatchRow/MatchRow';
 import MomentumGraph from '../../components/shared/MomentumGraph/MomentumGraph';
 import AIInsight from '../../components/shared/AIInsight/AIInsight';
 import ScheduleModal from '../../components/shared/ScheduleModal/ScheduleModal';
+import SearchModal   from '../../components/shared/SearchModal/SearchModal';
 
 interface HomePageProps {
   locale: SupportedLocale;
@@ -133,7 +135,7 @@ function DesktopMatchSection({ comp }: { comp: Competition }) {
         <Icon name="chevron-right" size={14} style={{ color: 'var(--text-faint)' }} />
       </div>
       {comp.matches.map((m) => (
-        <MatchRow key={m.id} match={m} onClick={handleClick} />
+        <MatchRow key={m.id} match={m} locale="en" onClick={handleClick} />
       ))}
     </div>
   );
@@ -242,74 +244,6 @@ function TrendingCard({ competitions }: { competitions: Competition[] }) {
   );
 }
 
-function DesktopFooter() {
-  const year = new Date().getFullYear();
-
-  return (
-    <footer className={styles.footer}>
-      <div className={styles.footerGrid}>
-
-        {/* Brand column */}
-        <div>
-          <FSLogo size={56} />
-          <p style={{ fontSize: 12.5, color: 'var(--text-dim)', lineHeight: 1.55, margin: '14px 0 0', maxWidth: 280 }}>
-            Live scores, AI Pulse and Share Studio for football fans.
-          </p>
-          <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-            {[['X','x'],['IG','instagram'],['TT','tiktok']].map(([label, id]) => (
-              <a key={id} style={{
-                width: 30, height: 30, borderRadius: 8,
-                background: 'var(--surface)', border: '1px solid var(--border)',
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                color: 'var(--text-dim)', textDecoration: 'none',
-                fontSize: 11, fontWeight: 800,
-              }}>{label}</a>
-            ))}
-          </div>
-        </div>
-
-        {/* SEO content — spans the space previously used by Product, Company and Get the app */}
-        <div className={styles.footerSeo}>
-          <p className={styles.footerSeoPara}>
-            Fanatic Scores delivers real-time football scores, live match updates and full-time results
-            across the Premier League, La Liga, Serie A, Bundesliga, Ligue 1, UEFA Champions League
-            and more. Follow every goal, half-time score and final whistle as it happens.
-          </p>
-          <p className={styles.footerSeoPara}>
-            Track league tables, head-to-head records and recent form for clubs across Europe and beyond.
-            Our live scores update every minute so you never miss a moment — whether you're following
-            a title race, a relegation battle or a cup upset.
-          </p>
-          <p className={styles.footerSeoPara}>
-            From match-day schedules to detailed competition standings, Fanatic Scores is the fastest
-            way to stay on top of football results worldwide. Free, no account required.
-          </p>
-        </div>
-
-        {/* Get the app — commented out until native apps are ready
-        <div>
-          <div style={colTitleStyle}>Get the app</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <a className={styles.storeBadge}>...</a>
-            <a className={styles.storeBadge}>...</a>
-          </div>
-        </div>
-        */}
-
-        <div className={styles.footerBottom}>
-          <span style={{ fontSize: 11.5, color: 'var(--text-faint)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.04em' }}>
-            &copy; {year} Fanatic Scores &middot; Not affiliated with any league or club
-          </span>
-          <div style={{ display: 'flex', gap: 22 }}>
-            <Link to="/en/terms"   style={{ fontSize: 11.5, color: 'var(--text-dim)', textDecoration: 'none' }}>Terms</Link>
-            <Link to="/en/privacy" style={{ fontSize: 11.5, color: 'var(--text-dim)', textDecoration: 'none' }}>Privacy</Link>
-            <Link to="/en/cookies" style={{ fontSize: 11.5, color: 'var(--text-dim)', textDecoration: 'none' }}>Cookies</Link>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-}
 
 interface LayoutProps {
   locale?: SupportedLocale;
@@ -325,6 +259,7 @@ interface LayoutProps {
 
 function DesktopLayout({ locale, featured, competitions, loading, error, resolvedDate, aiBrief }: LayoutProps) {
   const [showSchedule, setShowSchedule] = useState(false);
+  const [showSearch,   setShowSearch]   = useState(false);
 
   const today = new Date().toISOString().slice(0, 10);
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
@@ -355,6 +290,7 @@ function DesktopLayout({ locale, featured, competitions, loading, error, resolve
       <Sidebar locale={locale ?? 'en'} onScheduleClick={() => setShowSchedule(true)} />
 
       <main className={styles.main}>
+        <div className={styles.mainInner}>
         <div className={styles.pageHeader}>
           <div>
             <div className={styles.eyebrow}>{dateLabel}</div>
@@ -367,7 +303,9 @@ function DesktopLayout({ locale, featured, competitions, loading, error, resolve
               </span>
             )}
 
-            <div className={styles.searchField}>
+            <div className={styles.searchField} role="button" tabIndex={0}
+              onClick={() => setShowSearch(true)}
+              onKeyDown={e => e.key === 'Enter' && setShowSearch(true)}>
               <Icon name="search" size={14} style={{ color: 'var(--text-dim)', flexShrink: 0 }} />
               <span style={{ color: 'var(--text-faint)', fontSize: 13 }}>
                 Search teams, competitions&hellip;
@@ -382,7 +320,7 @@ function DesktopLayout({ locale, featured, competitions, loading, error, resolve
 
         <DesktopFeatured featured={loading ? null : (featured ?? null)} />
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 20, marginTop: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 20, marginTop: 24, flexGrow: 1, alignContent: 'start' }}>
           {loading && display.length === 0 ? (
             <div style={{ color: 'var(--text-faint)', fontSize: 13, padding: '32px 0', textAlign: 'center', fontFamily: 'JetBrains Mono, monospace' }}>
               Loading matches&hellip;
@@ -403,7 +341,8 @@ function DesktopLayout({ locale, featured, competitions, loading, error, resolve
           )}
         </div>
 
-        <DesktopFooter />
+        <Footer />
+        </div>
       </main>
 
       <aside className={styles.rail}>
@@ -412,6 +351,7 @@ function DesktopLayout({ locale, featured, competitions, loading, error, resolve
         <TrendingCard competitions={competitions} />
       </aside>
       {showSchedule && <ScheduleModal locale={locale ?? 'en'} onClose={() => setShowSchedule(false)} />}
+      {showSearch   && <SearchModal   locale={locale ?? 'en'} onClose={() => setShowSearch(false)}   />}
     </div>
   );
 }
@@ -490,9 +430,10 @@ function MobileFeatured({ featured }: { featured: FeaturedMatch | null }) {
   );
 }
 
-function MobileLayout({ featured, competitions, loading, error, aiBrief }: LayoutProps) {
+function MobileLayout({ featured, competitions, loading, error, aiBrief, locale }: LayoutProps) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab,  setActiveTab]  = useState('all');
+  const [showSearch, setShowSearch] = useState(false);
   const display = competitions;
 
   const liveCount = display.reduce((n, c) => n + c.matches.filter(m => m.status === 'LIVE').length, 0);
@@ -509,7 +450,8 @@ function MobileLayout({ featured, competitions, loading, error, aiBrief }: Layou
       <div className={styles.mobTopBar}>
         <FSLogo size={28} />
         <div style={{ display: 'flex', gap: 4 }}>
-          <button className="fs-btn ghost" style={{ width: 36, height: 36, padding: 0, borderColor: 'transparent' }}>
+          <button className="fs-btn ghost" style={{ width: 36, height: 36, padding: 0, borderColor: 'transparent' }}
+            onClick={() => setShowSearch(true)}>
             <Icon name="search" size={18} />
           </button>
 
@@ -586,11 +528,14 @@ function MobileLayout({ featured, competitions, loading, error, aiBrief }: Layou
                 </div>
                 <Icon name="chevron-right" size={14} style={{ color: 'var(--text-faint)' }} />
               </div>
-              {comp.matches.map((m) => <MatchRow key={m.id} match={m} onClick={(m) => navigate(`/en/match/${m.id}`)} />)}
+              {comp.matches.map((m) => <MatchRow key={m.id} match={m} locale="en" onClick={(m) => navigate(`/en/match/${m.id}`)} />)}
             </div>
           ))
         )}
 
+        <div style={{ padding: '0 16px' }}>
+          <Footer />
+        </div>
         <div style={{ height: 90 }} />
       </div>
 
@@ -617,6 +562,7 @@ function MobileLayout({ featured, competitions, loading, error, aiBrief }: Layou
             )
         ))}
       </nav>
+      {showSearch && <SearchModal locale={locale ?? 'en'} onClose={() => setShowSearch(false)} />}
     </div>
   );
 }

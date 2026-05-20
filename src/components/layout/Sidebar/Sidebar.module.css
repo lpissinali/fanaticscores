@@ -90,10 +90,19 @@
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.1s;
+  text-decoration: none;
 }
 
 .followRow:hover {
   background: var(--surface);
+}
+
+.followRowActive {
+  background: var(--surface);
+}
+
+.followRowActive .followName {
+  color: var(--text);
 }
 
 .followName {
