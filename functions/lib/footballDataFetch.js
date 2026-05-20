@@ -10,7 +10,6 @@ exports.fetchMatchday = fetchMatchday;
 const params_1 = require("firebase-functions/params");
 exports.fdApiKey = (0, params_1.defineSecret)('FD_API_KEY');
 const FD_BASE = 'https://api.football-data.org/v4';
-// ── Competition list (priority order) ──────────────────────────────────────
 exports.COMP_LIST = [
     { code: 'CL', name: 'UEFA Champions League', country: 'Europe', short: 'UCL', flag: '#1a3a6b' },
     { code: 'PL', name: 'Premier League', country: 'England', short: 'PL', flag: '#3d0d6b' },
@@ -24,7 +23,6 @@ exports.COMP_LIST = [
     { code: 'PPL', name: 'Primeira Liga', country: 'Portugal', short: 'PPL', flag: '#006600' },
     { code: 'WC', name: 'FIFA World Cup', country: 'World', short: 'WC', flag: '#8b6914' },
 ];
-// ── Helpers ────────────────────────────────────────────────────────────────
 const delay = (ms) => new Promise(r => setTimeout(r, ms));
 function mapStatus(s) {
     switch (s) {
@@ -59,21 +57,18 @@ const COMP_TIER = {
     CL: 10, WC: 9, PL: 8, PD: 8, SA: 8, BL1: 7, FL1: 7,
     BSA: 5, ELC: 4, DED: 4, PPL: 4,
 };
-// ── TTL logic ──────────────────────────────────────────────────────────────
 function calcNextFetch(date, hasLive, hadErrors, now) {
     const today = new Date().toISOString().slice(0, 10);
     if (date < today)
-        return hadErrors ? now + 65000 : now + 24 * 3600000; // past: retry 65s on errors, else 24h
+        return hadErrors ? now + 65000 : now + 24 * 3600000;
     if (date > today)
-        return now + (hadErrors ? 65000 : 3600000); // future: 1 h or retry 65 s
-    // today:
+        return now + (hadErrors ? 65000 : 3600000);
     if (hasLive)
-        return now + 60000; // live match: 60 s
+        return now + 60000;
     if (hadErrors)
-        return now + 65000; // partial: 65 s
-    return now + 2 * 60000; // no live: 2 min
+        return now + 65000;
+    return now + 2 * 60000;
 }
-// ── Main fetch ─────────────────────────────────────────────────────────────
 async function fetchMatchday(date, apiKey) {
     var _a, _b, _c, _d;
     const now = Date.now();
@@ -85,7 +80,7 @@ async function fetchMatchday(date, apiKey) {
             await delay(350);
         const comp = exports.COMP_LIST[i];
         try {
-            const res = await fetch(`${FD_BASE}/competitions/${comp.code}/matches?dateFrom=${date}&dateTo=${date}`, { headers: { 'X-Auth-Token': apiKey } });
+            const res = await fetch(FD_BASE + '/competitions/' + comp.code + '/matches?dateFrom=' + date + '&dateTo=' + date, { headers: { 'X-Auth-Token': apiKey } });
             if (res.status === 429) {
                 hadErrors = true;
                 continue;
@@ -109,7 +104,7 @@ async function fetchMatchday(date, apiKey) {
                     const status = mapStatus(fd.status);
                     let minute = null;
                     if (fd.minute != null) {
-                        minute = fd.injuryTime ? `${fd.minute}+${fd.injuryTime}` : fd.minute;
+                        minute = fd.injuryTime ? fd.minute + '+' + fd.injuryTime : fd.minute;
                     }
                     return {
                         id: String(fd.id),
@@ -122,10 +117,9 @@ async function fetchMatchday(date, apiKey) {
                 }),
             });
         }
-        catch ( /* network error — skip comp */_e) { /* network error — skip comp */ }
+        catch ( /* network error -- skip comp */_e) { /* network error -- skip comp */ }
     }
     const hasLive = allMatches.some(m => m.status === 'IN_PLAY' || m.status === 'PAUSED');
-    // Pick featured match (highest-tier live/scheduled)
     let featured = null;
     const priority = ['IN_PLAY', 'PAUSED', 'TIMED', 'SCHEDULED', 'FINISHED'];
     for (const s of priority) {
@@ -141,7 +135,7 @@ async function fetchMatchday(date, apiKey) {
         const status = mapStatus(fd.status);
         let minute = null;
         if (fd.minute != null)
-            minute = fd.injuryTime ? `${fd.minute}+${fd.injuryTime}` : fd.minute;
+            minute = fd.injuryTime ? fd.minute + '+' + fd.injuryTime : fd.minute;
         featured = {
             id: String(fd.id), status, minute,
             kickoff: status === 'SCHEDULED' ? formatKickoff(fd.utcDate) : undefined,
@@ -158,6 +152,8 @@ async function fetchMatchday(date, apiKey) {
         hasLive,
         fetchedAt: now,
         nextFetchAfter: calcNextFetch(date, hasLive, hadErrors, now),
+        aiBrief: null,
+        aiBriefGeneratedAt: 0,
     };
 }
 //# sourceMappingURL=footballDataFetch.js.map

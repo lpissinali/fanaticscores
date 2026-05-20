@@ -135,6 +135,7 @@ function pickFeatured(fdMatches: FDMatch[]): FeaturedMatch | null {
     return {
       ...mapMatch(fd),
       competition:    fd.competition?.name ?? '',
+      compCountry:    '',
       stats:          { possession: [50, 50], shots: [0, 0], xG: [0.0, 0.0] },
       events:         [],
       aiPulse:        '',
@@ -168,6 +169,7 @@ export interface TodayData {
   competitions: Competition[];
   featured:     FeaturedMatch | null;
   hadErrors:    boolean;
+  aiBrief:      string | null;
 }
 
 export async function fetchMatchesForDate(date: string): Promise<TodayData> {
@@ -202,7 +204,7 @@ export async function fetchMatchesForDate(date: string): Promise<TodayData> {
     });
   });
 
-  return { competitions, featured: pickFeatured(allFdMatches), hadErrors };
+  return { competitions, featured: pickFeatured(allFdMatches), hadErrors, aiBrief: null };
 }
 
 export function fetchTodayData(): Promise<TodayData> {

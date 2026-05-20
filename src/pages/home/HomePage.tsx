@@ -1,7 +1,6 @@
 import styles from './HomePage.module.css';
-import { mockData } from '../../lib/mock';
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import type { SupportedLocale } from '../../i18n';
 import type { Competition, FeaturedMatch, Match, TrendingItem } from '../../lib/types';
 import { useMatches } from '../../lib/useMatches';
@@ -123,7 +122,7 @@ function DesktopMatchSection({ comp }: { comp: Competition }) {
   const handleClick = (m: Match) => navigate(`/en/match/${m.id}`);
   return (
     <div className={styles.compBlock}>
-      <div className={styles.compHeader}>
+      <div className={styles.compHeader} style={{ cursor: 'pointer' }} onClick={() => navigate(`/en/competition/${comp.id}`)}>
         <div className="lh-title">
           <span className="lh-flag" style={{ backgroundColor: comp.flag }} aria-hidden="true" />
           {comp.country} – {comp.name}
@@ -140,21 +139,11 @@ function DesktopMatchSection({ comp }: { comp: Competition }) {
   );
 }
 
-function AIBriefCard() {
+function AIBriefCard({ brief }: { brief: string | null }) {
+  const body = brief ?? 'Generating today\'s brief…';
   return (
     <div>
-      <AIInsight
-        title="Your AI brief"
-        body="2 of your teams play tonight. The City-Madrid tie is tilting toward Pep's side; expect City to push for a decisive third in the next 15 minutes based on the pressure curve."
-      />
-      <div className={styles.aiActions}>
-        <button className="fs-btn ghost" style={{ flex: 1, height: 34, fontSize: 12 }}>
-          Ask anything
-        </button>
-        <button className="fs-btn ghost" style={{ flex: 1, height: 34, fontSize: 12 }}>
-          Tonight's read
-        </button>
-      </div>
+      <AIInsight title="Your AI brief" body={body} />
     </div>
   );
 }
@@ -176,7 +165,65 @@ function ShareStudioPromo() {
   );
 }
 
-function TrendingCard({ items }: { items: TrendingItem[] }) {
+function buildTrendingItems(competitions: Competition[]): TrendingItem[] {
+  const items: TrendingItem[] = [];
+  const BIG_COMPS = new Set(['UEFA Champions League', 'Premier League', 'Primera Division', 'Serie A', 'Bundesliga', 'Ligue 1']);
+
+  for (const comp of competitions) {
+    for (const m of comp.matches) {
+      const h = m.home.short || m.home.name;
+      const a = m.away.short || m.away.name;
+      const hs = m.home.score;
+      const as_ = m.away.score;
+      const score = hs !== null && as_ !== null ? `${hs}–${as_}` : '';
+
+      if (m.status === 'LIVE') {
+        const min = m.minute ? ` ${m.minute}'` : '';
+        const totalGoals = (hs ?? 0) + (as_ ?? 0);
+        items.push({
+          id: m.id, matchId: m.id,
+          tag: totalGoals > 0 ? 'GOAL' : 'MOMENT',
+          text: `${h} ${score} ${a}${min} — ${comp.name}`,
+        });
+      } else if (m.status === 'HT') {
+        items.push({
+          id: m.id, matchId: m.id,
+          tag: 'MOMENT',
+          text: `${h} ${score} ${a} · Half Time — ${comp.name}`,
+        });
+      } else if (m.status === 'FT' && hs !== null && as_ !== null && (hs + as_) >= 3) {
+        // Only surface high-scoring finished games
+        items.push({
+          id: m.id, matchId: m.id,
+          tag: 'RESULT',
+          text: `${h} ${score} ${a} · Full Time — ${comp.name}`,
+        });
+      } else if (m.status === 'SCHEDULED' && m.kickoff && BIG_COMPS.has(comp.name)) {
+        items.push({
+          id: m.id, matchId: m.id,
+          tag: 'MOMENT',
+          text: `${h} vs ${a} · ${m.kickoff} — ${comp.name}`,
+        });
+      }
+    }
+  }
+
+  // Priority: LIVE (GOAL > MOMENT) → HT → FT results → upcoming
+  const priority: Record<string, number> = { GOAL: 4, RESULT: 3, MOMENT: 2 };
+  items.sort((a, b) => {
+    // LIVE items first (they have a minute), then rest
+    const aLive = a.text.includes("'") ? 1 : 0;
+    const bLive = b.text.includes("'") ? 1 : 0;
+    if (aLive !== bLive) return bLive - aLive;
+    return (priority[b.tag] ?? 0) - (priority[a.tag] ?? 0);
+  });
+
+  return items.slice(0, 7);
+}
+
+function TrendingCard({ competitions }: { competitions: Competition[] }) {
+  const items = buildTrendingItems(competitions);
+  if (items.length === 0) return null;
   return (
     <div className={styles.trending}>
       <div className={styles.trendingHeader}>
@@ -197,19 +244,12 @@ function TrendingCard({ items }: { items: TrendingItem[] }) {
 
 function DesktopFooter() {
   const year = new Date().getFullYear();
-  const linkStyle: React.CSSProperties = {
-    display: 'block', fontSize: 12.5, color: 'var(--text-dim)',
-    textDecoration: 'none', padding: '4px 0', cursor: 'pointer',
-  };
-  const colTitleStyle: React.CSSProperties = {
-    fontSize: 10, fontWeight: 800, letterSpacing: '0.16em',
-    textTransform: 'uppercase', color: 'var(--text-faint)',
-    marginBottom: 12, fontFamily: 'JetBrains Mono, monospace',
-  };
 
   return (
     <footer className={styles.footer}>
       <div className={styles.footerGrid}>
+
+        {/* Brand column */}
         <div>
           <FSLogo size={56} />
           <p style={{ fontSize: 12.5, color: 'var(--text-dim)', lineHeight: 1.55, margin: '14px 0 0', maxWidth: 280 }}>
@@ -228,52 +268,42 @@ function DesktopFooter() {
           </div>
         </div>
 
-        <div>
-          <div style={colTitleStyle}>Product</div>
-          {['Live scores','AI Pulse','Share Studio','Competitions'].map((l) => (
-            <a key={l} style={linkStyle}>{l}</a>
-          ))}
+        {/* SEO content — spans the space previously used by Product, Company and Get the app */}
+        <div className={styles.footerSeo}>
+          <p className={styles.footerSeoPara}>
+            Fanatic Scores delivers real-time football scores, live match updates and full-time results
+            across the Premier League, La Liga, Serie A, Bundesliga, Ligue 1, UEFA Champions League
+            and more. Follow every goal, half-time score and final whistle as it happens.
+          </p>
+          <p className={styles.footerSeoPara}>
+            Track league tables, head-to-head records and recent form for clubs across Europe and beyond.
+            Our live scores update every minute so you never miss a moment — whether you're following
+            a title race, a relegation battle or a cup upset.
+          </p>
+          <p className={styles.footerSeoPara}>
+            From match-day schedules to detailed competition standings, Fanatic Scores is the fastest
+            way to stay on top of football results worldwide. Free, no account required.
+          </p>
         </div>
 
-        <div>
-          <div style={colTitleStyle}>Company</div>
-          {['About','Press','Careers','Contact'].map((l) => (
-            <a key={l} style={linkStyle}>{l}</a>
-          ))}
-        </div>
-
+        {/* Get the app — commented out until native apps are ready
         <div>
           <div style={colTitleStyle}>Get the app</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <a className={styles.storeBadge}>
-              <svg width="20" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M17.05 12.04c-.03-2.95 2.41-4.37 2.52-4.44-1.37-2.01-3.51-2.28-4.27-2.31-1.81-.18-3.54 1.07-4.46 1.07-.93 0-2.34-1.04-3.85-1.01-1.98.03-3.81 1.15-4.83 2.92-2.06 3.58-.53 8.87 1.48 11.78.98 1.42 2.15 3.02 3.69 2.96 1.48-.06 2.04-.96 3.83-.96 1.78 0 2.29.96 3.86.93 1.59-.03 2.6-1.45 3.57-2.88 1.13-1.65 1.59-3.25 1.62-3.34-.04-.02-3.11-1.2-3.16-4.72zM14.13 3.36c.81-.99 1.36-2.36 1.21-3.73-1.17.05-2.59.79-3.43 1.77-.75.86-1.42 2.27-1.24 3.61 1.31.1 2.65-.66 3.46-1.65z"/>
-              </svg>
-              <div>
-                <div style={{ fontSize: 9, color: 'var(--text-faint)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Download on the</div>
-                <div style={{ fontSize: 13, fontWeight: 700, marginTop: 1 }}>App Store</div>
-              </div>
-            </a>
-            <a className={styles.storeBadge}>
-              <svg width="20" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M3.6 1.3c-.4.4-.6 1-.6 1.7v18c0 .7.2 1.3.6 1.7l10.1-10.7L3.6 1.3zm11.5 11.4 2.7 2.9-12.1 7c-.3.2-.6.2-.9.1l10.3-10zm0-2.4-10.3-10c.3-.1.6-.1.9.1l12.1 7-2.7 2.9zm5.7 3.5-3-1.7 2.8-3 3 1.7c.9.5.9 1.9-.1 2.4l-2.7 1z"/>
-              </svg>
-              <div>
-                <div style={{ fontSize: 9, color: 'var(--text-faint)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Get it on</div>
-                <div style={{ fontSize: 13, fontWeight: 700, marginTop: 1 }}>Google Play</div>
-              </div>
-            </a>
+            <a className={styles.storeBadge}>...</a>
+            <a className={styles.storeBadge}>...</a>
           </div>
         </div>
+        */}
 
         <div className={styles.footerBottom}>
           <span style={{ fontSize: 11.5, color: 'var(--text-faint)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.04em' }}>
             &copy; {year} Fanatic Scores &middot; Not affiliated with any league or club
           </span>
           <div style={{ display: 'flex', gap: 22 }}>
-            {['Terms','Privacy','Cookies','Data sources','Status'].map((l) => (
-              <a key={l} style={{ fontSize: 11.5, color: 'var(--text-dim)', textDecoration: 'none' }}>{l}</a>
-            ))}
+            <Link to="/en/terms"   style={{ fontSize: 11.5, color: 'var(--text-dim)', textDecoration: 'none' }}>Terms</Link>
+            <Link to="/en/privacy" style={{ fontSize: 11.5, color: 'var(--text-dim)', textDecoration: 'none' }}>Privacy</Link>
+            <Link to="/en/cookies" style={{ fontSize: 11.5, color: 'var(--text-dim)', textDecoration: 'none' }}>Cookies</Link>
           </div>
         </div>
       </div>
@@ -290,9 +320,10 @@ interface LayoutProps {
   hadErrors: boolean;
   resolvedDate: string;  // YYYY-MM-DD
   refresh: () => void;
+  aiBrief: string | null;
 }
 
-function DesktopLayout({ locale, featured, competitions, loading, error, resolvedDate }: LayoutProps) {
+function DesktopLayout({ locale, featured, competitions, loading, error, resolvedDate, aiBrief }: LayoutProps) {
   const [showSchedule, setShowSchedule] = useState(false);
 
   const today = new Date().toISOString().slice(0, 10);
@@ -376,9 +407,9 @@ function DesktopLayout({ locale, featured, competitions, loading, error, resolve
       </main>
 
       <aside className={styles.rail}>
-        <AIBriefCard />
+        <AIBriefCard brief={aiBrief} />
         <ShareStudioPromo />
-        {mockData.trending && <TrendingCard items={mockData.trending} />}
+        <TrendingCard competitions={competitions} />
       </aside>
       {showSchedule && <ScheduleModal locale={locale ?? 'en'} onClose={() => setShowSchedule(false)} />}
     </div>
@@ -459,7 +490,7 @@ function MobileFeatured({ featured }: { featured: FeaturedMatch | null }) {
   );
 }
 
-function MobileLayout({ featured, competitions, loading, error }: LayoutProps) {
+function MobileLayout({ featured, competitions, loading, error, aiBrief }: LayoutProps) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('all');
   const display = competitions;
@@ -528,7 +559,7 @@ function MobileLayout({ featured, competitions, loading, error }: LayoutProps) {
         <div style={{ padding: '0 16px 12px' }}>
           <AIInsight
             title="Your AI brief"
-            body="3 of your teams play tonight. City-Madrid is heating up at 2-2. Liverpool look comfortable. Kickoff alert set for Botafogo-Corinthians."
+            body={aiBrief ?? 'Generating today\'s brief…'}
           />
         </div>
 
@@ -543,7 +574,7 @@ function MobileLayout({ featured, competitions, loading, error }: LayoutProps) {
         ) : (
           display.map((comp) => (
             <div key={comp.id}>
-              <div className="list-header">
+              <div className="list-header" style={{ cursor: 'pointer' }} onClick={() => navigate(`/en/competition/${comp.id}`)}>
                 <div className="lh-title">
                   <span className="lh-flag" style={{ backgroundColor: comp.flag }} aria-hidden="true" />
                   {comp.country} – {comp.name}
@@ -553,7 +584,7 @@ function MobileLayout({ featured, competitions, loading, error }: LayoutProps) {
                     </span>
                   )}
                 </div>
-                <Icon name="star" size={14} style={{ color: 'var(--text-faint)' }} />
+                <Icon name="chevron-right" size={14} style={{ color: 'var(--text-faint)' }} />
               </div>
               {comp.matches.map((m) => <MatchRow key={m.id} match={m} onClick={(m) => navigate(`/en/match/${m.id}`)} />)}
             </div>
@@ -599,14 +630,14 @@ export default function HomePage({ locale }: HomePageProps) {
   const today = new Date().toISOString().slice(0, 10);
   const resolvedDate = (!dateParam || dateParam === 'today') ? today : dateParam;
 
-  const { featured, competitions, loading, error, hadErrors, refresh } = useMatches(resolvedDate);
+  const { featured, competitions, loading, error, hadErrors, refresh, aiBrief } = useMatches(resolvedDate);
   return (
     <>
       <div className={styles.desktopOnly}>
-        <DesktopLayout locale={locale} featured={featured} competitions={competitions} loading={loading} error={error} hadErrors={hadErrors} resolvedDate={resolvedDate} refresh={refresh} />
+        <DesktopLayout locale={locale} featured={featured} competitions={competitions} loading={loading} error={error} hadErrors={hadErrors} resolvedDate={resolvedDate} refresh={refresh} aiBrief={aiBrief} />
       </div>
       <div className={styles.mobileOnly}>
-        <MobileLayout featured={featured} competitions={competitions} loading={loading} error={error} hadErrors={hadErrors} resolvedDate={resolvedDate} refresh={refresh} />
+        <MobileLayout featured={featured} competitions={competitions} loading={loading} error={error} hadErrors={hadErrors} resolvedDate={resolvedDate} refresh={refresh} aiBrief={aiBrief} />
       </div>
     </>
   );

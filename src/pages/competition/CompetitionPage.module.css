@@ -1,0 +1,332 @@
+/* ── Breakpoint guards ───────────────────────────────────────────────────── */
+.desktopOnly { display: none; }
+.mobileOnly  { display: block; min-height: 100vh; }
+@media (min-width: 1024px) {
+  .desktopOnly { display: block; }
+  .mobileOnly  { display: none; }
+}
+
+/* ================================================================
+   DESKTOP
+   ================================================================ */
+.desktop {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg);
+}
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 28px 32px 60px;
+  max-width: 900px;
+}
+
+/* ── Back button ─────────────────────────────────────────────────────────── */
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 24px;
+  transition: color 0.12s;
+}
+.backBtn:hover { color: var(--text); }
+
+/* ── Hero card ───────────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.heroGlow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(252,128,3,0.07), transparent);
+  pointer-events: none;
+}
+.heroInner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.emblem {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.emblemPlaceholder {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  background: var(--surface-raised, var(--bg));
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+.heroText { display: flex; flex-direction: column; gap: 6px; }
+.heroCountry {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+}
+.heroName {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.heroMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.heroSeason {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+}
+.heroMatchday {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--surface-raised, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.winnerRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.winnerLabel {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.winnerTeam {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.winnerName {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* ── Section wrapper ─────────────────────────────────────────────────────── */
+.section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+.sectionTitle {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+  margin: 0 0 16px;
+}
+
+/* ── Standings ───────────────────────────────────────────────────────────── */
+.table { width: 100%; min-width: 520px; }
+.tableHead, .tableRow {
+  display: grid;
+  grid-template-columns: 28px 1fr 32px 32px 32px 32px 32px 32px 40px 36px;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+.tableHead {
+  color: var(--text-faint);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.tableRow {
+  border-radius: 6px;
+  color: var(--text-dim);
+  transition: background 0.1s;
+}
+.tableRow:hover { background: var(--bg); }
+.colPos  { color: var(--text-faint); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+.colTeam {
+  display: flex; align-items: center; gap: 7px;
+  font-weight: 600; overflow: hidden;
+  white-space: nowrap; text-overflow: ellipsis;
+}
+.colNum { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+.colPts { text-align: center; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text); }
+
+/* ── Scorers ─────────────────────────────────────────────────────────────── */
+.scorersTable { width: 100%; min-width: 400px; }
+.scorersHead, .scorerRow {
+  display: grid;
+  grid-template-columns: 28px 1fr 36px 36px 36px 44px;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+.scorersHead {
+  color: var(--text-faint);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.scorerRow {
+  border-radius: 6px;
+  color: var(--text-dim);
+  transition: background 0.1s;
+}
+.scorerRow:hover { background: var(--bg); }
+.scorerRank {
+  color: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  text-align: center;
+}
+.scorerPlayer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+.scorerName {
+  display: block;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.scorerTeam {
+  display: block;
+  font-size: 11px;
+  color: var(--text-faint);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.scorerNum {
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+.scorersLegend {
+  font-size: 10px;
+  color: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Placeholder ─────────────────────────────────────────────────────────── */
+.placeholder {
+  color: var(--text-faint);
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 48px 0;
+  text-align: center;
+}
+
+/* ================================================================
+   MOBILE
+   ================================================================ */
+.mobScreen {
+  background: var(--bg);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.mobTopBar {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.mobBackBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+  flex-shrink: 0;
+}
+.mobBackBtn:hover { color: var(--text); }
+.mobTopTitle {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+.mobContent {
+  flex: 1;
+  padding: 16px 16px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+/* Mobile hero adjustments */
+@media (max-width: 1023px) {
+  .emblem { width: 52px; height: 52px; }
+  .emblemPlaceholder { width: 52px; height: 52px; }
+  .heroName { font-size: 20px; }
+}

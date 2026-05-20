@@ -8,11 +8,11 @@
     "build": "tsc"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
     "firebase-admin": "latest",
     "firebase-functions": "latest"
   },
   "devDependencies": {
-    "typescript": "^5.4.0",
-    "@types/node": "^22.0.0"
+    "typescript": "^5.4.0"
   }
 }

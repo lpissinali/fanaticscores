@@ -8,8 +8,6 @@ import { defineSecret } from 'firebase-functions/params';
 export const fdApiKey = defineSecret('FD_API_KEY');
 const FD_BASE = 'https://api.football-data.org/v4';
 
-// ── Competition list (priority order) ──────────────────────────────────────
-
 export const COMP_LIST = [
   { code: 'CL',  name: 'UEFA Champions League', country: 'Europe',      short: 'UCL', flag: '#1a3a6b' },
   { code: 'PL',  name: 'Premier League',         country: 'England',     short: 'PL',  flag: '#3d0d6b' },
@@ -24,15 +22,15 @@ export const COMP_LIST = [
   { code: 'WC',  name: 'FIFA World Cup',         country: 'World',       short: 'WC',  flag: '#8b6914' },
 ] as const;
 
-// ── Types ──────────────────────────────────────────────────────────────────
-
 export interface MatchdayDoc {
-  competitions: CompetitionData[];
-  featured:     MatchData | null;
-  hadErrors:    boolean;
-  hasLive:      boolean;
-  fetchedAt:    number;        // ms epoch
-  nextFetchAfter: number;      // ms epoch — scheduler respects this
+  competitions:       CompetitionData[];
+  featured:           MatchData | null;
+  hadErrors:          boolean;
+  hasLive:            boolean;
+  fetchedAt:          number;
+  nextFetchAfter:     number;
+  aiBrief:            string | null;
+  aiBriefGeneratedAt: number;
 }
 
 export interface CompetitionData {
@@ -52,8 +50,6 @@ export interface TeamData {
   color: string; crest?: string; score: number | null;
 }
 
-// ── Raw FD types ───────────────────────────────────────────────────────────
-
 interface FDTeam  { id: number; name: string; shortName: string; tla: string; crest: string; }
 interface FDScore { fullTime: { home: number|null; away: number|null }; }
 interface FDMatch {
@@ -62,8 +58,6 @@ interface FDMatch {
   competition: { id: number; name: string; code: string; type: string };
   homeTeam: FDTeam; awayTeam: FDTeam; score: FDScore;
 }
-
-// ── Helpers ────────────────────────────────────────────────────────────────
 
 const delay = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
 
@@ -105,19 +99,14 @@ const COMP_TIER: Record<string, number> = {
   BSA: 5, ELC: 4, DED: 4, PPL: 4,
 };
 
-// ── TTL logic ──────────────────────────────────────────────────────────────
-
 export function calcNextFetch(date: string, hasLive: boolean, hadErrors: boolean, now: number): number {
   const today = new Date().toISOString().slice(0, 10);
-  if (date < today) return hadErrors ? now + 65_000 : now + 24 * 3600_000; // past: retry 65s on errors, else 24h
-  if (date > today) return now + (hadErrors ? 65_000 : 3600_000); // future: 1 h or retry 65 s
-  // today:
-  if (hasLive)    return now + 60_000;   // live match: 60 s
-  if (hadErrors)  return now + 65_000;   // partial: 65 s
-  return now + 2 * 60_000;              // no live: 2 min
+  if (date < today) return hadErrors ? now + 65000 : now + 24 * 3600000;
+  if (date > today) return now + (hadErrors ? 65000 : 3600000);
+  if (hasLive)   return now + 60000;
+  if (hadErrors) return now + 65000;
+  return now + 2 * 60000;
 }
-
-// ── Main fetch ─────────────────────────────────────────────────────────────
 
 export async function fetchMatchday(date: string, apiKey: string): Promise<MatchdayDoc> {
   const now = Date.now();
@@ -130,7 +119,7 @@ export async function fetchMatchday(date: string, apiKey: string): Promise<Match
     const comp = COMP_LIST[i];
     try {
       const res = await fetch(
-        `${FD_BASE}/competitions/${comp.code}/matches?dateFrom=${date}&dateTo=${date}`,
+        FD_BASE + '/competitions/' + comp.code + '/matches?dateFrom=' + date + '&dateTo=' + date,
         { headers: { 'X-Auth-Token': apiKey } }
       );
       if (res.status === 429) { hadErrors = true; continue; }
@@ -152,7 +141,7 @@ export async function fetchMatchday(date: string, apiKey: string): Promise<Match
           const status = mapStatus(fd.status);
           let minute: string | number | null = null;
           if (fd.minute != null) {
-            minute = fd.injuryTime ? `${fd.minute}+${fd.injuryTime}` : fd.minute;
+            minute = fd.injuryTime ? fd.minute + '+' + fd.injuryTime : fd.minute;
           }
           return {
             id:      String(fd.id),
@@ -164,12 +153,11 @@ export async function fetchMatchday(date: string, apiKey: string): Promise<Match
           };
         }),
       });
-    } catch { /* network error — skip comp */ }
+    } catch { /* network error -- skip comp */ }
   }
 
   const hasLive = allMatches.some(m => m.status === 'IN_PLAY' || m.status === 'PAUSED');
 
-  // Pick featured match (highest-tier live/scheduled)
   let featured: MatchData | null = null;
   const priority = ['IN_PLAY', 'PAUSED', 'TIMED', 'SCHEDULED', 'FINISHED'];
   for (const s of priority) {
@@ -182,7 +170,7 @@ export async function fetchMatchday(date: string, apiKey: string): Promise<Match
     });
     const status = mapStatus(fd.status);
     let minute: string | number | null = null;
-    if (fd.minute != null) minute = fd.injuryTime ? `${fd.minute}+${fd.injuryTime}` : fd.minute;
+    if (fd.minute != null) minute = fd.injuryTime ? fd.minute + '+' + fd.injuryTime : fd.minute;
     featured = {
       id: String(fd.id), status, minute,
       kickoff: status === 'SCHEDULED' ? formatKickoff(fd.utcDate) : undefined,
@@ -198,7 +186,9 @@ export async function fetchMatchday(date: string, apiKey: string): Promise<Match
     featured,
     hadErrors,
     hasLive,
-    fetchedAt:      now,
-    nextFetchAfter: calcNextFetch(date, hasLive, hadErrors, now),
+    fetchedAt:          now,
+    nextFetchAfter:     calcNextFetch(date, hasLive, hadErrors, now),
+    aiBrief:            null,
+    aiBriefGeneratedAt: 0,
   };
 }

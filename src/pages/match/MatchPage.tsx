@@ -159,7 +159,7 @@ function MatchCard({ d }: { d: MatchDetailData }) {
           {d.matchday && <span className={styles.matchday}>MD {d.matchday}</span>}
         </div>
         <button className="fs-btn ghost" style={{ height: 32, padding: '0 12px', fontSize: 12 }}>
-          <Icon name="share" size={14} /> Share
+          <Icon name="share" size={14} /> Share Studio
         </button>
       </div>
 

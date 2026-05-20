@@ -1,17 +1,21 @@
 /**
- * Scheduled Cloud Function — runs every minute via Cloud Scheduler.
+ * Scheduled Cloud Function -- runs every minute via Cloud Scheduler.
  * Checks whether today's Firestore doc needs refreshing and fetches if so.
- * Interval is data-driven: 60 s with live matches, 2 min otherwise, 30 min if no matches.
+ * Also generates an AI brief via Claude Haiku (rate-limited to 5 min).
  */
 
 import { onSchedule } from 'firebase-functions/v2/scheduler';
+import { defineSecret } from 'firebase-functions/params';
 import { fdApiKey, fetchMatchday, type MatchdayDoc } from './footballDataFetch';
+import { generateAiBrief } from './aiBrief';
 import { getDb } from './adminInit';
+
+export const anthropicApiKey = defineSecret('ANTHROPIC_API_KEY');
 
 const db = getDb;
 
 export const scheduledMatchFetch = onSchedule(
-  { schedule: 'every 1 minutes', secrets: [fdApiKey], timeoutSeconds: 120 },
+  { schedule: 'every 1 minutes', secrets: [fdApiKey, anthropicApiKey], timeoutSeconds: 120 },
   async () => {
     const today = new Date().toISOString().slice(0, 10);
     const now   = Date.now();
@@ -22,30 +26,40 @@ export const scheduledMatchFetch = onSchedule(
     if (snap.exists) {
       const data = snap.data() as { nextFetchAfter?: number };
       if (data.nextFetchAfter && data.nextFetchAfter > now) {
-        console.log(`[scheduledFetch] skipping — next fetch due in ${Math.round((data.nextFetchAfter - now) / 1000)}s`);
+        console.log('[scheduledFetch] skipping -- next fetch not yet due');
         return;
       }
     }
 
-    console.log(`[scheduledFetch] fetching ${today}`);
+    console.log('[scheduledFetch] fetching ' + today);
     const newDoc = await fetchMatchday(today, fdApiKey.value());
 
     // Guard: never overwrite good competition data with an empty array caused by rate limiting.
-    // If the new fetch got no competitions (all 429'd) but we have existing data, keep it.
     let docToWrite: MatchdayDoc = newDoc;
     if (newDoc.hadErrors && newDoc.competitions.length === 0 && snap.exists) {
-      const existing = snap.data() as MatchdayDoc;
-      if (existing.competitions && existing.competitions.length > 0) {
-        console.log(`[scheduledFetch] rate-limited with no results — preserving ${existing.competitions.length} existing comps`);
+      const existingDoc = snap.data() as MatchdayDoc;
+      if (existingDoc.competitions && existingDoc.competitions.length > 0) {
+        console.log('[scheduledFetch] rate-limited -- preserving ' + existingDoc.competitions.length + ' existing comps');
         docToWrite = {
           ...newDoc,
-          competitions: existing.competitions,
-          featured:     newDoc.featured ?? existing.featured ?? null,
+          competitions: existingDoc.competitions,
+          featured:     newDoc.featured ?? existingDoc.featured ?? null,
         };
       }
     }
 
+    // Generate AI brief (rate-limited internally to avoid excess Claude API calls).
+    const existingData = snap.exists ? snap.data() as MatchdayDoc : null;
+    const { brief, generatedAt } = await generateAiBrief(
+      docToWrite.competitions,
+      docToWrite.hasLive,
+      existingData ? existingData.aiBrief : null,
+      existingData ? existingData.aiBriefGeneratedAt : 0,
+      anthropicApiKey.value(),
+    );
+    docToWrite = { ...docToWrite, aiBrief: brief, aiBriefGeneratedAt: generatedAt };
+
     await ref.set(docToWrite);
-    console.log(`[scheduledFetch] wrote ${today} — hasLive=${docToWrite.hasLive} hadErrors=${docToWrite.hadErrors} comps=${docToWrite.competitions.length}`);
+    console.log('[scheduledFetch] wrote ' + today + ' hasLive=' + docToWrite.hasLive + ' comps=' + docToWrite.competitions.length + ' brief=' + !!brief);
   }
 );

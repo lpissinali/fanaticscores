@@ -1,18 +1,21 @@
 "use strict";
 /**
- * HTTP Cloud Function — on-demand fetch for non-today dates.
+ * HTTP Cloud Function -- on-demand fetch for non-today dates.
  * Called by the client when a past/future date is not yet in Firestore.
  * Writes to Firestore and returns the document.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.fetchMatchdayHttp = void 0;
+exports.fetchMatchdayHttp = exports.anthropicApiKey = void 0;
 const https_1 = require("firebase-functions/v2/https");
+const params_1 = require("firebase-functions/params");
 const footballDataFetch_1 = require("./footballDataFetch");
+const aiBrief_1 = require("./aiBrief");
 const adminInit_1 = require("./adminInit");
+exports.anthropicApiKey = (0, params_1.defineSecret)('ANTHROPIC_API_KEY');
 const db = adminInit_1.getDb;
 // Simple in-flight dedup: prevent parallel fetches for the same date.
 const inFlight = new Set();
-exports.fetchMatchdayHttp = (0, https_1.onRequest)({ secrets: [footballDataFetch_1.fdApiKey], cors: true, timeoutSeconds: 120 }, async (req, res) => {
+exports.fetchMatchdayHttp = (0, https_1.onRequest)({ secrets: [footballDataFetch_1.fdApiKey, exports.anthropicApiKey], cors: true, timeoutSeconds: 120 }, async (req, res) => {
     var _a, _b, _c;
     const date = (_a = req.query.date) !== null && _a !== void 0 ? _a : '';
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -37,19 +40,23 @@ exports.fetchMatchdayHttp = (0, https_1.onRequest)({ secrets: [footballDataFetch
     }
     inFlight.add(date);
     try {
-        console.log(`[fetchMatchdayHttp] fetching ${date}`);
+        console.log('[fetchMatchdayHttp] fetching ' + date);
         const newDoc = await (0, footballDataFetch_1.fetchMatchday)(date, footballDataFetch_1.fdApiKey.value());
         // Guard: never overwrite good competition data with an empty array caused by rate limiting.
         let docToWrite = newDoc;
         if (newDoc.hadErrors && newDoc.competitions.length === 0 && snap.exists) {
-            const existing = snap.data();
-            if (existing.competitions && existing.competitions.length > 0) {
-                console.log(`[fetchMatchdayHttp] rate-limited with no results — preserving ${existing.competitions.length} existing comps`);
-                docToWrite = Object.assign(Object.assign({}, newDoc), { competitions: existing.competitions, featured: (_c = (_b = newDoc.featured) !== null && _b !== void 0 ? _b : existing.featured) !== null && _c !== void 0 ? _c : null });
+            const existingDoc = snap.data();
+            if (existingDoc.competitions && existingDoc.competitions.length > 0) {
+                console.log('[fetchMatchdayHttp] rate-limited -- preserving ' + existingDoc.competitions.length + ' existing comps');
+                docToWrite = Object.assign(Object.assign({}, newDoc), { competitions: existingDoc.competitions, featured: (_c = (_b = newDoc.featured) !== null && _b !== void 0 ? _b : existingDoc.featured) !== null && _c !== void 0 ? _c : null });
             }
         }
+        // Generate AI brief (rate-limited internally).
+        const existingData = snap.exists ? snap.data() : null;
+        const briefResult = await (0, aiBrief_1.generateAiBrief)(docToWrite.competitions, docToWrite.hasLive, existingData ? existingData.aiBrief : null, existingData ? existingData.aiBriefGeneratedAt : 0, exports.anthropicApiKey.value());
+        docToWrite = Object.assign(Object.assign({}, docToWrite), { aiBrief: briefResult.brief, aiBriefGeneratedAt: briefResult.generatedAt });
         await ref.set(docToWrite);
-        console.log(`[fetchMatchdayHttp] wrote ${date} — comps=${docToWrite.competitions.length}`);
+        console.log('[fetchMatchdayHttp] wrote ' + date + ' comps=' + docToWrite.competitions.length + ' brief=' + !!briefResult.brief);
         res.json({ cached: false });
     }
     catch (err) {

@@ -35,12 +35,14 @@ interface TeamData  { id: string; name: string; short: string; initial: string; 
 interface MatchData { id: string; status: string; minute: string | number | null; kickoff?: string; competition?: string; home: TeamData; away: TeamData; }
 interface CompData  { id: string; name: string; country: string; short: string; flag: string; stage?: string; matches: MatchData[]; }
 interface MatchdayDoc {
-  competitions:   CompData[];
-  featured:       MatchData | null;
-  hadErrors:      boolean;
-  hasLive:        boolean;
-  fetchedAt:      number;
-  nextFetchAfter: number;
+  competitions:       CompData[];
+  featured:           MatchData | null;
+  hadErrors:          boolean;
+  hasLive:            boolean;
+  fetchedAt:          number;
+  nextFetchAfter:     number;
+  aiBrief:            string | null;
+  aiBriefGeneratedAt: number;
 }
 
 // ── Map Firestore doc → TodayData ──────────────────────────────────────────
@@ -84,7 +86,7 @@ function mapDoc(doc: MatchdayDoc): TodayData {
     };
   }
 
-  return { competitions, featured, hadErrors: doc.hadErrors };
+  return { competitions, featured, hadErrors: doc.hadErrors, aiBrief: doc.aiBrief ?? null };
 }
 
 // ── On-demand trigger for non-today dates ──────────────────────────────────
@@ -122,7 +124,7 @@ export function useMatches(date?: string): MatchesState {
   const isPast  = targetDate < today;
 
   const [state, setState] = useState<MatchesState>({
-    competitions: [], featured: null, hadErrors: false,
+    competitions: [], featured: null, hadErrors: false, aiBrief: null,
     loading: true, error: null, lastUpdated: null,
     refresh: () => {},
   });
@@ -292,7 +294,7 @@ export function useMatches(date?: string): MatchesState {
     if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); retryTimerRef.current = undefined; }
     if (unsubRef.current)      { unsubRef.current(); unsubRef.current = null; }
 
-    setState(prev => ({ ...prev, competitions: [], featured: null, loading: true, error: null, refresh }));
+    setState(prev => ({ ...prev, competitions: [], featured: null, aiBrief: null, loading: true, error: null, refresh }));
 
     if (isFirebaseReady()) {
       setupFirestore();

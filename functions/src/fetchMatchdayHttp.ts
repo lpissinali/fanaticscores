@@ -1,12 +1,16 @@
 /**
- * HTTP Cloud Function — on-demand fetch for non-today dates.
+ * HTTP Cloud Function -- on-demand fetch for non-today dates.
  * Called by the client when a past/future date is not yet in Firestore.
  * Writes to Firestore and returns the document.
  */
 
 import { onRequest } from 'firebase-functions/v2/https';
+import { defineSecret } from 'firebase-functions/params';
 import { fdApiKey, fetchMatchday, type MatchdayDoc } from './footballDataFetch';
+import { generateAiBrief } from './aiBrief';
 import { getDb } from './adminInit';
+
+export const anthropicApiKey = defineSecret('ANTHROPIC_API_KEY');
 
 const db = getDb;
 
@@ -14,7 +18,7 @@ const db = getDb;
 const inFlight = new Set<string>();
 
 export const fetchMatchdayHttp = onRequest(
-  { secrets: [fdApiKey], cors: true, timeoutSeconds: 120 },
+  { secrets: [fdApiKey, anthropicApiKey], cors: true, timeoutSeconds: 120 },
   async (req, res) => {
     const date = (req.query.date as string) ?? '';
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -43,25 +47,36 @@ export const fetchMatchdayHttp = onRequest(
     inFlight.add(date);
 
     try {
-      console.log(`[fetchMatchdayHttp] fetching ${date}`);
+      console.log('[fetchMatchdayHttp] fetching ' + date);
       const newDoc = await fetchMatchday(date, fdApiKey.value());
 
       // Guard: never overwrite good competition data with an empty array caused by rate limiting.
       let docToWrite: MatchdayDoc = newDoc;
       if (newDoc.hadErrors && newDoc.competitions.length === 0 && snap.exists) {
-        const existing = snap.data() as MatchdayDoc;
-        if (existing.competitions && existing.competitions.length > 0) {
-          console.log(`[fetchMatchdayHttp] rate-limited with no results — preserving ${existing.competitions.length} existing comps`);
+        const existingDoc = snap.data() as MatchdayDoc;
+        if (existingDoc.competitions && existingDoc.competitions.length > 0) {
+          console.log('[fetchMatchdayHttp] rate-limited -- preserving ' + existingDoc.competitions.length + ' existing comps');
           docToWrite = {
             ...newDoc,
-            competitions: existing.competitions,
-            featured:     newDoc.featured ?? existing.featured ?? null,
+            competitions: existingDoc.competitions,
+            featured:     newDoc.featured ?? existingDoc.featured ?? null,
           };
         }
       }
 
+      // Generate AI brief (rate-limited internally).
+      const existingData = snap.exists ? snap.data() as MatchdayDoc : null;
+      const briefResult = await generateAiBrief(
+        docToWrite.competitions,
+        docToWrite.hasLive,
+        existingData ? existingData.aiBrief : null,
+        existingData ? existingData.aiBriefGeneratedAt : 0,
+        anthropicApiKey.value(),
+      );
+      docToWrite = { ...docToWrite, aiBrief: briefResult.brief, aiBriefGeneratedAt: briefResult.generatedAt };
+
       await ref.set(docToWrite);
-      console.log(`[fetchMatchdayHttp] wrote ${date} — comps=${docToWrite.competitions.length}`);
+      console.log('[fetchMatchdayHttp] wrote ' + date + ' comps=' + docToWrite.competitions.length + ' brief=' + !!briefResult.brief);
       res.json({ cached: false });
     } catch (err) {
       console.error('[fetchMatchdayHttp] error', err);
