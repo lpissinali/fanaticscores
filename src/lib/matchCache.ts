@@ -6,11 +6,12 @@
  */
 import type { Match, Competition } from './types';
 
-const CACHE_KEY = 'fs_match_cache_v1';
+const CACHE_KEY = 'fs_match_cache_v2';
 
 export interface CachedMatch {
   match: Match;
   competition: string;
+  compCountry: string;
   compCode: string;   // e.g. 'PL', 'SA', 'CL'
   compType: string;   // 'LEAGUE' | 'CUP'
 }
@@ -47,6 +48,7 @@ export function cacheCompetitions(comps: Competition[]): void {
       store.set(match.id, {
         match,
         competition: comp.name,
+        compCountry: comp.country,
         compCode: comp.id,
         compType,
       });

@@ -56,6 +56,7 @@ export interface MatchDetailData {
   minute: string | number | null;
   kickoff: string;
   competition: string;
+  compCountry: string;
   compCode: string;
   compType: string;
   matchday: number | null;
@@ -73,29 +74,56 @@ export interface MatchDetailData {
 
 type H2HResult = { homeWins: number; draws: number; awayWins: number; totalGoals: number; recent: H2HMatch[]; } | null;
 
-async function fetchH2H(id: string): Promise<H2HResult> {
-  const key = `h2h:${id}`;
+async function fetchWithRetry(url: string, retries = 2, delayMs = 3000): Promise<Response> {
+  const res = await fetch(url);
+  if (res.status === 429 && retries > 0) {
+    console.warn(`[matchDetails] 429 rate limit on ${url} — retrying in ${delayMs}ms`);
+    await new Promise(r => setTimeout(r, delayMs));
+    return fetchWithRetry(url, retries - 1, delayMs * 2);
+  }
+  return res;
+}
+
+async function fetchH2H(matchId: string, homeId: string, awayId: string): Promise<H2HResult> {
+  const key = `h2h:${matchId}`;
   const hit = cacheGet<H2HResult>(key);
   if (hit !== null) return hit;
 
   try {
-    const res = await fetch(`${BASE}/matches/${id}/head2head?limit=5`);
-    if (!res.ok) return null;
-    const data = await res.json() as {
-      aggregates: {
-        homeTeam: { wins: number; draws: number; losses: number };
-        awayTeam: { wins: number };
-        totalGoals: number;
-      };
-      matches: FDH2HMatch[];
-    };
-    const agg = data.aggregates;
+    const res = await fetchWithRetry(`${BASE}/matches/${matchId}/head2head?limit=5`);
+    if (!res.ok) {
+      console.warn(`[matchDetails] H2H fetch failed: ${res.status}`);
+      return null;
+    }
+    const data = await res.json() as { matches: FDH2HMatch[] };
+    const matches = (data.matches ?? []).slice(0, 5);
+
+    console.log('[H2H] homeId:', homeId, 'awayId:', awayId);
+    console.log('[H2H] matches:', matches.map(m => ({
+      homeTeamId: m.homeTeam.id, awayTeamId: m.awayTeam.id,
+      score: `${m.score.fullTime.home}-${m.score.fullTime.away}`,
+    })));
+
+    // Derive wins/draws from match results rather than aggregates (free-tier aggregates
+    // are unreliable). Compare each match's winner against the current match's team IDs.
+    let homeWins = 0, draws = 0, awayWins = 0, totalGoals = 0;
+    for (const m of matches) {
+      const hScore = m.score.fullTime.home;
+      const aScore = m.score.fullTime.away;
+      if (hScore === null || aScore === null) continue;
+      totalGoals += hScore + aScore;
+      if (hScore === aScore) {
+        draws++;
+      } else {
+        const winnerId = String(hScore > aScore ? m.homeTeam.id : m.awayTeam.id);
+        if (winnerId === homeId)      homeWins++;
+        else if (winnerId === awayId) awayWins++;
+      }
+    }
+
     const result: H2HResult = {
-      homeWins:   agg.homeTeam.wins,
-      draws:      agg.homeTeam.draws,
-      awayWins:   agg.awayTeam.wins,
-      totalGoals: agg.totalGoals,
-      recent: data.matches.slice(0, 5).map(m => ({
+      homeWins, draws, awayWins, totalGoals,
+      recent: matches.map(m => ({
         id:        String(m.id),
         date:      m.utcDate.slice(0, 10),
         homeTeam:  m.homeTeam.shortName || m.homeTeam.name,
@@ -119,8 +147,11 @@ async function fetchStandings(compCode: string): Promise<StandingRow[]> {
   if (hit !== null) return hit;
 
   try {
-    const res = await fetch(`${BASE}/competitions/${compCode}/standings`);
-    if (!res.ok) return [];
+    const res = await fetchWithRetry(`${BASE}/competitions/${compCode}/standings`);
+    if (!res.ok) {
+      console.warn(`[matchDetails] standings fetch failed: ${res.status} for ${compCode}`);
+      return [];
+    }
     const data = await res.json() as { standings: { type: string; table: FDStandingRow[] }[] };
     const total = data.standings.find(s => s.type === 'TOTAL') ?? data.standings[0];
     if (!total) return [];
@@ -151,10 +182,10 @@ export async function fetchMatchDetail(matchId: string): Promise<MatchDetailData
   const cached = getCachedMatch(matchId);
   if (!cached) return null;
 
-  const { match, competition, compCode, compType } = cached;
+  const { match, competition, compCountry, compCode, compType } = cached;
 
   const [h2h, standings] = await Promise.all([
-    fetchH2H(matchId),
+    fetchH2H(matchId, match.home.id ?? '', match.away.id ?? ''),
     compType === 'LEAGUE' ? fetchStandings(compCode) : Promise.resolve([] as StandingRow[]),
   ]);
 
@@ -164,6 +195,7 @@ export async function fetchMatchDetail(matchId: string): Promise<MatchDetailData
     minute:      match.minute ?? null,
     kickoff:     match.kickoff ?? '',
     competition,
+    compCountry,
     compCode,
     compType,
     matchday:    null,

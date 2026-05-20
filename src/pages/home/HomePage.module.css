@@ -10,6 +10,19 @@
   .mobileOnly  { display: none; }
 }
 
+/* ── Competition cards grid ── */
+/* Single column on tablet, two columns only on wide desktop */
+.matchGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+@media (min-width: 1400px) {
+  .matchGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 /* ================================================================
    DESKTOP
    ================================================================ */
@@ -175,6 +188,30 @@
   color: var(--text-faint);
   font-weight: 400;
   font-size: 50px;
+}
+
+/* ── Featured card tablet scaling (1024–1399px) ── */
+@media (min-width: 1024px) and (max-width: 1399px) {
+  .scoreBlock {
+    font-size: 52px;
+    gap: 10px;
+  }
+  .scoreDash {
+    font-size: 34px;
+  }
+  .teamName {
+    font-size: 15px;
+  }
+  .teamLeft,
+  .teamRight {
+    gap: 10px;
+  }
+  .scoreGrid {
+    gap: 12px;
+  }
+  .featured {
+    padding: 18px;
+  }
 }
 
 /* Stats row */

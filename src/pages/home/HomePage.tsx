@@ -1,7 +1,7 @@
 import styles from './HomePage.module.css';
 import { mockData } from '../../lib/mock';
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import type { SupportedLocale } from '../../i18n';
 import type { Competition, FeaturedMatch, Match, TrendingItem } from '../../lib/types';
 import { useMatches } from '../../lib/useMatches';
@@ -55,7 +55,7 @@ function DesktopFeatured({ featured }: { featured: FeaturedMatch | null }) {
           ) : (
             <span className="chip">{m.kickoff ?? 'Upcoming'}</span>
           )}
-          <span className={styles.featuredCompLabel}>{m.competition}</span>
+          <span className={styles.featuredCompLabel}>{m.compCountry ? `${m.compCountry} · ` : ''}{m.competition}</span>
         </div>
         <button className="fs-btn ghost" style={{ height: 32, padding: '0 12px', fontSize: 12 }}>
           <Icon name="share" size={14} /> Share match
@@ -119,7 +119,8 @@ function DesktopFeatured({ featured }: { featured: FeaturedMatch | null }) {
 }
 
 function DesktopMatchSection({ comp }: { comp: Competition }) {
-  const handleClick = (_m: Match) => {};
+  const navigate = useNavigate();
+  const handleClick = (m: Match) => navigate(`/en/match/${m.id}`);
   return (
     <div className={styles.compBlock}>
       <div className={styles.compHeader}>
@@ -360,7 +361,7 @@ function DesktopLayout({ locale, featured, competitions, loading, error, resolve
               {error ? 'Could not load matches — retrying' : 'No matches scheduled'}
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            <div className={styles.matchGrid}>
               {pairs.map(([a, b]) => (
                 <div key={a.id} style={{ display: 'contents' }}>
                   <DesktopMatchSection comp={a} />
@@ -423,7 +424,7 @@ function MobileFeatured({ featured }: { featured: FeaturedMatch | null }) {
           ) : (
             <span className="chip">{m.kickoff ?? ''}</span>
           )}
-          <span className={styles.mobCompLabel}>{m.competition}</span>
+          <span className={styles.mobCompLabel}>{m.compCountry ? `${m.compCountry} · ` : ''}{m.competition}</span>
         </div>
         <button className="fs-btn ghost" style={{ height: 28, padding: '0 10px', borderColor: 'transparent', fontSize: 12 }}>
           <Icon name="share" size={14} /> Share
@@ -459,6 +460,7 @@ function MobileFeatured({ featured }: { featured: FeaturedMatch | null }) {
 }
 
 function MobileLayout({ featured, competitions, loading, error }: LayoutProps) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('all');
   const display = competitions;
 
@@ -553,7 +555,7 @@ function MobileLayout({ featured, competitions, loading, error }: LayoutProps) {
                 </div>
                 <Icon name="star" size={14} style={{ color: 'var(--text-faint)' }} />
               </div>
-              {comp.matches.map((m) => <MatchRow key={m.id} match={m} />)}
+              {comp.matches.map((m) => <MatchRow key={m.id} match={m} onClick={(m) => navigate(`/en/match/${m.id}`)} />)}
             </div>
           ))
         )}

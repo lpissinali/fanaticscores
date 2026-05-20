@@ -49,6 +49,7 @@ export interface Match {
 
 export interface FeaturedMatch extends Match {
   competition: string;
+  compCountry: string;
   stats: MatchStats;
   events: MatchEvent[];
   aiPulse: string;

@@ -10,6 +10,7 @@ export const mockData: FSData = {
   featuredMatch: {
     id: 'm1',
     competition: 'UEFA Champions League · QF 2nd leg',
+    compCountry: 'Europe',
     status: 'LIVE',
     minute: 67,
     home: { name: 'Manchester City', short: 'MCI', score: 2, color: '#6CABDD', initial: 'M' },

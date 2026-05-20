@@ -66,12 +66,15 @@ function mapDoc(doc: MatchdayDoc): TodayData {
   let featured: FeaturedMatch | null = null;
   if (doc.featured) {
     const m = doc.featured;
+    const compName = m.competition ?? '';
+    const compCountry = doc.competitions.find(c => c.name === compName)?.country ?? '';
     featured = {
       id:             m.id,
       status:         m.status as MatchStatus,
       minute:         m.minute ?? undefined,
       kickoff:        m.kickoff,
-      competition:    m.competition ?? '',
+      competition:    compName,
+      compCountry,
       home:           { ...m.home },
       away:           { ...m.away },
       stats:          { possession: [50, 50], shots: [0, 0], xG: [0, 0] },
