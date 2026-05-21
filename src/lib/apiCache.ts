@@ -4,7 +4,7 @@
  * Version bump clears any data cached under the old v1 prefix.
  */
 
-const PREFIX = 'fs_cache_v3_';
+const PREFIX = 'fs_cache_v4_';
 
 interface CacheEntry<T> {
   data: T;

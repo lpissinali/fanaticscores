@@ -8,18 +8,20 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       proxy: {
-        '/api/fd': {
-          target: 'https://api.football-data.org/v4',
+        // api-football.com v3 -- adds the API key header so the key is never in client bundles.
+        '/api/af': {
+          target:       'https://v3.football.api-sports.io',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/fd/, ''),
+          rewrite:      (path) => path.replace(/^\/api\/af/, ''),
           headers: {
-            'X-Auth-Token': env.VITE_FD_API_KEY ?? '',
+            'x-apisports-key': env.VITE_AF_API_KEY ?? '',
           },
         },
+        // On-demand matchday fetch (Cloud Function) for non-today dates.
         '/api/fetchMatchday': {
-          target: 'https://us-central1-fanaticscores-b6af4.cloudfunctions.net',
+          target:       'https://us-central1-fanaticscores-b6af4.cloudfunctions.net',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/fd/, '/fetchMatchdayHttp'),
+          rewrite:      (path) => path.replace(/^\/api\/fetchMatchday/, '/fetchMatchdayHttp'),
         },
       },
     },

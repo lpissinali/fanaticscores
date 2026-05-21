@@ -6,7 +6,7 @@
 
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { defineSecret } from 'firebase-functions/params';
-import { fdApiKey, fetchMatchday, type MatchdayDoc } from './footballDataFetch';
+import { afApiKey, fetchMatchday, type MatchdayDoc } from './apiFootballFetch';
 import { generateAiBrief } from './aiBrief';
 import { getDb } from './adminInit';
 
@@ -15,7 +15,7 @@ export const anthropicApiKey = defineSecret('ANTHROPIC_API_KEY');
 const db = getDb;
 
 export const scheduledMatchFetch = onSchedule(
-  { schedule: 'every 1 minutes', secrets: [fdApiKey, anthropicApiKey], timeoutSeconds: 120 },
+  { schedule: 'every 1 minutes', secrets: [afApiKey, anthropicApiKey], timeoutSeconds: 120 },
   async () => {
     const today = new Date().toISOString().slice(0, 10);
     const now   = Date.now();
@@ -32,7 +32,7 @@ export const scheduledMatchFetch = onSchedule(
     }
 
     console.log('[scheduledFetch] fetching ' + today);
-    const newDoc = await fetchMatchday(today, fdApiKey.value());
+    const newDoc = await fetchMatchday(today, afApiKey.value());
 
     // Guard: never overwrite good competition data with an empty array caused by rate limiting.
     let docToWrite: MatchdayDoc = newDoc;

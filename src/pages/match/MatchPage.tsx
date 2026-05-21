@@ -2,6 +2,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useSEO } from '../../lib/useSEO';
 import { useMatchDetails } from '../../lib/useMatchDetails';
 import type { MatchDetailData, StandingRow } from '../../lib/api/matchDetails';
+import type { MatchEvent } from '../../lib/types';
 import type { SupportedLocale } from '../../i18n';
 import Sidebar from '../../components/layout/Sidebar/Sidebar';
 import Footer from '../../components/layout/Footer/Footer';
@@ -137,6 +138,176 @@ function FormCard({ d, rows }: { d: MatchDetailData; rows: StandingRow[] }) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+// ── Events timeline ───────────────────────────────────────────────────────────
+
+function EventIcon({ type, detail }: { type: string; detail?: string }) {
+  if (type === 'goal') {
+    const cls = detail === 'own goal' ? styles.iconGoalOwn : detail === 'pen' ? styles.iconGoalPen : styles.iconGoal;
+    return (
+      <div>
+        <div className={cls}>
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+            <circle cx="5" cy="5" r="4.5" stroke="rgba(255,255,255,0.5)" strokeWidth="0.5"/>
+            <line x1="5" y1="0.5" x2="5" y2="9.5" stroke="rgba(255,255,255,0.4)" strokeWidth="0.5"/>
+            <line x1="0.5" y1="5" x2="9.5" y2="5" stroke="rgba(255,255,255,0.4)" strokeWidth="0.5"/>
+          </svg>
+        </div>
+      </div>
+    );
+  }
+  if (type === 'yellow') return <div className={styles.iconYellow} aria-label="Yellow card" />;
+  if (type === 'red')    return <div className={styles.iconRed}    aria-label="Red card" />;
+  if (type === 'sub') {
+    return (
+      <svg className={styles.iconSub} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M8 2v5l3-3" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M8 14V9l-3 3"  stroke="#e03131" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    );
+  }
+  // VAR / fallback
+  return <span style={{ fontSize: 10, color: 'var(--text-faint)', fontFamily: 'monospace' }}>VAR</span>;
+}
+
+function EventRow({ e }: { e: MatchEvent; homeShort: string; awayShort: string }) {
+  const isGoal = e.type === 'goal';
+
+  const playerCls = [
+    styles.eventPlayer,
+    isGoal ? styles.eventPlayerGoal : '',
+  ].filter(Boolean).join(' ');
+
+  const content = (
+    <div className={styles.eventTextWrap}>
+      <span className={playerCls}>{e.player}</span>
+      {e.detail && <span className={styles.eventDetail}>{e.detail}</span>}
+    </div>
+  );
+
+  const icon = <div className={styles.eventIconWrap}><EventIcon type={e.type} detail={e.detail} /></div>;
+
+  const minBadge = (
+    <div className={styles.eventMinCol}>
+      <span className={styles.eventMinBadge}>{e.min}&prime;</span>
+    </div>
+  );
+
+  return (
+    <div className={styles.eventRow}>
+      {e.team === 'home' ? (
+        <>
+          <div className={`${styles.eventCell} ${styles.eventCellHome}`}>{content}{icon}</div>
+          {minBadge}
+          <div className={`${styles.eventCell} ${styles.eventCellEmpty}`} />
+        </>
+      ) : (
+        <>
+          <div className={`${styles.eventCell} ${styles.eventCellEmpty}`} />
+          {minBadge}
+          <div className={`${styles.eventCell} ${styles.eventCellAway}`}>{icon}{content}</div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function EventsSection({ d }: { d: MatchDetailData }) {
+  if (d.events.length === 0) return null;
+
+  const mainEvents = d.events.filter(e => e.type !== 'sub' && e.type !== 'var');
+  const subEvents  = d.events.filter(e => e.type === 'sub');
+
+  return (
+    <div className={styles.section}>
+      <h2 className={styles.sectionTitle}>Match Events</h2>
+
+      {/* Column headers */}
+      <div className={styles.eventRow} style={{ marginBottom: 4 }}>
+        <div className={styles.eventCell} style={{ justifyContent: 'flex-end', paddingBottom: 0 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-faint)', letterSpacing: '0.08em', fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase' }}>
+            {d.home.short || d.home.name}
+          </span>
+        </div>
+        <div />
+        <div className={styles.eventCell} style={{ paddingBottom: 0 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-faint)', letterSpacing: '0.08em', fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase' }}>
+            {d.away.short || d.away.name}
+          </span>
+        </div>
+      </div>
+
+      <div className={styles.eventsGrid}>
+        {mainEvents.map((e: MatchEvent, i: number) => (
+          <EventRow key={i} e={e} homeShort={d.home.short} awayShort={d.away.short} />
+        ))}
+
+        {subEvents.length > 0 && (
+          <>
+            <div className={styles.eventsDivider}>
+              <div className={styles.eventsDividerLine} />
+              <span className={styles.eventsDividerLabel}>Substitutions</span>
+              <div className={styles.eventsDividerLine} />
+            </div>
+            {subEvents.map((e: MatchEvent, i: number) => (
+              <EventRow key={`sub-${i}`} e={e} homeShort={d.home.short} awayShort={d.away.short} />
+            ))}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Stats bars ────────────────────────────────────────────────────────────────
+
+interface StatBarDef { label: string; home: number; away: number; isPercent?: boolean; decimals?: number; }
+
+function StatsSection({ d }: { d: MatchDetailData }) {
+  const s = d.stats;
+  if (!s) return null;
+
+  const statRows: StatBarDef[] = [
+    { label: 'Possession',  home: s.possession[0],     away: s.possession[1],     isPercent: true },
+    { label: 'Total Shots', home: s.shots[0],           away: s.shots[1] },
+    ...(s.shotsOnTarget ? [{ label: 'On Target',  home: s.shotsOnTarget[0], away: s.shotsOnTarget[1] }] : []),
+    { label: 'xG',          home: s.xG[0],              away: s.xG[1],             decimals: 2 },
+    ...(s.corners ? [{ label: 'Corners',  home: s.corners[0], away: s.corners[1] }] : []),
+    ...(s.fouls   ? [{ label: 'Fouls',    home: s.fouls[0],   away: s.fouls[1]   }] : []),
+  ];
+
+  const hasAnyData = statRows.some(r => r.home > 0 || r.away > 0);
+  if (!hasAnyData) return null;
+
+  return (
+    <div className={styles.section}>
+      <h2 className={styles.sectionTitle}>Match Statistics</h2>
+      <div className={styles.statsList}>
+        {statRows.map(row => {
+          const t = row.home + row.away || 1;
+          const homePct = (row.home / t) * 100;
+          const fmt = (v: number) =>
+            row.isPercent ? `${v}%` :
+            row.decimals  ? v.toFixed(row.decimals) :
+            String(v);
+          return (
+            <div key={row.label} className={styles.statRow}>
+              <div className={styles.statMeta}>
+                <span className={`${styles.statVal} ${styles.statValHome}`}>{fmt(row.home)}</span>
+                <span className={styles.statLabel}>{row.label}</span>
+                <span className={`${styles.statVal} ${styles.statValAway}`}>{fmt(row.away)}</span>
+              </div>
+              <div className={styles.statBarTrack}>
+                <div className={styles.statBarHome} style={{ width: `${homePct}%` }} />
+                <div className={styles.statBarAway} style={{ width: `${100 - homePct}%` }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -287,6 +458,8 @@ export default function MatchPage({ locale }: MatchPageProps) {
             {data && (
               <>
                 <MatchCard d={data} locale={locale} matchId={matchId ?? ''} />
+                <EventsSection d={data} />
+                <StatsSection d={data} />
                 <H2HSection d={data} />
                 <StandingsSection
                   rows={data.standings}
@@ -336,6 +509,8 @@ export default function MatchPage({ locale }: MatchPageProps) {
             {data && (
               <>
                 <MobMatchCard d={data} locale={locale} matchId={matchId ?? ''} />
+                <EventsSection d={data} />
+                <StatsSection d={data} />
                 <H2HSection d={data} />
                 <StandingsSection
                   rows={data.standings}

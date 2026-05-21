@@ -16,6 +16,9 @@ const cfg = {
 };
 
 export function isFirebaseReady(): boolean {
+  // Set VITE_FORCE_PROXY=true in .env.local to bypass Firestore and use the
+  // api-football proxy directly (useful when functions aren't yet deployed).
+  if (import.meta.env.VITE_FORCE_PROXY === 'true') return false;
   return Boolean(cfg.projectId && cfg.apiKey);
 }
 

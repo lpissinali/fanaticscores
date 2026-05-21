@@ -5,7 +5,7 @@
 
 @media (max-width: 1023px) {
   .desktopOnly { display: none; }
-  .mobileOnly  { display: block; }
+  .mobileOnly  { display: block; height: 100vh; }
 }
 
 /* ── Desktop layout ────────────────────────────────────────────────────────── */
@@ -325,9 +325,23 @@
 
 .matchRow:hover { background: var(--surface-raised); }
 
+.matchDateCell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
 .matchDate {
   font-size: 11px;
   color: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+
+.matchTime {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--orange);
   font-family: 'JetBrains Mono', monospace;
   white-space: nowrap;
 }
@@ -375,13 +389,6 @@
   text-align: right;
 }
 
-.matchKickoff {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-dim);
-  white-space: nowrap;
-  text-align: right;
-}
 
 .resultTag {
   font-size: 10px;

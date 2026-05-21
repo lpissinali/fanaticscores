@@ -6,6 +6,7 @@ import type { SupportedLocale } from '../../i18n';
 import Sidebar from '../../components/layout/Sidebar/Sidebar';
 import Footer from '../../components/layout/Footer/Footer';
 import Icon from '../../components/shared/Icon/Icon';
+import MobileBottomNav from '../../components/shared/MobileBottomNav/MobileBottomNav';
 import styles from './TeamPage.module.css';
 
 interface TeamPageProps { locale: SupportedLocale; }
@@ -88,13 +89,19 @@ function MatchRow({ m, teamId, locale }: { m: TeamMatch; teamId: string; locale:
     else resultTag = 'D';
   }
 
-  const kickoff = new Date(m.utcDate).toLocaleDateString('en-US', {
+  const kickoffDate = new Date(m.utcDate).toLocaleDateString('en-US', {
     weekday: 'short', month: 'short', day: 'numeric',
+  });
+  const kickoffTime = new Date(m.utcDate).toLocaleTimeString('en-US', {
+    hour: '2-digit', minute: '2-digit',
   });
 
   return (
     <Link to={`/${locale}/match/${m.id}`} className={styles.matchRow}>
-      <div className={styles.matchDate}>{kickoff}</div>
+      <div className={styles.matchDateCell}>
+        <span className={styles.matchDate}>{kickoffDate}</span>
+        {isScheduled && <span className={styles.matchTime}>{kickoffTime}</span>}
+      </div>
       <div className={styles.matchVenue}>{isHome ? 'H' : 'A'}</div>
       <img
         src={opponent.crest} alt={opponent.name} width={20} height={20}
@@ -103,11 +110,7 @@ function MatchRow({ m, teamId, locale }: { m: TeamMatch; teamId: string; locale:
       />
       <div className={styles.matchOpponent}>{opponent.name}</div>
       <div className={styles.matchComp}>{m.competition}</div>
-      {isScheduled ? (
-        <div className={styles.matchKickoff}>
-          {new Date(m.utcDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-        </div>
-      ) : (
+      {!isScheduled && (
         <div className={styles.matchScore}>
           {teamScore ?? '–'} – {oppScore ?? '–'}
         </div>
@@ -187,39 +190,29 @@ export default function TeamPage({ locale }: TeamPageProps) {
         </div>
 
         {/* ── Info grid ── */}
-        <div className={styles.infoGrid}>
-          {info.coach && (
-            <div className={styles.infoCard}>
-              <div className={styles.infoLabel}>Head Coach</div>
-              <div className={styles.infoValue}>{info.coach.name}</div>
-              {info.coach.nationality && <div className={styles.infoSub}>{info.coach.nationality}</div>}
-              {info.coach.contractUntil && (
-                <div className={styles.infoSub}>Contract until {info.coach.contractUntil.slice(0, 4)}</div>
-              )}
-            </div>
-          )}
-          {info.venue && (
-            <div className={styles.infoCard}>
-              <div className={styles.infoLabel}>Stadium</div>
-              <div className={styles.infoValue}>{info.venue}</div>
-            </div>
-          )}
-          {info.address && (
-            <div className={styles.infoCard}>
-              <div className={styles.infoLabel}>Address</div>
-              <div className={styles.infoValue} style={{ fontSize: 12 }}>{info.address}</div>
-            </div>
-          )}
-          {info.website && (
-            <div className={styles.infoCard}>
-              <div className={styles.infoLabel}>Website</div>
-              <a href={info.website} target="_blank" rel="noopener noreferrer" className={styles.websiteLink}>
-                {info.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}
-                <Icon name="arrow-right" size={11} style={{ marginLeft: 4 }} />
-              </a>
-            </div>
-          )}
-        </div>
+        {(info.coach || info.website) && (
+          <div className={styles.infoGrid}>
+            {info.coach && (
+              <div className={styles.infoCard}>
+                <div className={styles.infoLabel}>Head Coach</div>
+                <div className={styles.infoValue}>{info.coach.name}</div>
+                {info.coach.nationality && <div className={styles.infoSub}>{info.coach.nationality}</div>}
+                {info.coach.contractUntil && (
+                  <div className={styles.infoSub}>Contract until {info.coach.contractUntil.slice(0, 4)}</div>
+                )}
+              </div>
+            )}
+            {info.website && (
+              <div className={styles.infoCard}>
+                <div className={styles.infoLabel}>Website</div>
+                <a href={info.website} target="_blank" rel="noopener noreferrer" className={styles.websiteLink}>
+                  {info.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                  <Icon name="arrow-right" size={11} style={{ marginLeft: 4 }} />
+                </a>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── Upcoming fixtures ── */}
         {upcomingMatches.length > 0 && (
@@ -318,6 +311,7 @@ export default function TeamPage({ locale }: TeamPageProps) {
             {content(true)}
             <div style={{ padding: '0 16px' }}><Footer /></div>
           </div>
+          <MobileBottomNav locale={locale} />
         </div>
       </div>
     </>

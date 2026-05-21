@@ -1,16 +1,15 @@
-/* ============================================================
-   api-football.com v3  --  API service layer (frontend)
-   Single /fixtures?date=DATE call returns all leagues at once.
-   In production the Firestore cache (via Cloud Functions) is
-   always preferred; this file is only used as a dev/fallback.
-   ============================================================ */
+/**
+ * api-football.com v3 fetching logic shared by scheduled + on-demand functions.
+ * Replaces footballDataFetch.ts — single /fixtures?date=DATE call (all leagues at once).
+ */
 
-import type { Match, TeamInfo, FeaturedMatch, Competition, MatchStatus } from '../types';
-import { getFollowedNames } from '../useFollowing';
+import { defineSecret } from 'firebase-functions/params';
 
-const BASE = '/api/af';
+export const afApiKey = defineSecret('AF_API_KEY');
+const AF_BASE = 'https://v3.football.api-sports.io';
 
-// League definitions — must stay in sync with apiFootballFetch.ts
+// League definitions ordered highest → lowest priority.
+// id = api-football league ID, code = internal code kept for cache/UI consistency.
 export const LEAGUE_LIST = [
   // ── International tournaments ────────────────────────────────────────────────
   { id: 1,   code: 'WC',   name: 'FIFA World Cup',          country: 'World',        short: 'WC',   flag: '#8b6914', type: 'CUP'    },
@@ -67,7 +66,7 @@ export const LEAGUE_LIST = [
 const ALLOWED_IDS:  Set<number>                              = new Set(LEAGUE_LIST.map(l => l.id as number));
 const LEAGUE_BY_ID: Map<number, typeof LEAGUE_LIST[number]> = new Map(LEAGUE_LIST.map(l => [l.id as number, l]));
 
-// Priority tier for featured match selection.
+// Higher number = higher priority in featured-match selection.
 const TIER: Record<number, number> = {
     // International
   1: 12, 4: 12, 9: 11, 6: 11, 15: 10,
@@ -89,7 +88,37 @@ const TIER: Record<number, number> = {
   45: 6, 48: 4, 143: 6, 81: 6, 137: 6, 66: 6,
 };
 
-// ── api-football.com v3 raw types ────────────────────────────────────────────
+// ── Shared interfaces (mirrors football-data shape so Firestore + client stay unchanged) ──
+
+export interface MatchdayDoc {
+  competitions:       CompetitionData[];
+  featured:           MatchData | null;
+  hadErrors:          boolean;
+  hasLive:            boolean;
+  fetchedAt:          number;
+  nextFetchAfter:     number;
+  aiBrief:            string | null;
+  aiBriefGeneratedAt: number;
+}
+
+export interface CompetitionData {
+  id: string; name: string; country: string; short: string; flag: string;
+  stage?: string;
+  matches: MatchData[];
+}
+
+export interface MatchData {
+  id: string; status: string; minute: string | number | null;
+  kickoff?: string; competition?: string;
+  home: TeamData; away: TeamData;
+}
+
+export interface TeamData {
+  id: string; name: string; short: string; initial: string;
+  color: string; crest?: string; score: number | null;
+}
+
+// ── api-football.com v3 raw types ───────────────────────────────────────────
 
 interface AFFixtureStatus { short: string; elapsed: number | null; }
 interface AFFixtureInfo   { id: number; date: string; status: AFFixtureStatus; }
@@ -105,7 +134,7 @@ interface AFFixture {
 
 // ── Mapping helpers ──────────────────────────────────────────────────────────
 
-function mapStatus(s: string): MatchStatus {
+function mapStatus(s: string): string {
   switch (s) {
     case '1H':
     case '2H':
@@ -129,7 +158,7 @@ function formatKickoff(isoDate: string): string {
   return new Date(isoDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-function mapTeam(af: AFTeam, score: number | null): TeamInfo {
+function mapTeam(af: AFTeam, score: number | null): TeamData {
   const words = af.name.split(/\s+/);
   const initial = words.length >= 2
     ? words.map(w => w[0]).join('').slice(0, 3).toUpperCase()
@@ -145,23 +174,9 @@ function mapTeam(af: AFTeam, score: number | null): TeamInfo {
   };
 }
 
-function mapFixtureToMatch(f: AFFixture): Match {
-  const status  = mapStatus(f.fixture.status.short);
-  const elapsed = f.fixture.status.elapsed;
-  const minute: string | number | null =
-    (elapsed != null && (status === 'LIVE' || status === 'HT')) ? elapsed : null;
-  return {
-    id:      String(f.fixture.id),
-    status,
-    minute,
-    kickoff: status === 'SCHEDULED' ? formatKickoff(f.fixture.date) : undefined,
-    home:    mapTeam(f.teams.home, f.goals.home),
-    away:    mapTeam(f.teams.away, f.goals.away),
-  };
-}
-
 function parseRound(round: string): string | undefined {
   if (!round) return undefined;
+  // "Regular Season - 20" → "Matchday 20", "Group Stage - A" → "Group Stage A"
   const m = round.match(/^(.+?)\s*-\s*(.+)$/);
   if (!m) return round;
   const [, prefix, suffix] = m;
@@ -169,75 +184,47 @@ function parseRound(round: string): string | undefined {
   return `${prefix} ${suffix}`;
 }
 
-function hasFollowedTeam(f: AFFixture, followed: Set<string>): boolean {
-  if (followed.size === 0) return false;
-  return followed.has(f.teams.home.name) || followed.has(f.teams.away.name);
+// ── Next-fetch timing (unchanged from old implementation) ────────────────────
+
+export function calcNextFetch(date: string, hasLive: boolean, hadErrors: boolean, now: number): number {
+  const today = new Date().toISOString().slice(0, 10);
+  if (date < today) return hadErrors ? now + 30 * 60_000 : now + 24 * 3_600_000;
+  if (date > today) return now + (hadErrors ? 30 * 60_000 : 2 * 3_600_000);
+  if (hasLive)   return now + 5  * 60_000;   // live: every 5 min
+  if (hadErrors) return now + 30 * 60_000;
+  return now + 30 * 60_000;                  // no live: every 30 min
 }
 
-function pickFeatured(whitelisted: AFFixture[]): FeaturedMatch | null {
-  const followed = getFollowedNames();
+// ── Main fetch ───────────────────────────────────────────────────────────────
 
-  const LIVE_CODES  = new Set(['1H', '2H', 'ET', 'BT', 'P', 'HT']);
-  const SCHED_CODES = new Set(['NS', 'TBD']);
-  const FIN_CODES   = new Set(['FT', 'AET', 'PEN']);
-
-  const tryGroups = [
-    whitelisted.filter(f => LIVE_CODES.has(f.fixture.status.short)),
-    whitelisted.filter(f => SCHED_CODES.has(f.fixture.status.short)),
-    whitelisted.filter(f => FIN_CODES.has(f.fixture.status.short)),
-  ];
-
-  for (const group of tryGroups) {
-    if (group.length === 0) continue;
-    const best = group.reduce((b, m) => {
-      const mF = hasFollowedTeam(m, followed) ? 1 : 0;
-      const bF = hasFollowedTeam(b, followed) ? 1 : 0;
-      if (mF !== bF) return mF > bF ? m : b;
-      return (TIER[m.league.id] ?? 0) >= (TIER[b.league.id] ?? 0) ? m : b;
-    });
-    return {
-      ...mapFixtureToMatch(best),
-      competition:    LEAGUE_BY_ID.get(best.league.id)?.name ?? best.league.name,
-      compCountry:    best.league.country,
-      stats:          { possession: [50, 50], shots: [0, 0], xG: [0.0, 0.0] },
-      events:         [],
-      aiPulse:        '',
-      momentumSeries: [],
-    };
-  }
-  return null;
-}
-
-// ── Public API ───────────────────────────────────────────────────────────────
-
-export interface TodayData {
-  competitions: Competition[];
-  featured:     FeaturedMatch | null;
-  hadErrors:    boolean;
-  aiBrief:      string | null;
-}
-
-export async function fetchMatchesForDate(date: string): Promise<TodayData> {
-  let fixtures: AFFixture[] = [];
+export async function fetchMatchday(date: string, apiKey: string): Promise<MatchdayDoc> {
+  const now = Date.now();
   let hadErrors = false;
+  let fixtures: AFFixture[] = [];
 
   try {
-    const res = await fetch(`${BASE}/fixtures?date=${date}`);
+    const res = await fetch(`${AF_BASE}/fixtures?date=${date}`, {
+      headers: { 'x-apisports-key': apiKey },
+    });
     if (res.status === 429 || !res.ok) {
+      console.warn(`[apiFootballFetch] HTTP ${res.status} for date=${date}`);
       hadErrors = true;
     } else {
       const json = await res.json() as { response: AFFixture[]; errors: unknown };
+      // api-football returns errors as an object (non-empty = problem)
       const errors = json.errors;
       if (errors && typeof errors === 'object' && Object.keys(errors as object).length > 0) {
+        console.warn('[apiFootballFetch] API errors:', errors);
         hadErrors = true;
       }
       fixtures = json.response ?? [];
     }
-  } catch {
+  } catch (err) {
+    console.error('[apiFootballFetch] fetch threw:', err);
     hadErrors = true;
   }
 
-  // Group by league ID in priority order
+  // Group by league ID (whitelisted only)
   const byLeague = new Map<number, AFFixture[]>();
   for (const f of fixtures) {
     if (!ALLOWED_IDS.has(f.league.id)) continue;
@@ -246,10 +233,12 @@ export async function fetchMatchesForDate(date: string): Promise<TodayData> {
     byLeague.set(f.league.id, arr);
   }
 
-  const competitions: Competition[] = [];
+  // Build competitions in priority order
+  const competitions: CompetitionData[] = [];
   for (const leagueDef of LEAGUE_LIST) {
     const group = byLeague.get(leagueDef.id);
     if (!group || group.length === 0) continue;
+
     competitions.push({
       id:      leagueDef.code,
       name:    leagueDef.name,
@@ -257,14 +246,65 @@ export async function fetchMatchesForDate(date: string): Promise<TodayData> {
       short:   leagueDef.short,
       flag:    leagueDef.flag,
       stage:   parseRound(group[0].league.round),
-      matches: group.map(mapFixtureToMatch),
+      matches: group.map(f => {
+        const status  = mapStatus(f.fixture.status.short);
+        const elapsed = f.fixture.status.elapsed;
+        const minute: string | number | null =
+          (elapsed != null && (status === 'LIVE' || status === 'HT')) ? elapsed : null;
+        return {
+          id:      String(f.fixture.id),
+          status,
+          minute,
+          kickoff: status === 'SCHEDULED' ? formatKickoff(f.fixture.date) : undefined,
+          home:    mapTeam(f.teams.home, f.goals.home),
+          away:    mapTeam(f.teams.away, f.goals.away),
+        };
+      }),
     });
   }
 
-  const whitelisted = fixtures.filter(f => ALLOWED_IDS.has(f.league.id));
-  return { competitions, featured: pickFeatured(whitelisted), hadErrors, aiBrief: null };
-}
+  const LIVE_CODES = new Set(['1H', '2H', 'ET', 'BT', 'P', 'HT']);
+  const hasLive = fixtures.some(f => ALLOWED_IDS.has(f.league.id) && LIVE_CODES.has(f.fixture.status.short));
 
-export function fetchTodayData(): Promise<TodayData> {
-  return fetchMatchesForDate(new Date().toISOString().slice(0, 10));
+  // Pick the highest-priority featured match
+  let featured: MatchData | null = null;
+  const whitelisted = fixtures.filter(f => ALLOWED_IDS.has(f.league.id));
+
+  const tryGroups = [
+    whitelisted.filter(f => LIVE_CODES.has(f.fixture.status.short)),
+    whitelisted.filter(f => f.fixture.status.short === 'NS' || f.fixture.status.short === 'TBD'),
+    whitelisted.filter(f => ['FT', 'AET', 'PEN'].includes(f.fixture.status.short)),
+  ];
+
+  for (const group of tryGroups) {
+    if (group.length === 0) continue;
+    const best = group.reduce((b, m) =>
+      (TIER[m.league.id] ?? 0) >= (TIER[b.league.id] ?? 0) ? m : b
+    );
+    const status  = mapStatus(best.fixture.status.short);
+    const elapsed = best.fixture.status.elapsed;
+    const minute: string | number | null =
+      (elapsed != null && (status === 'LIVE' || status === 'HT')) ? elapsed : null;
+    featured = {
+      id:          String(best.fixture.id),
+      status,
+      minute,
+      kickoff:     status === 'SCHEDULED' ? formatKickoff(best.fixture.date) : undefined,
+      competition: LEAGUE_BY_ID.get(best.league.id)?.name ?? best.league.name,
+      home:        mapTeam(best.teams.home, best.goals.home),
+      away:        mapTeam(best.teams.away, best.goals.away),
+    };
+    break;
+  }
+
+  return {
+    competitions,
+    featured,
+    hadErrors,
+    hasLive,
+    fetchedAt:          now,
+    nextFetchAfter:     calcNextFetch(date, hasLive, hadErrors, now),
+    aiBrief:            null,
+    aiBriefGeneratedAt: 0,
+  };
 }

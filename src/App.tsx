@@ -26,7 +26,7 @@ function App() {
           <Route path="terms"                element={<TermsPage       locale="en" />} />
           <Route path="privacy"              element={<PrivacyPage     locale="en" />} />
           <Route path="cookies"              element={<CookiesPage     locale="en" />} />
-          <Route path="studio"               element={<StudioPage      locale="en" />} />
+<Route path="studio"               element={<StudioPage      locale="en" />} />
           <Route path="studio/:matchId"      element={<StudioPage      locale="en" />} />
           <Route path=":date"                element={<HomePage        locale="en" />} />
         </Route>

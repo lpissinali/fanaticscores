@@ -6,7 +6,7 @@
 
 import { onRequest } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
-import { fdApiKey, fetchMatchday, type MatchdayDoc } from './footballDataFetch';
+import { afApiKey, fetchMatchday, type MatchdayDoc } from './apiFootballFetch';
 import { generateAiBrief } from './aiBrief';
 import { getDb } from './adminInit';
 
@@ -18,7 +18,7 @@ const db = getDb;
 const inFlight = new Set<string>();
 
 export const fetchMatchdayHttp = onRequest(
-  { secrets: [fdApiKey, anthropicApiKey], cors: true, timeoutSeconds: 120 },
+  { secrets: [afApiKey, anthropicApiKey], cors: true, timeoutSeconds: 120 },
   async (req, res) => {
     const date = (req.query.date as string) ?? '';
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -48,7 +48,7 @@ export const fetchMatchdayHttp = onRequest(
 
     try {
       console.log('[fetchMatchdayHttp] fetching ' + date);
-      const newDoc = await fetchMatchday(date, fdApiKey.value());
+      const newDoc = await fetchMatchday(date, afApiKey.value());
 
       // Guard: never overwrite good competition data with an empty array caused by rate limiting.
       let docToWrite: MatchdayDoc = newDoc;

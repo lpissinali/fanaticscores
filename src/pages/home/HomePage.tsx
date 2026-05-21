@@ -15,8 +15,9 @@ import LiveDot from '../../components/shared/LiveDot/LiveDot';
 import MatchRow from '../../components/shared/MatchRow/MatchRow';
 import MomentumGraph from '../../components/shared/MomentumGraph/MomentumGraph';
 import AIInsight from '../../components/shared/AIInsight/AIInsight';
-import ScheduleModal from '../../components/shared/ScheduleModal/ScheduleModal';
-import SearchModal   from '../../components/shared/SearchModal/SearchModal';
+import SearchModal     from '../../components/shared/SearchModal/SearchModal';
+import ScheduleModal   from '../../components/shared/ScheduleModal/ScheduleModal';
+import MobileBottomNav from '../../components/shared/MobileBottomNav/MobileBottomNav';
 
 interface HomePageProps {
   locale: SupportedLocale;
@@ -259,8 +260,7 @@ interface LayoutProps {
 }
 
 function DesktopLayout({ locale, featured, competitions, loading, error, resolvedDate, aiBrief }: LayoutProps) {
-  const [showSchedule, setShowSchedule] = useState(false);
-  const [showSearch,   setShowSearch]   = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
 
   const today = new Date().toISOString().slice(0, 10);
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
@@ -288,7 +288,7 @@ function DesktopLayout({ locale, featured, competitions, loading, error, resolve
 
   return (
     <div className={styles.desktop}>
-      <Sidebar locale={locale ?? 'en'} onScheduleClick={() => setShowSchedule(true)} />
+      <Sidebar locale={locale ?? 'en'} />
 
       <main className={styles.main}>
         <div className={styles.mainInner}>
@@ -351,8 +351,7 @@ function DesktopLayout({ locale, featured, competitions, loading, error, resolve
         <ShareStudioPromo locale={locale ?? 'en'} />
         <TrendingCard competitions={competitions} />
       </aside>
-      {showSchedule && <ScheduleModal locale={locale ?? 'en'} onClose={() => setShowSchedule(false)} />}
-      {showSearch   && <SearchModal   locale={locale ?? 'en'} onClose={() => setShowSearch(false)}   />}
+      {showSearch && <SearchModal locale={locale ?? 'en'} onClose={() => setShowSearch(false)} />}
     </div>
   );
 }
@@ -361,14 +360,6 @@ function DesktopLayout({ locale, featured, competitions, loading, error, resolve
 // MOBILE
 // -----------------------------------------------------------------------
 
-const DATE_PILLS = ['Yesterday', 'Today', 'Tomorrow', 'Sat', 'Sun', 'Mon'];
-const BOTTOM_TABS = [
-  { id: 'home',   label: 'Today',        icon: 'home'     as const },
-  { id: 'comp',   label: 'Competitions', icon: 'trophy'   as const },
-  { id: 'share',  label: 'Share',        icon: 'sparkles' as const, accent: true },
-  { id: 'follow', label: 'Following',    icon: 'star'     as const },
-  { id: 'me',     label: 'Me',           icon: 'user'     as const },
-];
 
 function MobileFeatured({ featured, locale }: { featured: FeaturedMatch | null; locale: string }) {
   if (!featured) {
@@ -431,69 +422,98 @@ function MobileFeatured({ featured, locale }: { featured: FeaturedMatch | null; 
   );
 }
 
-function MobileLayout({ featured, competitions, loading, error, aiBrief, locale }: LayoutProps) {
+function MobileLayout({ featured, competitions, loading, error, aiBrief, locale, resolvedDate }: LayoutProps) {
   const navigate = useNavigate();
-  const [activeTab,  setActiveTab]  = useState('all');
-  const [showSearch, setShowSearch] = useState(false);
+  const [activeTab,    setActiveTab]    = useState('all');
+  const [showSchedule, setShowSchedule] = useState(false);
   const display = competitions;
+
+  const todayYmd     = new Date().toISOString().slice(0, 10);
+  const yesterdayYmd = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const tomorrowYmd  = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+
+  const datePills = [
+    { label: 'Yesterday', ymd: yesterdayYmd },
+    { label: 'Today',     ymd: todayYmd     },
+    { label: 'Tomorrow',  ymd: tomorrowYmd  },
+  ];
+
+  const dateLabel = resolvedDate === todayYmd
+    ? new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+    : new Date(resolvedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
   const liveCount = display.reduce((n, c) => n + c.matches.filter(m => m.status === 'LIVE').length, 0);
   const allCount  = display.reduce((n, c) => n + c.matches.length, 0);
 
   const tabs = [
-    { id: 'live', label: 'Live',      count: liveCount },
-    { id: 'all',  label: 'All',       count: allCount  },
-    { id: 'favs', label: 'Following', count: 0         },
+    { id: 'live', label: 'Live', count: liveCount },
+    { id: 'all',  label: 'All',  count: allCount  },
   ];
 
   return (
     <div className="screen">
       <div className={styles.mobTopBar}>
         <FSLogo size={28} />
-        <div style={{ display: 'flex', gap: 4 }}>
-          <button className="fs-btn ghost" style={{ width: 36, height: 36, padding: 0, borderColor: 'transparent' }}
-            onClick={() => setShowSearch(true)}>
-            <Icon name="search" size={18} />
-          </button>
 
-          <button className="fs-btn ghost" style={{ width: 36, height: 36, padding: 0, borderColor: 'transparent' }}>
-            <Icon name="bell" size={18} />
-          </button>
-        </div>
-      </div>
-
-      <div className={styles.datePills}>
-        {DATE_PILLS.map((d, i) => (
-          <button key={d} className="chip" style={{
-            background: i === 1 ? 'var(--orange)' : 'var(--surface)',
-            color: i === 1 ? '#1a0d04' : 'var(--text-dim)',
-            borderColor: i === 1 ? 'transparent' : 'var(--border)',
-            height: 32, padding: '0 14px', flex: '0 0 auto', cursor: 'pointer',
-          }}>{d}</button>
-        ))}
-      </div>
-
-      <div className={styles.tabStrip}>
-        {tabs.map((t) => (
+        <div className={styles.mobTopPills}>
+          {datePills.map(({ label, ymd }) => {
+            const isActive = resolvedDate === ymd;
+            return (
+              <button
+                key={label}
+                className="chip"
+                onClick={() => navigate(ymd === todayYmd ? `/${locale ?? 'en'}/today` : `/${locale ?? 'en'}/${ymd}`)}
+                style={{
+                  background:  isActive ? 'var(--orange)' : 'var(--surface)',
+                  color:       isActive ? '#1a0d04'       : 'var(--text-dim)',
+                  borderColor: isActive ? 'transparent'   : 'var(--border)',
+                  height: 24, padding: '0 10px', flex: '0 0 auto', cursor: 'pointer', fontSize: 11,
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
           <button
-            key={t.id}
-            onClick={() => setActiveTab(t.id)}
-            className="fs-btn ghost"
+            className="chip"
+            onClick={() => setShowSchedule(true)}
             style={{
-              height: 40, padding: '0 14px', borderRadius: 0,
-              borderBottom: activeTab === t.id ? '2px solid var(--orange)' : '2px solid transparent',
-              color: activeTab === t.id ? 'var(--text)' : 'var(--text-dim)',
-              fontWeight: 700, fontSize: 13, gap: 6,
+              background: 'var(--surface)', color: 'var(--text-dim)',
+              borderColor: 'var(--border)',
+              height: 24, padding: '0 10px', flex: '0 0 auto', cursor: 'pointer', fontSize: 11,
+              display: 'flex', alignItems: 'center', gap: 5,
             }}
           >
-            {t.label}
-            <span style={{
-              fontSize: 11, padding: '2px 6px', borderRadius: 999,
-              background: activeTab === t.id ? 'var(--orange-soft)' : 'var(--surface)',
-              color: activeTab === t.id ? 'var(--orange)' : 'var(--text-faint)',
-            }}>{t.count}</span>
+            <Icon name="calendar" size={12} />
           </button>
-        ))}
+        </div>
+
+      </div>
+
+      <div className={styles.tabStrip} style={{ justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex' }}>
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
+              className="fs-btn ghost"
+              style={{
+                height: 40, padding: '0 14px', borderRadius: 0,
+                borderBottom: activeTab === t.id ? '2px solid var(--orange)' : '2px solid transparent',
+                color: activeTab === t.id ? 'var(--text)' : 'var(--text-dim)',
+                fontWeight: 700, fontSize: 13, gap: 6,
+              }}
+            >
+              {t.label}
+              <span style={{
+                fontSize: 11, padding: '2px 6px', borderRadius: 999,
+                background: activeTab === t.id ? 'var(--orange-soft)' : 'var(--surface)',
+                color: activeTab === t.id ? 'var(--orange)' : 'var(--text-faint)',
+              }}>{t.count}</span>
+            </button>
+          ))}
+        </div>
+        <div className={styles.mobEyebrow} style={{ alignSelf: 'center', paddingRight: 2 }}>{dateLabel}</div>
       </div>
 
       <div className="scroll">
@@ -540,31 +560,8 @@ function MobileLayout({ featured, competitions, loading, error, aiBrief, locale 
         <div style={{ height: 90 }} />
       </div>
 
-      <nav className={styles.bottomTabs} aria-label="Main navigation" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
-        {BOTTOM_TABS.map((t) => (
-          t.accent
-            ? (
-              <Link key={t.id} to={`/${locale ?? 'en'}/studio`} className="fs-btn" style={{
-                flexDirection: 'column', gap: 2, height: 50, padding: 0,
-                borderColor: 'transparent', background: 'var(--orange)', color: '#1a0d04',
-                textDecoration: 'none',
-              }}>
-                <Icon name={t.icon} size={20} />
-                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.04em' }}>{t.label}</span>
-              </Link>
-            ) : (
-              <button key={t.id} className="fs-btn ghost" style={{
-                flexDirection: 'column', gap: 4, height: 50, padding: 0,
-                borderColor: 'transparent',
-                color: t.id === 'home' ? 'var(--text)' : 'var(--text-faint)',
-              }}>
-                <Icon name={t.icon} size={20} />
-                <span style={{ fontSize: 10, fontWeight: 600 }}>{t.label}</span>
-              </button>
-            )
-        ))}
-      </nav>
-      {showSearch && <SearchModal locale={locale ?? 'en'} onClose={() => setShowSearch(false)} />}
+      <MobileBottomNav locale={locale ?? 'en'} activeTab="home" />
+      {showSchedule && <ScheduleModal locale={locale ?? 'en'} onClose={() => setShowSchedule(false)} />}
     </div>
   );
 }

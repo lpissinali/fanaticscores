@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import styles from './Sidebar.module.css';
 import FSLogo from '../../shared/FSLogo/FSLogo';
 import Icon from '../../shared/Icon/Icon';
 import Crest from '../../shared/Crest/Crest';
+import ScheduleModal from '../../shared/ScheduleModal/ScheduleModal';
 import { useAllFollowed } from '../../../lib/useFollowing';
 import type { SupportedLocale } from '../../../i18n';
 
@@ -21,6 +23,7 @@ interface SidebarProps {
 
 export default function Sidebar({ locale, onScheduleClick }: SidebarProps) {
   const followedTeams = useAllFollowed();
+  const [showSchedule, setShowSchedule] = useState(false);
 
   const navItems: NavItem[] = [
     { id: 'today',        label: 'Today',        icon: 'home',     path: `/${locale}/` },
@@ -31,6 +34,7 @@ export default function Sidebar({ locale, onScheduleClick }: SidebarProps) {
   ];
 
   return (
+    <>
     <aside className={styles.sidebar}>
       <NavLink to={`/${locale}/`} className={styles.logoLink}>
         <FSLogo size={36} showWordmark />
@@ -42,8 +46,8 @@ export default function Sidebar({ locale, onScheduleClick }: SidebarProps) {
             key={item.id}
             to={item.path}
             end={item.id === 'today'}
-            onClick={item.id === 'schedule' && onScheduleClick
-              ? (e) => { e.preventDefault(); onScheduleClick(); }
+            onClick={item.id === 'schedule'
+              ? (e) => { e.preventDefault(); if (onScheduleClick) onScheduleClick(); else setShowSchedule(true); }
               : undefined
             }
             className={({ isActive }) =>
@@ -78,5 +82,10 @@ export default function Sidebar({ locale, onScheduleClick }: SidebarProps) {
         </div>
       )}
     </aside>
+
+    {showSchedule && (
+      <ScheduleModal locale={locale} onClose={() => setShowSchedule(false)} />
+    )}
+    </>
   );
 }

@@ -115,11 +115,11 @@ async function triggerFetch(date: string): Promise<void> {
 
 // ── Legacy proxy constants (fallback mode) ─────────────────────────────────
 
-const POLL_INTERVAL = 120_000;
-const TTL_TODAY     =   2 * 60_000;
-const TTL_PAST      =  24 * 3_600_000;
-const TTL_FUTURE    =   1 * 3_600_000;
-const TTL_PARTIAL   =  65 * 1_000;
+const POLL_INTERVAL = 30 * 60_000;   // 30 min — matches Cloud Function cadence
+const TTL_TODAY     = 30 * 60_000;   // 30 min
+const TTL_PAST      = 24 * 3_600_000;
+const TTL_FUTURE    =  2 * 3_600_000;
+const TTL_PARTIAL   = 32 * 60_000;   // slightly longer than poll interval
 const MAX_RETRIES   = 2;
 
 function dateTTL(targetDate: string, hadErrors: boolean): number {
@@ -199,13 +199,27 @@ export function useMatches(date?: string): MatchesState {
 
     if (isToday) {
       // Real-time listener — Firestore pushes every write from the scheduler.
+      let fetchTriggered = false;
       unsubRef.current = onSnapshot(ref, (snap) => {
         if (cancelledRef.current) return;
         if (!snap.exists()) {
           setState(prev => ({ ...prev, loading: true }));
+          // Doc missing — kick off an on-demand fetch (once) so the scheduler
+          // doesn't have to run before today's matches appear.
+          if (!fetchTriggered) {
+            fetchTriggered = true;
+            triggerFetch(targetDate);
+          }
           return;
         }
-        const data = mapDoc(snap.data() as MatchdayDoc);
+        const fsDoc = snap.data() as MatchdayDoc;
+        // Doc exists but has no competitions — always re-trigger once.
+        // (Handles stale docs from old function versions with incompatible data.)
+        if (!fetchTriggered && fsDoc.competitions.length === 0) {
+          fetchTriggered = true;
+          triggerFetch(targetDate);
+        }
+        const data = mapDoc(fsDoc);
         cacheCompetitions(data.competitions);
         setState(prev => ({
           ...prev, ...data,

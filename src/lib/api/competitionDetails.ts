@@ -1,55 +1,98 @@
 /* ============================================================
    Competition details API
    Fetches info, standings and top scorers for a given comp code.
-   All responses cached in localStorage (12 h for standings/info,
-   1 h for scorers so goal tallies stay fresh).
+   Uses api-football v3 (/api/af proxy).
+   All responses cached 24 h (testing TTL — tighten for production).
    ============================================================ */
 
 import { cacheGet, cacheSet } from '../apiCache';
 
-const BASE    = '/api/fd';
-const TTL_12H =  12 * 60 * 60 * 1000;
-const TTL_1H  =       60 * 60 * 1000;
+const BASE = '/api/af';
+const TTL  = 24 * 60 * 60 * 1000;   // 24 h — testing TTL; tighten for production
 
-// ── Raw API shapes ────────────────────────────────────────────────────────────
+// Maps our internal compCode → api-football league ID.
+const COMP_CODE_TO_LEAGUE_ID: Record<string, number> = {
+  WC:   1,   CWC: 15,  EURO: 4,  CA:   9,  AFCN: 6,  UNL: 5,
+  CL:   2,   EL:  3,   UECL: 848,
+  LIBT: 13,  CSUD: 11,
+  PL:   39,  PD:  140, SA:  135, BL1:  78, FL1:  61,
+  DED:  88,  PPL: 94,  SPL: 179, JPL: 144, TSL: 203, SAPL: 307,
+  ELC:  40,  SD:  141, SB:  136, BL2:  79, FL2:  62,
+  BSA:  71,  ARG: 128, MX:  262, MLS: 253, COL: 239, CHI: 265,
+  J1:   98,  CSL: 169,
+  FAC:  45,  LCC:  48, CDR: 143, DFB:  81, CI:  137, CDF:  66,
+};
 
-interface FDArea { id: number; name: string; code: string; flag: string | null; }
+// Cup codes — no standings fetch for these.
+const CUP_CODES = new Set([
+  'WC', 'CWC', 'EURO', 'CA', 'AFCN', 'UNL',
+  'CL', 'EL', 'UECL',
+  'LIBT', 'CSUD',
+  'FAC', 'LCC', 'CDR', 'DFB', 'CI', 'CDF',
+]);
 
-interface FDSeason {
-  id: number;
-  startDate: string;
-  endDate: string;
-  currentMatchday: number | null;
-  winner: { id: number; name: string; crest: string | null; } | null;
+// Derive api-football season year from current date (European calendar).
+function currentSeason(): number {
+  const now = new Date();
+  return now.getMonth() < 6 ? now.getFullYear() - 1 : now.getFullYear();
 }
 
-interface FDCompetition {
-  id: number;
-  area: FDArea;
-  name: string;
-  code: string;
-  type: string;
-  emblem: string | null;
-  currentSeason: FDSeason | null;
+// Parse "Regular Season - 35" or "Matchday - 4" → 35 / 4.
+function parseMatchday(round: string | null | undefined): number | null {
+  if (!round) return null;
+  const m = round.match(/(\d+)\s*$/);
+  return m ? Number(m[1]) : null;
 }
 
-interface FDStandingRow {
-  position: number;
-  team: { id: number; name: string; shortName: string; tla: string; crest: string; };
-  playedGames: number;
-  won: number; draw: number; lost: number;
-  points: number;
-  goalsFor: number; goalsAgainst: number; goalDifference: number;
-  form: string | null;
+// ── Raw API types ─────────────────────────────────────────────────────────────
+
+interface AFLeagueSeason {
+  year:    number;
+  start:   string;
+  end:     string;
+  current: boolean;
 }
 
-interface FDScorer {
+interface AFLeagueEntry {
+  league: {
+    id:   number;
+    name: string;
+    type: string;   // "League" | "Cup"
+    logo: string;
+  };
+  country: {
+    name: string;
+    code: string | null;
+    flag: string | null;
+  };
+  seasons: AFLeagueSeason[];
+}
+
+interface AFStandingsLeague {
+  id:         number;
+  name:       string;
+  round:      string | null;
+  season:     number;
+  standings:  AFStandingsEntry[][];
+}
+
+interface AFStandingsEntry {
+  rank:      number;
+  team:      { id: number; name: string; logo: string };
+  points:    number;
+  goalsDiff: number;
+  form:      string | null;
+  all: { played: number; win: number; draw: number; lose: number; goals: { for: number; against: number } };
+}
+
+interface AFScorer {
   player: { id: number; name: string; nationality: string; };
-  team: { id: number; name: string; shortName: string; crest: string; };
-  playedMatches: number;
-  goals: number;
-  assists: number | null;
-  penalties: number | null;
+  statistics: Array<{
+    team:    { id: number; name: string; logo: string };
+    goals:   { total: number | null; assists: number | null; };
+    penalty: { scored: number | null; };
+    games:   { appearences: number | null; };
+  }>;
 }
 
 // ── Public types ──────────────────────────────────────────────────────────────
@@ -100,7 +143,7 @@ export interface CompetitionDetailData {
   scorers: CompScorer[];
 }
 
-// ── Fetch helpers ─────────────────────────────────────────────────────────────
+// ── Retry helper ──────────────────────────────────────────────────────────────
 
 async function fetchWithRetry(url: string, retries = 2, delayMs = 3000): Promise<Response> {
   const res = await fetch(url);
@@ -111,105 +154,209 @@ async function fetchWithRetry(url: string, retries = 2, delayMs = 3000): Promise
   return res;
 }
 
-async function fetchCompInfo(code: string): Promise<CompInfo | null> {
-  const key = `comp_info:${code}`;
+function hasBodyErrors(errors: unknown): boolean {
+  if (!errors) return false;
+  if (Array.isArray(errors)) return errors.length > 0;
+  if (typeof errors === 'object') return Object.keys(errors as object).length > 0;
+  return false;
+}
+
+// ── Fetch competition info ────────────────────────────────────────────────────
+
+async function fetchCompInfo(code: string, leagueId: number): Promise<CompInfo | null> {
+  const key = `comp_info:af:${leagueId}`;
   const hit = cacheGet<CompInfo>(key);
   if (hit) return hit;
 
   try {
-    const res = await fetchWithRetry(`${BASE}/competitions/${code}`);
+    const res = await fetchWithRetry(`${BASE}/leagues?id=${leagueId}`);
     if (!res.ok) return null;
-    const d = await res.json() as FDCompetition;
+    const json = await res.json() as { response: AFLeagueEntry[]; errors: unknown };
+    if (hasBodyErrors(json.errors)) return null;
+
+    const entry = json.response?.[0];
+    if (!entry) return null;
+
+    const season = entry.seasons.find(s => s.current) ?? entry.seasons.at(-1) ?? null;
+
     const info: CompInfo = {
-      id:     d.id,
-      code:   d.code,
-      name:   d.name,
-      type:   d.type,
-      emblem: d.emblem ?? null,
-      area:   { name: d.area.name, code: d.area.code, flag: d.area.flag ?? null },
-      season: d.currentSeason ? {
-        startDate:       d.currentSeason.startDate,
-        endDate:         d.currentSeason.endDate,
-        currentMatchday: d.currentSeason.currentMatchday,
-        winner:          d.currentSeason.winner
-          ? { name: d.currentSeason.winner.name, crest: d.currentSeason.winner.crest ?? null }
-          : null,
+      id:     entry.league.id,
+      code,
+      name:   entry.league.name,
+      type:   entry.league.type === 'Cup' ? 'CUP' : 'LEAGUE',
+      emblem: entry.league.logo ?? null,
+      area: {
+        name: entry.country.name,
+        code: entry.country.code ?? '',
+        flag: entry.country.flag ?? null,
+      },
+      season: season ? {
+        startDate:       season.start,
+        endDate:         season.end,
+        currentMatchday: null,   // filled in from standings response below
+        winner:          null,   // filled in from previous-season standings below
       } : null,
     };
-    cacheSet(key, info, TTL_12H);
+    // Don't cache yet — we'll update currentMatchday/winner before caching.
     return info;
   } catch { return null; }
 }
 
-async function fetchCompStandings(code: string): Promise<CompStandingRow[]> {
-  const key = `comp_standings:${code}`;
-  const hit = cacheGet<CompStandingRow[]>(key);
-  if (hit) return hit;
+// ── Fetch standings (with season fallback) ────────────────────────────────────
 
+interface StandingsFetch {
+  rows:            CompStandingRow[];
+  currentMatchday: number | null;
+  winner:          { name: string; crest: string | null } | null; // rank-1 team (= champion of this season if finished, or null)
+}
+
+async function fetchStandingsRaw(leagueId: number, season: number): Promise<StandingsFetch | 'plan_error' | null> {
   try {
-    const res = await fetchWithRetry(`${BASE}/competitions/${code}/standings`);
-    if (!res.ok) return [];
-    const d = await res.json() as { standings: { type: string; table: FDStandingRow[] }[] };
-    const total = d.standings.find(s => s.type === 'TOTAL') ?? d.standings[0];
-    if (!total) return [];
-    const rows: CompStandingRow[] = total.table.map(r => ({
-      position:       r.position,
+    const res = await fetchWithRetry(`${BASE}/standings?league=${leagueId}&season=${season}`);
+    if (!res.ok) return null;
+    const data = await res.json() as { response: Array<{ league: AFStandingsLeague }>; errors: unknown };
+
+    if (hasBodyErrors(data.errors)) {
+      const msg = JSON.stringify(data.errors);
+      if (msg.includes('plan') || msg.includes('season') || msg.includes('subscription')) return 'plan_error';
+      console.warn('[competitionDetails] standings errors', data.errors);
+      return null;
+    }
+
+    const league = data.response?.[0]?.league;
+    if (!league) return null;
+
+    const table = league.standings?.[0] ?? [];
+    if (table.length === 0) return null;   // no data yet for this season
+
+    const rows: CompStandingRow[] = table.map(r => ({
+      position:       r.rank,
       teamId:         String(r.team.id),
-      teamName:       r.team.shortName || r.team.name,
-      teamShort:      r.team.tla || (r.team.shortName || r.team.name).slice(0, 3).toUpperCase(),
-      teamCrest:      r.team.crest,
-      played:         r.playedGames,
-      won:            r.won,
-      draw:           r.draw,
-      lost:           r.lost,
-      goalsFor:       r.goalsFor,
-      goalsAgainst:   r.goalsAgainst,
-      goalDifference: r.goalDifference,
+      teamName:       r.team.name,
+      teamShort:      r.team.name.split(/\s+/).map(w => w[0]).join('').slice(0, 3).toUpperCase(),
+      teamCrest:      r.team.logo,
+      played:         r.all.played,
+      won:            r.all.win,
+      draw:           r.all.draw,
+      lost:           r.all.lose,
+      goalsFor:       r.all.goals.for,
+      goalsAgainst:   r.all.goals.against,
+      goalDifference: r.goalsDiff,
       points:         r.points,
       form:           r.form ?? null,
     }));
-    cacheSet(key, rows, TTL_12H);
-    return rows;
-  } catch { return []; }
+
+    const champion = table.find(r => r.rank === 1) ?? null;
+
+    return {
+      rows,
+      currentMatchday: parseMatchday(league.round),
+      winner: champion ? { name: champion.team.name, crest: champion.team.logo } : null,
+    };
+  } catch (e) {
+    console.warn('[competitionDetails] standings fetch error', e);
+    return null;
+  }
 }
 
-async function fetchCompScorers(code: string): Promise<CompScorer[]> {
-  const key = `comp_scorers:${code}`;
+async function fetchCompStandings(code: string, leagueId: number): Promise<{
+  rows: CompStandingRow[];
+  currentMatchday: number | null;
+  winner: { name: string; crest: string | null } | null;
+}> {
+  const empty = { rows: [], currentMatchday: null, winner: null };
+  if (CUP_CODES.has(code)) return empty;
+
+  const baseSeason = currentSeason();
+
+  for (let offset = 0; offset <= 2; offset++) {
+    const season = baseSeason - offset;
+    const key = `comp_standings:af2:${leagueId}:${season}`;
+    const hit = cacheGet<{ rows: CompStandingRow[]; currentMatchday: number | null; winner: { name: string; crest: string | null } | null }>(key);
+    if (hit !== null) return hit;
+
+    const result = await fetchStandingsRaw(leagueId, season);
+    if (result === 'plan_error') { console.warn(`[competitionDetails] plan_error for season ${season}, trying ${season - 1}`); continue; }
+    if (result === null) continue;  // empty season or fetch error — try previous
+
+    cacheSet(key, result, TTL);
+    return result;
+  }
+  return empty;
+}
+
+// ── Fetch top scorers ─────────────────────────────────────────────────────────
+
+async function fetchCompScorers(leagueId: number): Promise<CompScorer[]> {
+  const season = currentSeason();
+  const key = `comp_scorers:af:${leagueId}:${season}`;
   const hit = cacheGet<CompScorer[]>(key);
   if (hit) return hit;
 
   try {
-    const res = await fetchWithRetry(`${BASE}/competitions/${code}/scorers?limit=20`);
-    if (!res.ok) return [];
-    const d = await res.json() as { scorers: FDScorer[] };
-    const scorers: CompScorer[] = (d.scorers ?? []).map(s => ({
-      playerName:   s.player.name,
-      nationality:  s.player.nationality,
-      teamName:     s.team.shortName || s.team.name,
-      teamShort:    (s.team.shortName || s.team.name).slice(0, 3).toUpperCase(),
-      teamCrest:    s.team.crest,
-      goals:        s.goals,
-      assists:      s.assists ?? null,
-      penalties:    s.penalties ?? null,
-      playedMatches: s.playedMatches,
-    }));
-    cacheSet(key, scorers, TTL_1H);
+    const res = await fetchWithRetry(`${BASE}/players/topscorers?league=${leagueId}&season=${season}`);
+    if (!res.ok) { console.warn('[competitionDetails] scorers not ok', res.status); return []; }
+    const json = await res.json() as { response: AFScorer[]; errors: unknown };
+    if (hasBodyErrors(json.errors)) { console.warn('[competitionDetails] scorers errors', json.errors); return []; }
+
+    const scorers: CompScorer[] = (json.response ?? []).map(s => {
+      const stats = s.statistics[0];
+      const teamName = stats?.team.name ?? '';
+      return {
+        playerName:    s.player.name,
+        nationality:   s.player.nationality,
+        teamName,
+        teamShort:     teamName.split(/\s+/).map(w => w[0]).join('').slice(0, 3).toUpperCase(),
+        teamCrest:     stats?.team.logo ?? '',
+        goals:         stats?.goals.total ?? 0,
+        assists:       stats?.goals.assists ?? null,
+        penalties:     stats?.penalty.scored ?? null,
+        playedMatches: stats?.games.appearences ?? 0,
+      };
+    });
+    cacheSet(key, scorers, TTL);
     return scorers;
-  } catch { return []; }
+  } catch (e) { console.warn('[competitionDetails] scorers error', e); return []; }
 }
 
 // ── Public entry point ────────────────────────────────────────────────────────
 
 export async function fetchCompetitionDetail(code: string): Promise<CompetitionDetailData | null> {
-  const info = await fetchCompInfo(code);
-  if (!info) return null;
+  const leagueId = COMP_CODE_TO_LEAGUE_ID[code];
+  if (!leagueId) { console.warn('[competitionDetails] unknown comp code', code); return null; }
 
-  const isLeague = info.type === 'LEAGUE' || info.type === 'LEAGUE_CUP';
-
-  const [standings, scorers] = await Promise.all([
-    isLeague ? fetchCompStandings(code) : Promise.resolve([] as CompStandingRow[]),
-    fetchCompScorers(code),
+  const [info, standingsFetch, scorers] = await Promise.all([
+    fetchCompInfo(code, leagueId),
+    fetchCompStandings(code, leagueId),
+    fetchCompScorers(leagueId),
   ]);
 
-  return { info, standings, scorers };
+  if (!info) return null;
+
+  // Enrich info with currentMatchday and winner from the standings response.
+  if (info.season) {
+    info.season.currentMatchday = standingsFetch.currentMatchday;
+
+    // Winner = rank-1 team from the PREVIOUS season (current season winner not yet decided).
+    // If the current season standings show a played count suggesting the season is over (e.g. 38+ games),
+    // use the current season's rank-1 team as champion. Otherwise fall back to previous season.
+    const topRow = standingsFetch.rows[0];
+    const seasonOver = topRow && topRow.played >= 34;
+    if (seasonOver) {
+      info.season.winner = standingsFetch.winner;
+    } else {
+      // Try to get last season's champion.
+      const prevKey = `comp_standings:af2:${leagueId}:${currentSeason() - 1}`;
+      const prevHit = cacheGet<{ rows: CompStandingRow[]; winner: { name: string; crest: string | null } | null }>(prevKey);
+      if (prevHit?.winner) {
+        info.season.winner = prevHit.winner;
+      }
+      // If no cached previous season, leave winner null (avoid an extra API call on every page load).
+    }
+  }
+
+  // Cache the final info (now that currentMatchday/winner are filled in).
+  cacheSet(`comp_info:af:${leagueId}`, info, TTL);
+
+  return { info, standings: standingsFetch.rows, scorers };
 }

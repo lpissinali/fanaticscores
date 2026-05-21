@@ -6,7 +6,7 @@
  */
 import type { Match, Competition } from './types';
 
-const CACHE_KEY = 'fs_match_cache_v2';
+const CACHE_KEY = 'fs_match_cache_v3';
 
 export interface CachedMatch {
   match: Match;
@@ -16,8 +16,13 @@ export interface CachedMatch {
   compType: string;   // 'LEAGUE' | 'CUP'
 }
 
-// Infer competition type from code — CL and WC are knockout competitions.
-const CUP_CODES = new Set(['CL', 'WC']);
+// Infer competition type from code — must match LEAGUE_LIST type:'CUP' entries.
+const CUP_CODES = new Set([
+  'WC', 'CWC', 'EURO', 'CA', 'AFCN', 'UNL',
+  'CL', 'EL', 'UECL',
+  'LIBT', 'CSUD',
+  'FAC', 'LCC', 'CDR', 'DFB', 'CI', 'CDF',
+]);
 
 // In-memory store (Map is the source of truth; sessionStorage is the mirror).
 const store = new Map<string, CachedMatch>();
@@ -60,6 +65,14 @@ export function cacheCompetitions(comps: Competition[]): void {
 /** Returns cached match data or null if not yet loaded. */
 export function getCachedMatch(matchId: string): CachedMatch | null {
   return store.get(matchId) ?? null;
+}
+
+/** Store a single entry — used by the team page to seed the cache from fixture lists. */
+export function cacheMatch(entry: CachedMatch): void {
+  // Don't overwrite a richer home-page entry with a leaner team-page one.
+  if (store.has(entry.match.id)) return;
+  store.set(entry.match.id, entry);
+  persist();
 }
 
 export interface CachedTeam {
