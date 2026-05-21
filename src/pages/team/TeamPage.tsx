@@ -1,4 +1,5 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useSEO } from '../../lib/useSEO';
 import { useTeamDetails } from '../../lib/useTeamDetails';
 import type { TeamPlayer, TeamMatch } from '../../lib/api/teamDetails';
 import type { SupportedLocale } from '../../i18n';
@@ -125,7 +126,13 @@ export default function TeamPage({ locale }: TeamPageProps) {
   const navigate = useNavigate();
   const { data, loading, error } = useTeamDetails(teamId);
 
-  const content = (isMobile: boolean) => {
+  useSEO({
+    title: data ? `${data.info.name} — Results & Stats` : 'Team',
+    description: data ? `Fixtures, results and stats for ${data.info.name}.` : undefined,
+    canonical: `/en/team/${teamId}`,
+  });
+
+  const content = (_isMobile: boolean) => {
     if (loading) return (
       <div className={styles.stateBox}>
         <span style={{ color: 'var(--text-faint)', fontSize: 13, fontFamily: 'JetBrains Mono, monospace' }}>

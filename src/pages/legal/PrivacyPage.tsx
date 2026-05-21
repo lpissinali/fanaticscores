@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useSEO } from '../../lib/useSEO';
 import type { SupportedLocale } from '../../i18n';
 import Footer from '../../components/layout/Footer/Footer';
 import Sidebar from '../../components/layout/Sidebar/Sidebar';
@@ -103,6 +104,7 @@ function Content() {
 }
 
 export default function PrivacyPage({ locale }: Props) {
+  useSEO({ title: 'Privacy Policy', description: 'Read the FanaticScores Privacy Policy.', canonical: '/en/privacy' });
   const navigate = useNavigate();
   return (
     <>

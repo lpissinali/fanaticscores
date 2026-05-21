@@ -131,7 +131,7 @@ export default function SearchModal({ onClose, locale }: SearchModalProps) {
                   onClick={() => { navigate(`/${locale}/team/${team.id}`); onClose(); }}
                 >
                   <Crest
-                    team={{ id: team.id, name: team.name, short: team.name.slice(0, 3), initial: team.name.slice(0, 3), color: '#3a3a48', crest: team.crest, score: null }}
+                    team={{ initial: team.name.slice(0, 3).toUpperCase(), color: '#3a3a48', name: team.name, crest: team.crest }}
                     size="sm"
                   />
                   <div className={styles.rowBody}>

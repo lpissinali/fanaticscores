@@ -89,6 +89,20 @@ function mapDoc(doc: MatchdayDoc): TodayData {
   return { competitions, featured, hadErrors: doc.hadErrors, aiBrief: doc.aiBrief ?? null };
 }
 
+// ── One-shot fetch for any date (used by Studio match picker) ──────────────
+// In Firestore mode: single document read (fast, free).
+// In proxy/dev mode: falls back to the multi-competition API fetch.
+
+export async function fetchMatchday(date: string): Promise<TodayData> {
+  if (isFirebaseReady()) {
+    try {
+      const snap = await getDoc(doc(getDb(), 'matchdays', date));
+      if (snap.exists()) return mapDoc(snap.data() as MatchdayDoc);
+    } catch { /* fall through to proxy */ }
+  }
+  return fetchMatchesForDate(date);
+}
+
 // ── On-demand trigger for non-today dates ──────────────────────────────────
 
 const FETCH_FN_URL = `/api/fetchMatchday`;

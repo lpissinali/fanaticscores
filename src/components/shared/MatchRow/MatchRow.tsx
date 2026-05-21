@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import styles from './MatchRow.module.css';
+import Icon from '../Icon/Icon';
 import Crest from '../Crest/Crest';
 import { useFollowing } from '../../../lib/useFollowing';
 import type { Match, TeamInfo } from '../../../lib/types';
@@ -119,6 +120,16 @@ export default function MatchRow({ match, featured = false, locale = 'en', onCli
           </>
         )}
       </div>
+
+      <Link
+        to={`/${locale}/studio/${match.id}`}
+        className={styles.studioBtn}
+        onClick={e => e.stopPropagation()}
+        title="Open in Share Studio"
+        aria-label="Share Studio"
+      >
+        <Icon name="share" size={12} />
+      </Link>
     </div>
   );
 }

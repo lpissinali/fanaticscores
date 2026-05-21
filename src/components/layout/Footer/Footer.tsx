@@ -15,11 +15,13 @@ export default function Footer() {
           <p className={styles.tagline}>
             Live scores, AI Pulse and Share Studio for football fans.
           </p>
+          {/* Social links — re-enable when accounts are live
           <div className={styles.social}>
             {[['X', 'x'], ['IG', 'instagram'], ['TT', 'tiktok']].map(([label, id]) => (
               <a key={id} href="#" className={styles.socialIcon}>{label}</a>
             ))}
           </div>
+          */}
         </div>
 
         {/* SEO block */}

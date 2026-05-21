@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useSEO } from '../../lib/useSEO';
 import type { SupportedLocale } from '../../i18n';
 import Footer from '../../components/layout/Footer/Footer';
 import Sidebar from '../../components/layout/Sidebar/Sidebar';
@@ -94,6 +95,7 @@ function Content() {
 }
 
 export default function TermsPage({ locale }: Props) {
+  useSEO({ title: 'Terms of Service', description: 'Read the FanaticScores Terms of Service.', canonical: '/en/terms' });
   const navigate = useNavigate();
   return (
     <>

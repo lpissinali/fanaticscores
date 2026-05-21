@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
         '/api/fetchMatchday': {
           target: 'https://us-central1-fanaticscores-b6af4.cloudfunctions.net',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/fetchMatchday/, '/fetchMatchdayHttp'),
+          rewrite: (path) => path.replace(/^\/api\/fd/, '/fetchMatchdayHttp'),
         },
       },
     },

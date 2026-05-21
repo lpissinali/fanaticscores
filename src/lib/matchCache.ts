@@ -76,6 +76,7 @@ export function getAllCachedTeams(): CachedTeam[] {
   const seen = new Map<string, CachedTeam>();
   for (const { match, compCode, competition, compCountry } of store.values()) {
     for (const side of [match.home, match.away]) {
+      if (!side.id) continue;
       if (!seen.has(side.id)) {
         seen.set(side.id, {
           id:          side.id,

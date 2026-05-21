@@ -1,5 +1,6 @@
 import styles from './HomePage.module.css';
 import { useState } from 'react';
+import { useSEO } from '../../lib/useSEO';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import type { SupportedLocale } from '../../i18n';
 import type { Competition, FeaturedMatch, Match, TrendingItem } from '../../lib/types';
@@ -25,7 +26,7 @@ interface HomePageProps {
 // DESKTOP
 // -----------------------------------------------------------------------
 
-function DesktopFeatured({ featured }: { featured: FeaturedMatch | null }) {
+function DesktopFeatured({ featured, locale }: { featured: FeaturedMatch | null; locale: string }) {
   if (!featured) {
     return (
       <div className={styles.featured} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 160 }}>
@@ -58,9 +59,9 @@ function DesktopFeatured({ featured }: { featured: FeaturedMatch | null }) {
           )}
           <span className={styles.featuredCompLabel}>{m.compCountry ? `${m.compCountry} · ` : ''}{m.competition}</span>
         </div>
-        <button className="fs-btn ghost" style={{ height: 32, padding: '0 12px', fontSize: 12 }}>
+        <Link to={`/${locale}/studio/${m.id}`} className="fs-btn ghost" style={{ height: 32, padding: '0 12px', fontSize: 12, textDecoration: 'none' }}>
           <Icon name="share" size={14} /> Share match
-        </button>
+        </Link>
       </div>
 
       <div className={styles.scoreGrid}>
@@ -150,7 +151,7 @@ function AIBriefCard({ brief }: { brief: string | null }) {
   );
 }
 
-function ShareStudioPromo() {
+function ShareStudioPromo({ locale }: { locale: string }) {
   return (
     <div className={styles.studioPromo}>
       <div className={styles.studioPromoHeader}>
@@ -160,9 +161,9 @@ function ShareStudioPromo() {
       <p className={styles.studioPromoHeading}>
         Turn any moment into a card you will want to post.
       </p>
-      <button className="fs-btn primary" style={{ height: 34, fontSize: 12 }}>
+      <Link to={`/${locale}/studio`} className="fs-btn primary" style={{ height: 34, fontSize: 12, textDecoration: 'none' }}>
         Open Studio &rarr;
-      </button>
+      </Link>
     </div>
   );
 }
@@ -311,14 +312,14 @@ function DesktopLayout({ locale, featured, competitions, loading, error, resolve
                 Search teams, competitions&hellip;
               </span>
             </div>
-            <button className="fs-btn primary" style={{ height: 38 }}>
+            <Link to={`/${locale}/studio`} className="fs-btn primary" style={{ height: 38, textDecoration: 'none' }}>
               <Icon name="sparkles" size={14} style={{ color: '#1a0d04' }} />
               Share Studio
-            </button>
+            </Link>
           </div>
         </div>
 
-        <DesktopFeatured featured={loading ? null : (featured ?? null)} />
+        <DesktopFeatured featured={loading ? null : (featured ?? null)} locale={locale ?? 'en'} />
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 20, marginTop: 24, flexGrow: 1, alignContent: 'start' }}>
           {loading && display.length === 0 ? (
@@ -347,7 +348,7 @@ function DesktopLayout({ locale, featured, competitions, loading, error, resolve
 
       <aside className={styles.rail}>
         <AIBriefCard brief={aiBrief} />
-        <ShareStudioPromo />
+        <ShareStudioPromo locale={locale ?? 'en'} />
         <TrendingCard competitions={competitions} />
       </aside>
       {showSchedule && <ScheduleModal locale={locale ?? 'en'} onClose={() => setShowSchedule(false)} />}
@@ -369,7 +370,7 @@ const BOTTOM_TABS = [
   { id: 'me',     label: 'Me',           icon: 'user'     as const },
 ];
 
-function MobileFeatured({ featured }: { featured: FeaturedMatch | null }) {
+function MobileFeatured({ featured, locale }: { featured: FeaturedMatch | null; locale: string }) {
   if (!featured) {
     return (
       <div className={styles.mobFeatured} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 120 }}>
@@ -397,9 +398,9 @@ function MobileFeatured({ featured }: { featured: FeaturedMatch | null }) {
           )}
           <span className={styles.mobCompLabel}>{m.compCountry ? `${m.compCountry} · ` : ''}{m.competition}</span>
         </div>
-        <button className="fs-btn ghost" style={{ height: 28, padding: '0 10px', borderColor: 'transparent', fontSize: 12 }}>
+        <Link to={`/${locale}/studio/${m.id}`} className="fs-btn ghost" style={{ height: 28, padding: '0 10px', borderColor: 'transparent', fontSize: 12, textDecoration: 'none' }}>
           <Icon name="share" size={14} /> Share
-        </button>
+        </Link>
       </div>
 
       <div className={styles.mobScoreRow}>
@@ -496,7 +497,7 @@ function MobileLayout({ featured, competitions, loading, error, aiBrief, locale 
       </div>
 
       <div className="scroll">
-        <MobileFeatured featured={loading ? null : featured} />
+        <MobileFeatured featured={loading ? null : featured} locale={locale ?? 'en'} />
 
         <div style={{ padding: '0 16px 12px' }}>
           <AIInsight
@@ -543,13 +544,14 @@ function MobileLayout({ featured, competitions, loading, error, aiBrief, locale 
         {BOTTOM_TABS.map((t) => (
           t.accent
             ? (
-              <button key={t.id} className="fs-btn" style={{
+              <Link key={t.id} to={`/${locale ?? 'en'}/studio`} className="fs-btn" style={{
                 flexDirection: 'column', gap: 2, height: 50, padding: 0,
                 borderColor: 'transparent', background: 'var(--orange)', color: '#1a0d04',
+                textDecoration: 'none',
               }}>
                 <Icon name={t.icon} size={20} />
                 <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.04em' }}>{t.label}</span>
-              </button>
+              </Link>
             ) : (
               <button key={t.id} className="fs-btn ghost" style={{
                 flexDirection: 'column', gap: 4, height: 50, padding: 0,
@@ -575,6 +577,12 @@ export default function HomePage({ locale }: HomePageProps) {
   const { date: dateParam } = useParams<{ date?: string }>();
   const today = new Date().toISOString().slice(0, 10);
   const resolvedDate = (!dateParam || dateParam === 'today') ? today : dateParam;
+
+  useSEO({
+    title: "Today's Football Scores & Live Results",
+    description: 'Live football scores, real-time match updates, standings and AI match cards — all on FanaticScores.',
+    canonical: `/${locale}/today`,
+  });
 
   const { featured, competitions, loading, error, hadErrors, refresh, aiBrief } = useMatches(resolvedDate);
   return (

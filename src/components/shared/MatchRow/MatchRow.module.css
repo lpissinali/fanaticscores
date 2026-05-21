@@ -71,3 +71,26 @@
   color: var(--text-faint);
   font-size: 14px;
 }
+
+/* ── Share Studio button ── */
+.studioBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  color: var(--text-faint);
+  text-decoration: none;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.12s, background 0.12s;
+  margin-left: 4px;
+}
+/* .match-row is a global class — use :global() to reach across the boundary */
+:global(.match-row:hover) .studioBtn { opacity: 1; }
+.studioBtn:hover {
+  color: var(--orange);
+  background: var(--orange-soft);
+  opacity: 1;
+}

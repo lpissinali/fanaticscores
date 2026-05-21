@@ -8,6 +8,8 @@ import TeamPage         from './pages/team/TeamPage';
 import TermsPage       from './pages/legal/TermsPage';
 import PrivacyPage     from './pages/legal/PrivacyPage';
 import CookiesPage     from './pages/legal/CookiesPage';
+import StudioPage      from './pages/studio/StudioPage';
+import CookieBanner    from './components/shared/CookieBanner/CookieBanner';
 
 function App() {
   return (
@@ -24,10 +26,13 @@ function App() {
           <Route path="terms"                element={<TermsPage       locale="en" />} />
           <Route path="privacy"              element={<PrivacyPage     locale="en" />} />
           <Route path="cookies"              element={<CookiesPage     locale="en" />} />
+          <Route path="studio"               element={<StudioPage      locale="en" />} />
+          <Route path="studio/:matchId"      element={<StudioPage      locale="en" />} />
           <Route path=":date"                element={<HomePage        locale="en" />} />
         </Route>
         <Route path="*" element={<Navigate to={`/${DEFAULT_LOCALE}/today`} replace />} />
       </Routes>
+      <CookieBanner />
     </BrowserRouter>
   );
 }

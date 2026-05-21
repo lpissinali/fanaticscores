@@ -1,4 +1,5 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useSEO } from '../../lib/useSEO';
 import { useCompetitionDetails } from '../../lib/useCompetitionDetails';
 import type { CompStandingRow, CompScorer, CompInfo } from '../../lib/api/competitionDetails';
 import type { SupportedLocale } from '../../i18n';
@@ -184,6 +185,12 @@ export default function CompetitionPage({ locale }: CompetitionPageProps) {
   const { compCode } = useParams<{ compCode: string }>();
   const navigate = useNavigate();
   const { data, loading, error } = useCompetitionDetails(compCode ?? '');
+
+  useSEO({
+    title: data ? `${data.info.name} — Standings & Results` : 'Competition',
+    description: data ? `Standings, results and top scorers for ${data.info.name}.` : undefined,
+    canonical: `/en/competition/${compCode}`,
+  });
 
   const title = data?.info.name ?? 'Competition';
 

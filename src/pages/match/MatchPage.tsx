@@ -1,4 +1,5 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useSEO } from '../../lib/useSEO';
 import { useMatchDetails } from '../../lib/useMatchDetails';
 import type { MatchDetailData, StandingRow } from '../../lib/api/matchDetails';
 import type { SupportedLocale } from '../../i18n';
@@ -141,7 +142,7 @@ function FormCard({ d, rows }: { d: MatchDetailData; rows: StandingRow[] }) {
 }
 
 // ── Desktop featured card ─────────────────────────────────────────────────────
-function MatchCard({ d, locale }: { d: MatchDetailData; locale: string }) {
+function MatchCard({ d, locale, matchId }: { d: MatchDetailData; locale: string; matchId: string }) {
   return (
     <div className={styles.featured}>
       <div className={styles.featuredGlow} aria-hidden="true" />
@@ -159,9 +160,9 @@ function MatchCard({ d, locale }: { d: MatchDetailData; locale: string }) {
           <span className={styles.compLabel}>{d.compCountry ? `${d.compCountry} · ` : ''}{d.competition}</span>
           {d.matchday && <span className={styles.matchday}>MD {d.matchday}</span>}
         </div>
-        <button className="fs-btn ghost" style={{ height: 32, padding: '0 12px', fontSize: 12 }}>
+        <Link to={`/${locale}/studio/${matchId}`} className="fs-btn ghost" style={{ height: 32, padding: '0 12px', fontSize: 12, textDecoration: 'none' }}>
           <Icon name="share" size={14} /> Share Studio
-        </button>
+        </Link>
       </div>
 
       <div className={styles.scoreGrid}>
@@ -199,7 +200,7 @@ function MatchCard({ d, locale }: { d: MatchDetailData; locale: string }) {
 }
 
 // ── Mobile featured card ──────────────────────────────────────────────────────
-function MobMatchCard({ d, locale }: { d: MatchDetailData; locale: string }) {
+function MobMatchCard({ d, locale, matchId }: { d: MatchDetailData; locale: string; matchId: string }) {
   return (
     <div className={styles.mobFeatured}>
       <div className={styles.featuredGlow} aria-hidden="true" />
@@ -216,9 +217,9 @@ function MobMatchCard({ d, locale }: { d: MatchDetailData; locale: string }) {
           )}
           <span className={styles.compLabel}>{d.compCountry ? `${d.compCountry} · ` : ''}{d.competition}</span>
         </div>
-        <button className="fs-btn ghost" style={{ height: 28, padding: '0 10px', fontSize: 12 }}>
+        <Link to={`/${locale}/studio/${matchId}`} className="fs-btn ghost" style={{ height: 28, padding: '0 10px', fontSize: 12, textDecoration: 'none' }}>
           <Icon name="share" size={13} /> Share Studio
-        </button>
+        </Link>
       </div>
 
       <div className={styles.mobScoreGrid}>
@@ -255,6 +256,12 @@ export default function MatchPage({ locale }: MatchPageProps) {
   const navigate = useNavigate();
   const { data, loading, error } = useMatchDetails(matchId ?? '');
 
+  useSEO({
+    title: data ? `${data.home.short || data.home.name} vs ${data.away.short || data.away.name} — ${data.competition}` : 'Match',
+    description: data ? `Live score: ${data.home.name} vs ${data.away.name}. ${data.competition}.` : undefined,
+    canonical: `/en/match/${matchId}`,
+  });
+
   const matchTitle = data ? `${data.home.short || data.home.name} vs ${data.away.short || data.away.name}` : 'Match';
 
   return (
@@ -279,7 +286,7 @@ export default function MatchPage({ locale }: MatchPageProps) {
             )}
             {data && (
               <>
-                <MatchCard d={data} locale={locale} />
+                <MatchCard d={data} locale={locale} matchId={matchId ?? ''} />
                 <H2HSection d={data} />
                 <StandingsSection
                   rows={data.standings}
@@ -307,14 +314,14 @@ export default function MatchPage({ locale }: MatchPageProps) {
               <Icon name="chevron-left" size={16} /> Back
             </button>
             <span className={styles.mobTopTitle}>{matchTitle}</span>
-            <button
+            <Link
+              to={`/${locale}/studio/${matchId}`}
               className={styles.mobStudioBtn}
-              onClick={() => navigate(`/${locale}/studio`)}
               title="Share Studio"
             >
               <Icon name="sparkles" size={16} />
               <span>Studio</span>
-            </button>
+            </Link>
           </div>
 
           <div className={styles.mobContent}>
@@ -328,7 +335,7 @@ export default function MatchPage({ locale }: MatchPageProps) {
             )}
             {data && (
               <>
-                <MobMatchCard d={data} locale={locale} />
+                <MobMatchCard d={data} locale={locale} matchId={matchId ?? ''} />
                 <H2HSection d={data} />
                 <StandingsSection
                   rows={data.standings}
