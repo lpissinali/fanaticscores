@@ -238,9 +238,10 @@ export function useMatches(date?: string): MatchesState {
           const fsDoc = snap.data() as MatchdayDoc;
           const now   = Date.now();
           applyDoc(fsDoc);
-          // Re-fetch if stale (non-past) OR past date has errors with no data at all.
-          const needsRefresh = fsDoc.nextFetchAfter < now &&
-            (!isPast || (fsDoc.hadErrors && fsDoc.competitions.length === 0));
+          // Re-fetch whenever nextFetchAfter has passed.
+          // For past dates with some data: refresh silently and re-read when done.
+          // For past dates with no data: show loading spinner and wait.
+          const needsRefresh = fsDoc.nextFetchAfter < now;
           if (needsRefresh) {
             if (isPast && fsDoc.hadErrors && fsDoc.competitions.length === 0) {
               // Past date with errors and no data — re-fetch actively and wait for result.
@@ -249,8 +250,16 @@ export function useMatches(date?: string): MatchesState {
                 if (!cancelledRef.current) pollUntilDoc(applyDoc);
               });
             } else {
-              // Stale but has existing data — refresh silently in background.
-              triggerFetch(targetDate);
+              // Stale — trigger background refresh then re-read to update UI.
+              triggerFetch(targetDate).then(async () => {
+                if (cancelledRef.current) return;
+                try {
+                  const updatedSnap = await getDoc(ref);
+                  if (updatedSnap.exists() && !cancelledRef.current) {
+                    applyDoc(updatedSnap.data() as MatchdayDoc);
+                  }
+                } catch { /* ignore — stale data still shown */ }
+              });
             }
           }
         } else {

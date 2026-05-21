@@ -8,6 +8,11 @@
     ],
     "rewrites": [
       {
+        "source": "/api/af/**",
+        "function": "afProxy",
+        "region": "us-central1"
+      },
+      {
         "source": "/api/fd/**",
         "function": "fdProxy",
         "region": "us-central1"
