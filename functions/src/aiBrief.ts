@@ -7,7 +7,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
-import type { CompetitionData } from './footballDataFetch';
+import type { CompetitionData } from './apiFootballFetch';
 
 const BRIEF_TTL_LIVE    =  5 * 60 * 1000;  // 5 min  (live match days)
 const BRIEF_TTL_NO_LIVE = 15 * 60 * 1000;  // 15 min (quiet days)

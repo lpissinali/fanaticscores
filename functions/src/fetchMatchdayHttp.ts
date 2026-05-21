@@ -14,8 +14,11 @@ export const anthropicApiKey = defineSecret('ANTHROPIC_API_KEY');
 
 const db = getDb;
 
-// Simple in-flight dedup: prevent parallel fetches for the same date.
 const inFlight = new Set<string>();
+
+function briefIsInvalid(doc: MatchdayDoc): boolean {
+  return !doc.aiBrief || doc.aiBrief === 'No matches scheduled today.' || doc.aiBrief === 'Unable to generate brief right now.';
+}
 
 export const fetchMatchdayHttp = onRequest(
   { secrets: [afApiKey, anthropicApiKey], cors: true, timeoutSeconds: 120 },
@@ -29,17 +32,27 @@ export const fetchMatchdayHttp = onRequest(
     const now = Date.now();
     const ref = db().collection('matchdays').doc(date);
 
-    // Return cached doc if still fresh.
     const snap = await ref.get();
     if (snap.exists) {
-      const data = snap.data() as { nextFetchAfter?: number };
-      if (data.nextFetchAfter && data.nextFetchAfter > now) {
+      const data = snap.data() as MatchdayDoc;
+      // Treat a doc with no competitions as stale — force a refetch.
+      const hasComps = data.competitions && data.competitions.length > 0;
+      if (hasComps && data.nextFetchAfter && data.nextFetchAfter > now) {
+        // Doc is fresh — regenerate brief if missing or invalid.
+        if (briefIsInvalid(data)) {
+          console.log('[fetchMatchdayHttp] doc fresh but brief invalid -- generating');
+          const briefResult = await generateAiBrief(
+            data.competitions, data.hasLive, null, 0, anthropicApiKey.value(),
+          );
+          if (briefResult.brief) {
+            await ref.update({ aiBrief: briefResult.brief, aiBriefGeneratedAt: briefResult.generatedAt });
+          }
+        }
         res.json({ cached: true });
         return;
       }
     }
 
-    // Deduplicate concurrent requests for same date.
     if (inFlight.has(date)) {
       res.json({ cached: false, inflight: true });
       return;
@@ -50,7 +63,6 @@ export const fetchMatchdayHttp = onRequest(
       console.log('[fetchMatchdayHttp] fetching ' + date);
       const newDoc = await fetchMatchday(date, afApiKey.value());
 
-      // Guard: never overwrite good competition data with an empty array caused by rate limiting.
       let docToWrite: MatchdayDoc = newDoc;
       if (newDoc.hadErrors && newDoc.competitions.length === 0 && snap.exists) {
         const existingDoc = snap.data() as MatchdayDoc;
@@ -64,13 +76,12 @@ export const fetchMatchdayHttp = onRequest(
         }
       }
 
-      // Generate AI brief (rate-limited internally).
       const existingData = snap.exists ? snap.data() as MatchdayDoc : null;
       const briefResult = await generateAiBrief(
         docToWrite.competitions,
         docToWrite.hasLive,
-        existingData ? existingData.aiBrief : null,
-        existingData ? existingData.aiBriefGeneratedAt : 0,
+        existingData && !briefIsInvalid(existingData) ? existingData.aiBrief : null,
+        existingData && !briefIsInvalid(existingData) ? existingData.aiBriefGeneratedAt : 0,
         anthropicApiKey.value(),
       );
       docToWrite = { ...docToWrite, aiBrief: briefResult.brief, aiBriefGeneratedAt: briefResult.generatedAt };

@@ -94,6 +94,15 @@ export default function MatchRow({ match, featured = false, locale = 'en', onCli
       onKeyDown={(e) => e.key === 'Enter' && onClick?.(match)}
     >
       <div className="time-col">
+        <Link
+          to={`/${locale}/studio/${match.id}`}
+          className={styles.studioBtn}
+          onClick={e => e.stopPropagation()}
+          title="Open in Share Studio"
+          aria-label="Share Studio"
+        >
+          <Icon name="share" size={14} />
+        </Link>
         <TimeCol match={match} />
       </div>
 
@@ -120,16 +129,6 @@ export default function MatchRow({ match, featured = false, locale = 'en', onCli
           </>
         )}
       </div>
-
-      <Link
-        to={`/${locale}/studio/${match.id}`}
-        className={styles.studioBtn}
-        onClick={e => e.stopPropagation()}
-        title="Open in Share Studio"
-        aria-label="Share Studio"
-      >
-        <Icon name="share" size={12} />
-      </Link>
     </div>
   );
 }

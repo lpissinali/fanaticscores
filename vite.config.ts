@@ -6,6 +6,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    build: { emptyOutDir: false },
     server: {
       proxy: {
         // api-football.com v3 -- adds the API key header so the key is never in client bundles.

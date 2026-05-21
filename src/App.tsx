@@ -10,10 +10,14 @@ import PrivacyPage     from './pages/legal/PrivacyPage';
 import CookiesPage     from './pages/legal/CookiesPage';
 import StudioPage      from './pages/studio/StudioPage';
 import CookieBanner    from './components/shared/CookieBanner/CookieBanner';
+import { useAnalytics }  from './lib/useAnalytics';
+
+function Analytics() { useAnalytics(); return null; }
 
 function App() {
   return (
     <BrowserRouter>
+      <Analytics />
       <Routes>
         <Route path="/" element={<Navigate to={`/${DEFAULT_LOCALE}/today`} replace />} />
         <Route path="/en/">

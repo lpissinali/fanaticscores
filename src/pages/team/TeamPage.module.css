@@ -134,6 +134,64 @@
   overflow: hidden;
 }
 
+/* ── Follow button ──────────────────────────────────────────────────────────── */
+
+.followBtn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  z-index: 2;
+}
+
+.followBtn:hover {
+  border-color: #f59e0b;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.followBtnActive {
+  border-color: #f59e0b;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.followBtnActive:hover {
+  background: rgba(245, 158, 11, 0.06);
+  color: var(--text-faint);
+  border-color: var(--border);
+}
+
+.mobFollowBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.mobFollowBtn:hover {
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
 .heroGlow {
   position: absolute;
   top: -60px; left: -60px;
@@ -557,7 +615,7 @@
 }
 
 @media (max-width: 1023px) {
-  .hero { border-radius: 0; border-left: none; border-right: none; margin-bottom: 0; padding: 20px 16px; }
+  .hero { border-radius: 0; border-left: none; border-right: none; margin-bottom: 12px; padding: 20px 16px; }
   .heroInner { gap: 16px; }
   .crest { width: 64px; height: 64px; }
   .crestPlaceholder { width: 64px; height: 64px; }

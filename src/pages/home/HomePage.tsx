@@ -426,7 +426,12 @@ function MobileLayout({ featured, competitions, loading, error, aiBrief, locale,
   const navigate = useNavigate();
   const [activeTab,    setActiveTab]    = useState('all');
   const [showSchedule, setShowSchedule] = useState(false);
-  const display = competitions;
+  const LIVE_STATUSES = new Set(['LIVE', 'HT']);
+  const display = activeTab === 'live'
+    ? competitions
+        .map(c => ({ ...c, matches: c.matches.filter(m => LIVE_STATUSES.has(m.status)) }))
+        .filter(c => c.matches.length > 0)
+    : competitions;
 
   const todayYmd     = new Date().toISOString().slice(0, 10);
   const yesterdayYmd = new Date(Date.now() - 86400000).toISOString().slice(0, 10);

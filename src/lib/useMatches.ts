@@ -15,7 +15,7 @@ import {
   doc, getDoc, onSnapshot,
   type Unsubscribe,
 } from 'firebase/firestore';
-import { getDb, isFirebaseReady } from './firebase';
+import { getDb, isFirebaseReady, isFirebaseConfigured } from './firebase';
 import { fetchMatchesForDate } from './api/footballData';
 import type { TodayData } from './api/footballData';
 import type { Competition, Match, FeaturedMatch, MatchStatus } from './types';
@@ -290,6 +290,30 @@ export function useMatches(date?: string): MatchesState {
           error: showError ? (canRetry ? 'Some matches may be missing — retrying' : 'Some matches may be missing') : null,
           lastUpdated: new Date(),
         }));
+
+        // Proxy mode: trigger the Cloud Function to generate/update the aiBrief
+        // in Firestore, then poll until the brief appears (up to ~30s).
+        if (isFirebaseConfigured()) {
+          triggerFetch(targetDate).then(() => {
+            let attempts = 0;
+            const iv = setInterval(async () => {
+              attempts++;
+              try {
+                const snap = await getDoc(doc(getDb(), 'matchdays', targetDate));
+                if (snap.exists()) {
+                  const brief = (snap.data() as MatchdayDoc).aiBrief;
+                  if (brief && !cancelledRef.current) {
+                    setState(prev => ({ ...prev, aiBrief: brief }));
+                    clearInterval(iv);
+                    return;
+                  }
+                }
+              } catch { /* ignore */ }
+              if (attempts >= 10) clearInterval(iv); // give up after ~30s
+            }, 3_000);
+          }).catch(() => {});
+        }
+
         if (canRetry) {
           retryCountRef.current += 1;
           retryTimerRef.current = setTimeout(() => {

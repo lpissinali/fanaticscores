@@ -13,7 +13,7 @@ function Content() {
     <div className={styles.doc}>
       <p className={styles.docEyebrow}>Legal</p>
       <h1 className={styles.docTitle}>Privacy Policy</h1>
-      <p className={styles.docDate}>Last updated: 1 June 2025</p>
+      <p className={styles.docDate}>Last updated: 21 May 2026</p>
 
       <h2>1. Overview</h2>
       <p>
@@ -31,12 +31,19 @@ function Content() {
         <strong>Data collected automatically.</strong> When you visit Fanatic Scores, our hosting
         provider (Google Firebase) may collect standard server logs, including your IP address,
         browser type, operating system, referring URLs and pages visited. This data is used for
-        security monitoring and aggregate analytics only.
+        security monitoring only.
+      </p>
+      <p>
+        <strong>Analytics (consent-based).</strong> If you choose "Accept all" on the cookie
+        consent banner, Google Analytics 4 (GA4) is activated. GA4 collects anonymised usage
+        data (pages visited, session duration, browser type). No personally identifiable
+        information is sent to Google.
       </p>
       <p>
         <strong>Local storage.</strong> We store certain data in your browser's local storage and
-        session storage (for example, cached match scores and your "Following" preferences). This
-        data never leaves your device and is not transmitted to our servers.
+        session storage (for example, cached match scores, your "Following" preferences, and your
+        analytics consent choice). This data never leaves your device and is not transmitted to
+        our servers.
       </p>
 
       <h2>3. How we use your information</h2>
@@ -53,12 +60,21 @@ function Content() {
       </p>
       <ul>
         <li>
-          <strong>football-data.org</strong> — supplies match data and statistics.
-          See <a href="https://www.football-data.org/more/privacy" target="_blank" rel="noreferrer">their privacy policy</a>.
+          <strong>API-Football (api-sports.io)</strong> — supplies live match data, standings and
+          statistics. See <a href="https://www.api-football.com/privacy" target="_blank" rel="noreferrer">their privacy policy</a>.
         </li>
         <li>
-          <strong>Google Firebase</strong> — provides hosting and our real-time database.
+          <strong>Google Firebase</strong> — provides hosting and our Firestore database.
           See <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noreferrer">Firebase's privacy policy</a>.
+        </li>
+        <li>
+          <strong>Google Analytics 4</strong> — collects anonymised usage analytics when you
+          opt in. See <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">Google's privacy policy</a>.
+        </li>
+        <li>
+          <strong>Anthropic</strong> — powers our AI match brief feature (Claude API). Match
+          data is sent to Anthropic's API to generate a short summary; no personal data is
+          included. See <a href="https://www.anthropic.com/privacy" target="_blank" rel="noreferrer">Anthropic's privacy policy</a>.
         </li>
       </ul>
       <p>

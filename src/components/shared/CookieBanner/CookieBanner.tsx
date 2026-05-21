@@ -12,6 +12,7 @@
  * The banner is shown until a choice is made. Dismissing counts as 'essential'.
  */
 import { useState, useEffect } from 'react';
+import { enableAnalytics, disableAnalytics } from '../../../lib/useAnalytics';
 import { Link } from 'react-router-dom';
 
 const CONSENT_KEY = 'fs_consent';
@@ -45,6 +46,8 @@ export default function CookieBanner() {
 
   const accept = (value: ConsentValue) => {
     setConsent(value);
+    if (value === 'all') enableAnalytics();
+    else disableAnalytics();
     setVisible(false);
   };
 

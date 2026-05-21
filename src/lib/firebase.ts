@@ -22,6 +22,12 @@ export function isFirebaseReady(): boolean {
   return Boolean(cfg.projectId && cfg.apiKey);
 }
 
+/** True if Firebase credentials are present, regardless of FORCE_PROXY.
+ *  Used for optional side-reads (e.g. aiBrief) even in proxy mode. */
+export function isFirebaseConfigured(): boolean {
+  return Boolean(cfg.projectId && cfg.apiKey);
+}
+
 let _app: FirebaseApp | null  = null;
 let _db:  Firestore   | null  = null;
 

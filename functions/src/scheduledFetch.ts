@@ -10,6 +10,10 @@ import { afApiKey, fetchMatchday, type MatchdayDoc } from './apiFootballFetch';
 import { generateAiBrief } from './aiBrief';
 import { getDb } from './adminInit';
 
+function briefIsInvalid(doc: MatchdayDoc): boolean {
+  return !doc.aiBrief || doc.aiBrief === 'No matches scheduled today.' || doc.aiBrief === 'Unable to generate brief right now.';
+}
+
 export const anthropicApiKey = defineSecret('ANTHROPIC_API_KEY');
 
 const db = getDb;
@@ -21,12 +25,21 @@ export const scheduledMatchFetch = onSchedule(
     const now   = Date.now();
     const ref   = db().collection('matchdays').doc(today);
 
-    // Check whether a fetch is due.
     const snap = await ref.get();
     if (snap.exists) {
-      const data = snap.data() as { nextFetchAfter?: number };
+      const data = snap.data() as MatchdayDoc;
       if (data.nextFetchAfter && data.nextFetchAfter > now) {
-        console.log('[scheduledFetch] skipping -- next fetch not yet due');
+        if (briefIsInvalid(data)) {
+          console.log('[scheduledFetch] doc fresh but brief missing/invalid -- generating');
+          const briefResult = await generateAiBrief(
+            data.competitions, data.hasLive, null, 0, anthropicApiKey.value(),
+          );
+          if (briefResult.brief) {
+            await ref.update({ aiBrief: briefResult.brief, aiBriefGeneratedAt: briefResult.generatedAt });
+          }
+        } else {
+          console.log('[scheduledFetch] skipping -- next fetch not yet due');
+        }
         return;
       }
     }
@@ -34,7 +47,6 @@ export const scheduledMatchFetch = onSchedule(
     console.log('[scheduledFetch] fetching ' + today);
     const newDoc = await fetchMatchday(today, afApiKey.value());
 
-    // Guard: never overwrite good competition data with an empty array caused by rate limiting.
     let docToWrite: MatchdayDoc = newDoc;
     if (newDoc.hadErrors && newDoc.competitions.length === 0 && snap.exists) {
       const existingDoc = snap.data() as MatchdayDoc;
@@ -48,18 +60,17 @@ export const scheduledMatchFetch = onSchedule(
       }
     }
 
-    // Generate AI brief (rate-limited internally to avoid excess Claude API calls).
     const existingData = snap.exists ? snap.data() as MatchdayDoc : null;
-    const { brief, generatedAt } = await generateAiBrief(
+    const briefResult = await generateAiBrief(
       docToWrite.competitions,
       docToWrite.hasLive,
-      existingData ? existingData.aiBrief : null,
-      existingData ? existingData.aiBriefGeneratedAt : 0,
+      existingData && !briefIsInvalid(existingData) ? existingData.aiBrief : null,
+      existingData && !briefIsInvalid(existingData) ? existingData.aiBriefGeneratedAt : 0,
       anthropicApiKey.value(),
     );
-    docToWrite = { ...docToWrite, aiBrief: brief, aiBriefGeneratedAt: generatedAt };
+    docToWrite = { ...docToWrite, aiBrief: briefResult.brief, aiBriefGeneratedAt: briefResult.generatedAt };
 
     await ref.set(docToWrite);
-    console.log('[scheduledFetch] wrote ' + today + ' hasLive=' + docToWrite.hasLive + ' comps=' + docToWrite.competitions.length + ' brief=' + !!brief);
+    console.log('[scheduledFetch] wrote ' + today + ' hasLive=' + docToWrite.hasLive + ' comps=' + docToWrite.competitions.length + ' brief=' + !!briefResult.brief);
   }
 );

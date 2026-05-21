@@ -7,6 +7,7 @@ import Sidebar from '../../components/layout/Sidebar/Sidebar';
 import Footer from '../../components/layout/Footer/Footer';
 import Icon from '../../components/shared/Icon/Icon';
 import MobileBottomNav from '../../components/shared/MobileBottomNav/MobileBottomNav';
+import { useFollowing } from '../../lib/useFollowing';
 import styles from './TeamPage.module.css';
 
 interface TeamPageProps { locale: SupportedLocale; }
@@ -128,6 +129,14 @@ export default function TeamPage({ locale }: TeamPageProps) {
   const { teamId = '' } = useParams<{ teamId: string }>();
   const navigate = useNavigate();
   const { data, loading, error } = useTeamDetails(teamId);
+  const teamObj = data ? {
+    id:      teamId,
+    name:    data.info.name,
+    initial: data.info.tla?.slice(0, 2) || data.info.name[0] || '?',
+    color:   '#374151',
+    crest:   data.info.crest,
+  } : { id: teamId, name: '', initial: '?', color: '#374151' };
+  const [isFollowed, toggleFollow] = useFollowing(teamObj);
 
   useSEO({
     title: data ? `${data.info.name} — Results & Stats` : 'Team',
@@ -157,6 +166,15 @@ export default function TeamPage({ locale }: TeamPageProps) {
         {/* ── Hero ── */}
         <div className={styles.hero}>
           <div className={styles.heroGlow} aria-hidden="true" />
+          {/* Follow star */}
+          <button
+            className={[styles.followBtn, isFollowed ? styles.followBtnActive : ''].join(' ')}
+            onClick={(e) => toggleFollow(e)}
+            aria-label={isFollowed ? 'Unfollow team' : 'Follow team'}
+            title={isFollowed ? 'Unfollow' : 'Follow'}
+          >
+            <Icon name={isFollowed ? 'star-filled' : 'star'} size={18} />
+          </button>
           <div className={styles.heroInner}>
             {info.crest ? (
               <img src={info.crest} alt={info.name} className={styles.crest}
