@@ -260,7 +260,11 @@ interface LayoutProps {
 }
 
 function DesktopLayout({ locale, featured, competitions, loading, error, resolvedDate, aiBrief }: LayoutProps) {
-  const [showSearch, setShowSearch] = useState(false);
+  const [showSearch,    setShowSearch]    = useState(false);
+  const [activeFilter,  setActiveFilter]  = useState<'all' | 'live'>('all');
+
+  const LIVE_STATUSES = new Set(['LIVE', 'HT']);
+  const liveCount = competitions.flatMap(c => c.matches).filter(m => LIVE_STATUSES.has(m.status)).length;
 
   const today = new Date().toISOString().slice(0, 10);
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
@@ -282,13 +286,22 @@ function DesktopLayout({ locale, featured, competitions, loading, error, resolve
     pageTitle = `Matches · ${dateLabel}`;
   }
 
-  const display = competitions;
+  const display = activeFilter === 'live'
+    ? competitions
+        .map(c => ({ ...c, matches: c.matches.filter(m => LIVE_STATUSES.has(m.status)) }))
+        .filter(c => c.matches.length > 0)
+    : competitions;
   const pairs: [Competition, Competition | undefined][] = [];
   for (let i = 0; i < display.length; i += 2) pairs.push([display[i], display[i + 1]]);
 
   return (
     <div className={styles.desktop}>
-      <Sidebar locale={locale ?? 'en'} />
+      <Sidebar
+        locale={locale ?? 'en'}
+        liveCount={liveCount}
+        activeFilter={activeFilter}
+        onFilterChange={setActiveFilter}
+      />
 
       <main className={styles.main}>
         <div className={styles.mainInner}>
@@ -328,7 +341,7 @@ function DesktopLayout({ locale, featured, competitions, loading, error, resolve
             </div>
           ) : display.length === 0 ? (
             <div style={{ color: 'var(--text-faint)', fontSize: 13, padding: '32px 0', textAlign: 'center', fontFamily: 'JetBrains Mono, monospace' }}>
-              {error ? 'Could not load matches — retrying' : 'No matches scheduled'}
+              {error ? 'Could not load matches — retrying' : activeFilter === 'live' ? 'No live matches' : 'No matches scheduled'}
             </div>
           ) : (
             <div className={styles.matchGrid}>

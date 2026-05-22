@@ -336,6 +336,13 @@ async function fetchFixtures(
   } catch { return { recent: [], upcoming: [] }; }
 }
 
+/** Fetch just fixtures for a team — lighter than full fetchTeamDetail. */
+export async function fetchTeamFixtures(
+  teamId: string,
+): Promise<{ recent: TeamMatch[]; upcoming: TeamMatch[] }> {
+  return fetchFixtures(teamId);
+}
+
 // ── Public entry point ────────────────────────────────────────────────────────
 
 export async function fetchTeamDetail(teamId: string): Promise<TeamDetailData | null> {

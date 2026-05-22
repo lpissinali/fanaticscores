@@ -41,6 +41,7 @@ export default function MobileBottomNav({ locale, activeTab }: MobileBottomNavPr
                 t.id === 'search' ? () => setShowSearch(true) :
                 t.id === 'home'   ? () => navigate(`/${locale}/today`) :
                 t.id === 'comp'   ? () => navigate(`/${locale}/competitions`) :
+                t.id === 'follow' ? () => navigate(`/${locale}/following`) :
                 undefined
               }
               style={{

@@ -9,6 +9,7 @@ import TermsPage       from './pages/legal/TermsPage';
 import PrivacyPage     from './pages/legal/PrivacyPage';
 import CookiesPage     from './pages/legal/CookiesPage';
 import StudioPage      from './pages/studio/StudioPage';
+import FollowingPage   from './pages/following/FollowingPage';
 import CookieBanner    from './components/shared/CookieBanner/CookieBanner';
 import { useAnalytics }  from './lib/useAnalytics';
 
@@ -30,6 +31,7 @@ function App() {
           <Route path="terms"                element={<TermsPage       locale="en" />} />
           <Route path="privacy"              element={<PrivacyPage     locale="en" />} />
           <Route path="cookies"              element={<CookiesPage     locale="en" />} />
+          <Route path="following"             element={<FollowingPage   locale="en" />} />
 <Route path="studio"               element={<StudioPage      locale="en" />} />
           <Route path="studio/:matchId"      element={<StudioPage      locale="en" />} />
           <Route path=":date"                element={<HomePage        locale="en" />} />
