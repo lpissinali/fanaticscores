@@ -23,6 +23,11 @@
         "region": "us-central1"
       },
       {
+        "source": "/api/captionRewrite",
+        "function": "captionRewrite",
+        "region": "us-central1"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

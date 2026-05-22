@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import type { SupportedLocale } from '../../i18n';
+import { useSEO } from '../../lib/useSEO';
 import Sidebar from '../../components/layout/Sidebar/Sidebar';
 import RailPromo from '../../components/shared/RailPromo/RailPromo';
 import Footer from '../../components/layout/Footer/Footer';
@@ -96,6 +97,11 @@ const COMPETITIONS = [
 
 export default function CompetitionsPage({ locale }: CompetitionsPageProps) {
   const navigate = useNavigate();
+  useSEO({
+    title: 'Competitions',
+    description: 'Browse all football competitions on FanaticScores — Champions League, Premier League, La Liga, Serie A and more.',
+    canonical: `/${locale}/competitions`,
+  });
 
   return (
     <>

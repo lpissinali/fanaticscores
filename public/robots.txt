@@ -4,4 +4,4 @@ Allow: /
 # Internal API proxy — no public value
 Disallow: /api/
 
-Sitemap: https://fanaticstore.com/sitemap.xml
+Sitemap: https://fanaticscores.com/sitemap.xml

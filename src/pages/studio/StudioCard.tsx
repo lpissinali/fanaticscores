@@ -76,22 +76,16 @@ function statusLabel(status: string, minute?: string | number | null, kickoff?: 
   }
 }
 
-/** Orange FS badge — matches the brand mark in the reference screenshots */
+/** Brand mark — uses the real PNG assets; inverted=true selects the light variant (black F) */
 function FSLogo({ size = 26, inverted = false }: { size?: number; inverted?: boolean }) {
+  const src = inverted ? '/assets/logo-mark-light.png' : '/assets/logo-mark-dark.png';
   return (
-    <div style={{
-      width: size, height: size,
-      borderRadius: Math.round(size * 0.24),
-      background: inverted ? '#1a0d04' : '#fc8003',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      flexShrink: 0,
-    }}>
-      <span style={{
-        fontSize: Math.round(size * 0.52), fontWeight: 900, fontStyle: 'italic',
-        color: inverted ? '#fc8003' : '#fff', lineHeight: 1, letterSpacing: '-0.5px',
-        fontFamily: "'Inter', system-ui, sans-serif",
-      }}>FS</span>
-    </div>
+    <img
+      src={src}
+      alt="FanaticScores"
+      height={size}
+      style={{ height: size, width: 'auto', flexShrink: 0, display: 'block' }}
+    />
   );
 }
 
@@ -116,9 +110,8 @@ function TeamBadge({ color, initial, crest, size }: { color: string; initial: st
   );
 }
 
-const BRAND = 'fanaticscores';
 const MONO  = "'JetBrains Mono', monospace";
-const SANS  = "'Inter', system-ui, sans-serif";
+const SANS  = "'Archivo', 'Inter', system-ui, sans-serif";
 
 // ── 01 · MINIMAL — The Result ─────────────────────────────────────────────────
 
@@ -130,14 +123,14 @@ function MinimalCard({ m, cfg, p, w, h }: { m: CachedMatch; cfg: CardConfig; p: 
   const hasScore = home.score !== null && away.score !== null;
   const isLive   = status === 'LIVE';
 
-  const outerPad = isWide ? 20 : 28;
-  const innerPad = isWide ? '18px 22px' : isStory ? '22px 26px' : '26px 30px';
-  const badgeSz  = isWide ? 34 : isStory ? 40 : 46;
-  const nameSz   = isWide ? 15 : isStory ? 16 : 18;
-  const scoreSz  = isWide ? 38 : isStory ? 44 : 50;
-  const rowGap   = isWide ? 10 : 16;
-  const hdrMb    = isWide ? 14 : 24;
-  const divMy    = isWide ? 14 : 20;
+  const outerPad = isWide ? 20 : isStory ? 14 : 12;
+  const innerPad = isWide ? '18px 22px' : isStory ? '20px 22px' : '20px 24px';
+  const badgeSz  = isWide ? 34 : isStory ? 64 : 76;
+  const nameSz   = isWide ? 26 : isStory ? 18 : 30;
+  const scoreSz  = isWide ? 38 : isStory ? 76 : 96;
+  const rowGap   = isWide ? 10 : isStory ? 24 : 32;
+  const hdrMb    = isWide ? 14 : 16;
+  const divMy    = isWide ? 14 : 14;
 
   const compLine = competition.toUpperCase()
     + (m.compCode && m.compCode !== competition ? ` · ${m.compCode.toUpperCase()}` : '');
@@ -168,31 +161,61 @@ function MinimalCard({ m, cfg, p, w, h }: { m: CachedMatch; cfg: CardConfig; p: 
       }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: hdrMb }}>
-          <FSLogo size={isWide ? 22 : 26} inverted={p.logoInverted} />
-          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: p.faint, fontFamily: MONO, textTransform: 'uppercase' }}>
+          <FSLogo size={isWide ? 38 : isStory ? 26 : 46} inverted={p.logoInverted} />
+          <span style={{ fontSize: isWide ? 10 : isStory ? 10 : 13, fontWeight: 700, letterSpacing: '0.1em', color: p.faint, fontFamily: MONO, textTransform: 'uppercase' }}>
             {compLine}
           </span>
         </div>
 
-        {/* Team rows */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: rowGap, flex: 1 }}>
-          {([{ t: home }, { t: away }] as const).map(({ t }, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <TeamBadge color={t.color} initial={t.initial} crest={t.crest} size={badgeSz} />
-              <span style={{
-                fontSize: nameSz, fontWeight: 700, color: p.text,
-                flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
-              }}>{t.name}</span>
+        {/* Team section */}
+        {isStory ? (
+          /* Story: horizontal matchup — badges flanking score, names below */
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 18 }}>
+            {/* Badges + score */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <TeamBadge color={home.color} initial={home.initial} crest={home.crest} size={badgeSz} />
               <span style={{
                 fontSize: scoreSz, fontWeight: 900, fontFamily: MONO,
-                color: hasScore ? p.text : p.faint,
-                lineHeight: 1, flexShrink: 0, minWidth: scoreSz * 0.7, textAlign: 'right',
+                color: hasScore ? p.dim : p.faint,
+                lineHeight: 1, letterSpacing: '-3px', flexShrink: 0,
               }}>
-                {hasScore ? t.score : '–'}
+                {hasScore ? `${home.score}–${away.score}` : 'vs'}
               </span>
+              <TeamBadge color={away.color} initial={away.initial} crest={away.crest} size={badgeSz} />
             </div>
-          ))}
-        </div>
+            {/* Names */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+              <span style={{
+                fontSize: nameSz, fontWeight: 700, color: p.text,
+                lineHeight: 1.2, maxWidth: '44%',
+              }}>{home.name}</span>
+              <span style={{
+                fontSize: nameSz, fontWeight: 700, color: p.text,
+                lineHeight: 1.2, maxWidth: '44%', textAlign: 'right',
+              }}>{away.name}</span>
+            </div>
+          </div>
+        ) : (
+          /* Square / Wide: vertical rows centred */
+          <div style={{ display: 'flex', flexDirection: 'column', gap: rowGap, flex: 1, justifyContent: 'center' }}>
+            {([{ t: home }, { t: away }] as const).map(({ t }, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <TeamBadge color={t.color} initial={t.initial} crest={t.crest} size={badgeSz} />
+                <span style={{
+                  fontSize: nameSz, fontWeight: 700, color: p.text,
+                  flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
+                }}>{t.name}</span>
+                <span style={{
+                  fontSize: scoreSz, fontWeight: 900, fontFamily: MONO,
+                  color: hasScore ? p.dim : p.faint,
+                  lineHeight: 1, flexShrink: 0, minWidth: scoreSz * 0.7, textAlign: 'right',
+                }}>
+                  {hasScore ? t.score : '–'}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Divider */}
         <div style={{ height: 1, background: p.border, margin: `${divMy}px 0` }} />
@@ -201,34 +224,21 @@ function MinimalCard({ m, cfg, p, w, h }: { m: CachedMatch; cfg: CardConfig; p: 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
             <div style={{
-              fontSize: 9, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase',
+              fontSize: isWide ? 10 : isStory ? 10 : 13, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase',
               color: isLive ? '#ff3b3b' : p.accent, fontFamily: MONO, marginBottom: 4,
             }}>{statusText}</div>
             {match.venue && (
-              <div style={{ fontSize: 10, color: p.faint, fontFamily: MONO }}>{match.venue}</div>
+              <div style={{ fontSize: isWide ? 11 : isStory ? 11 : 13, color: p.faint, fontFamily: MONO }}>{match.venue}</div>
             )}
           </div>
           {match.kickoff && (
-            <div style={{ fontSize: 10, color: p.faint, fontFamily: MONO, textAlign: 'right' }}>
+            <div style={{ fontSize: isWide ? 11 : isStory ? 11 : 13, color: p.faint, fontFamily: MONO, textAlign: 'right' }}>
               {match.kickoff}
             </div>
           )}
         </div>
-
-        {cfg.caption && (
-          <div style={{
-            marginTop: 12, paddingTop: 10, borderTop: `1px solid ${p.border}`,
-            fontSize: 11, lineHeight: 1.45, color: p.dim, fontStyle: 'italic',
-          }}>{cfg.caption}</div>
-        )}
       </div>
 
-      {/* Watermark */}
-      <div style={{
-        position: 'absolute', bottom: 6, right: 10,
-        fontSize: 7, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
-        color: p.faint, fontFamily: MONO,
-      }}>{BRAND}</div>
     </div>
   );
 }
@@ -285,7 +295,7 @@ function MomentCard({ m, cfg, p, w, h }: { m: CachedMatch; cfg: CardConfig; p: P
         <FSLogo size={isWide ? 22 : 26} inverted={p.logoInverted} />
         <div style={{
           background: p.accent, borderRadius: 999, padding: '4px 11px',
-          fontSize: 9, fontWeight: 800, letterSpacing: '0.12em',
+          fontSize: 10, fontWeight: 800, letterSpacing: '0.12em',
           color: '#fff', fontFamily: MONO, textTransform: 'uppercase',
         }}>{chipLabel}</div>
       </div>
@@ -298,11 +308,15 @@ function MomentCard({ m, cfg, p, w, h }: { m: CachedMatch; cfg: CardConfig; p: P
       }}>{home.name}</div>
 
       {/* Editorial headline */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
         <p style={{
           margin: 0,
-          fontSize: headlineSz, fontWeight: 900, fontStyle: 'italic',
-          color: p.text, lineHeight: 1.1, letterSpacing: '-1px',
+          fontSize: headlineSz, fontWeight: 900,
+          color: p.text, lineHeight: 1.08, letterSpacing: '-0.5px',
+          display: '-webkit-box',
+          WebkitLineClamp: isWide ? 3 : 5,
+          WebkitBoxOrient: 'vertical' as const,
+          overflow: 'hidden',
         }}>
           {headline}{scoreStr ? <> <span style={{ color: p.accent }}>{scoreStr}.</span></> : ''}
         </p>
@@ -317,24 +331,21 @@ function MomentCard({ m, cfg, p, w, h }: { m: CachedMatch; cfg: CardConfig; p: P
         <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <TeamBadge color={home.color} initial={home.initial} crest={home.crest} size={20} />
-            <span style={{ fontSize: 10, fontWeight: 700, color: p.dim, fontFamily: MONO, letterSpacing: '0.06em' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: p.dim, fontFamily: MONO, letterSpacing: '0.06em' }}>
               {(home.short || home.initial).toUpperCase()}
             </span>
           </div>
           {hasScore && (
-            <span style={{ fontSize: 11, fontWeight: 900, color: p.text, fontFamily: MONO }}>
+            <span style={{ fontSize: 12, fontWeight: 900, color: p.text, fontFamily: MONO }}>
               {home.score}–{away.score}
             </span>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: p.dim, fontFamily: MONO, letterSpacing: '0.06em' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: p.dim, fontFamily: MONO, letterSpacing: '0.06em' }}>
               {(away.short || away.initial).toUpperCase()}
             </span>
             <TeamBadge color={away.color} initial={away.initial} crest={away.crest} size={20} />
           </div>
-        </div>
-        <div style={{ fontSize: 7, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: p.faint, fontFamily: MONO }}>
-          {BRAND}
         </div>
       </div>
     </div>
@@ -354,6 +365,8 @@ function StatCard({ m, cfg, p, w, h }: { m: CachedMatch; cfg: CardConfig; p: Pal
   const pad     = isWide ? 20 : 28;
   const badgeSz = isWide ? 34 : isStory ? 40 : 46;
   const scoreSz = isWide ? 36 : isStory ? 48 : 56;
+  const teamNameSz  = isWide ? 14 : isStory ? 10 : 14;
+  const snapLabelSz = isWide ? 13 : isStory ? 10 : 13;
 
   // Derived pseudo-stats (real stats would come from live event data)
   const hG = home.score ?? 0;
@@ -385,62 +398,63 @@ function StatCard({ m, cfg, p, w, h }: { m: CachedMatch; cfg: CardConfig; p: Pal
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isWide ? 12 : 18 }}>
         <FSLogo size={isWide ? 22 : 26} inverted={p.logoInverted} />
-        <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: p.faint, fontFamily: MONO }}>
+        <span style={{ fontSize: snapLabelSz, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: p.faint, fontFamily: MONO }}>
           {snapshotLabel}
         </span>
       </div>
 
-      {/* Teams + score row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isWide ? 12 : 18 }}>
-        {/* Home */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-          <TeamBadge color={home.color} initial={home.initial} crest={home.crest} size={badgeSz} />
-          <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.08em', color: p.faint, fontFamily: MONO }}>
-            {(home.short || home.initial).toUpperCase()}
-          </span>
-        </div>
+      {/* Teams + divider + stats — vertically centered */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
 
-        {/* Score */}
-        <span style={{
-          fontSize: scoreSz, fontWeight: 900, fontFamily: MONO,
-          color: hasScore ? p.text : p.faint,
-          letterSpacing: '-2px', lineHeight: 1,
-        }}>
-          {hasScore ? `${home.score}–${away.score}` : 'vs'}
-        </span>
-
-        {/* Away */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-          <TeamBadge color={away.color} initial={away.initial} crest={away.crest} size={badgeSz} />
-          <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.08em', color: p.faint, fontFamily: MONO }}>
-            {(away.short || away.initial).toUpperCase()}
-          </span>
-        </div>
-      </div>
-
-      {/* Divider */}
-      <div style={{ height: 1, background: p.border, marginBottom: isWide ? 10 : 16 }} />
-
-      {/* Stat bars */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: isWide ? 8 : 12, flex: 1 }}>
-        {rows.map(({ label, hv, av, pct }) => (
-          <div key={label}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-              <span style={{ fontSize: isWide ? 12 : 14, fontWeight: 800, color: p.text, fontFamily: MONO, minWidth: 36 }}>{hv}</span>
-              <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color: p.faint, fontFamily: MONO }}>{label}</span>
-              <span style={{ fontSize: isWide ? 12 : 14, fontWeight: 800, color: p.text, fontFamily: MONO, minWidth: 36, textAlign: 'right' }}>{av}</span>
-            </div>
-            <div style={{ height: 3, borderRadius: 999, background: p.border, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${pct}%`, background: p.accent, borderRadius: 999 }} />
-            </div>
+        {/* Teams + score row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isWide ? 12 : 18 }}>
+          {/* Home */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+            <TeamBadge color={home.color} initial={home.initial} crest={home.crest} size={badgeSz} />
+            <span style={{ fontSize: teamNameSz, fontWeight: 800, letterSpacing: '0.08em', color: p.faint, fontFamily: MONO }}>
+              {(home.short || home.initial).toUpperCase()}
+            </span>
           </div>
-        ))}
+
+          {/* Score */}
+          <span style={{
+            fontSize: scoreSz, fontWeight: 900, fontFamily: MONO,
+            color: hasScore ? p.text : p.faint,
+            letterSpacing: '-2px', lineHeight: 1,
+          }}>
+            {hasScore ? `${home.score}–${away.score}` : 'vs'}
+          </span>
+
+          {/* Away */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+            <TeamBadge color={away.color} initial={away.initial} crest={away.crest} size={badgeSz} />
+            <span style={{ fontSize: teamNameSz, fontWeight: 800, letterSpacing: '0.08em', color: p.faint, fontFamily: MONO }}>
+              {(away.short || away.initial).toUpperCase()}
+            </span>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div style={{ height: 1, background: p.border, marginBottom: isWide ? 10 : 16 }} />
+
+        {/* Stat bars */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: isWide ? 8 : 12 }}>
+          {rows.map(({ label, hv, av, pct }) => (
+            <div key={label}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                <span style={{ fontSize: isWide ? 13 : 15, fontWeight: 800, color: p.text, fontFamily: MONO, minWidth: 36 }}>{hv}</span>
+                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color: p.faint, fontFamily: MONO }}>{label}</span>
+                <span style={{ fontSize: isWide ? 13 : 15, fontWeight: 800, color: p.text, fontFamily: MONO, minWidth: 36, textAlign: 'right' }}>{av}</span>
+              </div>
+              <div style={{ height: 3, borderRadius: 999, background: p.border, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${pct}%`, background: p.accent, borderRadius: 999 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+
       </div>
 
-      {/* Watermark */}
-      <div style={{ position: 'absolute', bottom: 6, right: 10, fontSize: 7, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: p.faint, fontFamily: MONO }}>
-        {BRAND}
-      </div>
     </div>
   );
 }
@@ -457,99 +471,105 @@ function TickerCard({ m, cfg, p, w, h }: { m: CachedMatch; cfg: CardConfig; p: P
 
   const pad = isWide ? 24 : 32;
 
-  // Ticker always uses a light/white bg — it's the "newspaper" card
-  const tkBg     = p.logoInverted ? p.bg    : '#f6f6f8';
-  const tkText   = p.logoInverted ? p.text  : '#0a0a0c';
-
-  const tkFaint  = p.logoInverted ? p.faint : 'rgba(0,0,0,0.3)';
-  const tkBorder = p.logoInverted ? p.border: 'rgba(0,0,0,0.09)';
-  const accent   = p.accent;
-
   const statusText = isLive ? `Live · ${minute}'`
     : status === 'FT' ? 'Full Time'
     : status === 'HT' ? 'Half Time'
     : kickoff ?? 'Upcoming';
 
-  const scoreStr  = hasScore ? `${home.score}–${away.score}` : '';
-  const shortH    = (home.short || home.name).toUpperCase();
-  const shortA    = (away.short || away.name).toUpperCase();
+  const scoreStr = hasScore ? `${home.score}–${away.score}` : '';
+  const shortH   = (home.short || home.name).toUpperCase();
+  const shortA   = (away.short || away.name).toUpperCase();
 
-  // Auto headline
+  // Auto headline — caption overrides it entirely
   const autoHl = hasScore
     ? `${shortH} ${home.score === away.score ? 'HELD' : home.score! > away.score! ? 'BEAT' : 'LOSE TO'} ${scoreStr} ${shortA}`
     : `${shortH} VS ${shortA}`;
 
   const headline = cfg.caption ? cfg.caption.toUpperCase() : autoHl;
-  const headlineSz = isWide ? 22 : isStory ? 28 : 32;
 
-  // Split headline around the score to colour it orange
+  const headlineSz = isWide ? 22 : isStory ? 28 : 34;
+
+  // Split headline around the score to colour it
   const parts = scoreStr ? headline.split(scoreStr) : [headline];
+
+  // Mini stats for bottom strip
+  const hG  = home.score ?? 0;
+  const aG  = away.score ?? 0;
+  const tot = hG + aG;
+  const hPct = tot > 0 ? Math.round((hG / tot) * 100) : 50;
+  const miniStats = [
+    { label: 'POS',   value: `${hPct}-${100 - hPct}` },
+    { label: 'xG',    value: `${(hG * 0.85 + 0.4).toFixed(1)}-${(aG * 0.85 + 0.4).toFixed(1)}` },
+    { label: 'SHOTS', value: `${hG * 4 + 5}-${aG * 4 + 4}` },
+  ];
 
   return (
     <div style={{
-      width: w, height: h, background: tkBg,
+      width: w, height: h, background: p.bg,
       position: 'relative', overflow: 'hidden',
       display: 'flex', flexDirection: 'column',
       fontFamily: SANS, boxSizing: 'border-box', padding: pad,
     }}>
-      {/* Orange top bar */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: accent }} />
+      {/* Accent top bar */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: p.accent }} />
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isWide ? 10 : 16 }}>
-        <FSLogo size={isWide ? 22 : 26} inverted={!p.logoInverted} />
-        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: tkFaint, fontFamily: MONO }}>
+      {/* Header: logo left, competition right */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        paddingTop: 6, marginBottom: isWide ? 10 : 16,
+      }}>
+        <FSLogo size={isWide ? 22 : 28} inverted={p.logoInverted} />
+        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: p.faint, fontFamily: MONO }}>
           {competition.toUpperCase()}
         </span>
       </div>
 
-      {/* Status pill */}
+      {/* Divider */}
+      <div style={{ height: 1, background: p.border, marginBottom: isWide ? 10 : 16 }} />
+
+      {/* Status — centred, small caps */}
       <div style={{
-        fontSize: 9, fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase',
-        color: isLive ? '#ff3b3b' : accent, fontFamily: MONO,
-        marginBottom: isWide ? 10 : 14,
+        fontSize: 10, fontWeight: 800, letterSpacing: '0.2em', textTransform: 'uppercase',
+        color: isLive ? '#ff3b3b' : p.faint, fontFamily: MONO,
+        textAlign: 'center', marginBottom: isWide ? 10 : 14,
       }}>{statusText}</div>
 
-      {/* Headline (centre + grow) */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+      {/* Headline + optional body — vertically centred */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden' }}>
         <p style={{
-          margin: 0, fontSize: headlineSz, fontWeight: 900,
-          color: tkText, lineHeight: 1.08, letterSpacing: '-1.5px',
+          margin: 0,
+          fontSize: headlineSz, fontWeight: 900, fontStyle: 'italic',
+          color: p.text, lineHeight: 1.05, letterSpacing: '-2px',
+          display: '-webkit-box',
+          WebkitLineClamp: isWide ? 3 : isStory ? 4 : 4,
+          WebkitBoxOrient: 'vertical' as const,
+          overflow: 'hidden',
         }}>
           {parts.length > 1 ? (
             <>
               {parts[0]}
-              <span style={{ color: accent }}>{scoreStr}</span>
+              <span style={{ color: p.accent }}>{scoreStr}</span>
               {parts.slice(1).join(scoreStr)}
             </>
           ) : headline}
         </p>
       </div>
 
-      {/* Bottom teams + score strip */}
+      {/* Bottom stats strip */}
       <div style={{
         paddingTop: isWide ? 10 : 14,
-        borderTop: `1px solid ${tkBorder}`,
+        borderTop: `1px solid ${p.border}`,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
-        <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <TeamBadge color={home.color} initial={home.initial} crest={home.crest} size={20} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: tkText }}>{home.short || home.initial}</span>
-          </div>
-          {hasScore && (
-            <span style={{ fontSize: isWide ? 14 : 18, fontWeight: 900, fontFamily: MONO, color: tkText, letterSpacing: '-0.5px' }}>
-              {home.score}–{away.score}
-            </span>
-          )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: tkText }}>{away.short || away.initial}</span>
-            <TeamBadge color={away.color} initial={away.initial} crest={away.crest} size={20} />
-          </div>
-        </div>
-        <div style={{ fontSize: 7, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: tkFaint, fontFamily: MONO }}>
-          {BRAND}
-        </div>
+        {miniStats.map(({ label, value }) => (
+          <span key={label} style={{
+            fontSize: isWide ? 10 : 11, fontWeight: 700,
+            color: p.faint, fontFamily: MONO,
+            letterSpacing: '0.05em',
+          }}>
+            {label} {value}
+          </span>
+        ))}
       </div>
     </div>
   );

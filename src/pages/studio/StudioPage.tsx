@@ -300,7 +300,8 @@ export default function StudioPage({ locale }: StudioPageProps) {
   const [newTag, setNewTag] = useState('');
   const [addingTag, setAddingTag] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [scheduleOn, setScheduleOn] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(false);
   const [mobileTab, setMobileTab] = useState<'customize' | 'preview' | 'share'>('preview');
 
   const previewRef    = useRef<HTMLDivElement>(null);
@@ -364,7 +365,7 @@ export default function StudioPage({ locale }: StudioPageProps) {
 
   const handleShare = useCallback(async () => {
     if (!selectedMatch) return;
-    const url = `https://fanaticstore.com/${locale}/match/${selectedMatch.match.id}`;
+    const url = `https://fanaticscores.com/${locale}/match/${selectedMatch.match.id}`;
     const title = `${selectedMatch.match.home.name} ${selectedMatch.match.home.score ?? ''} – ${selectedMatch.match.away.score ?? ''} ${selectedMatch.match.away.name}`;
     const text = config.caption || title;
     if (navigator.share) {
@@ -378,7 +379,7 @@ export default function StudioPage({ locale }: StudioPageProps) {
 
   const handleCopyLink = useCallback(async () => {
     if (!selectedMatch) return;
-    const url = `https://fanaticstore.com/${locale}/match/${selectedMatch.match.id}`;
+    const url = `https://fanaticscores.com/${locale}/match/${selectedMatch.match.id}`;
     await navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -418,7 +419,7 @@ export default function StudioPage({ locale }: StudioPageProps) {
         <div className={styles.templateGrid}>
           {TEMPLATES.map((t) => (
             <CardThumb key={t} template={t} selected={config.template === t}
-              onClick={() => setConfig(c => ({ ...c, template: t }))} />
+              onClick={() => setConfig(c => ({ ...c, template: t, caption: t === 'minimal' || t === 'stat' ? '' : c.caption }))} />
           ))}
         </div>
       </section>
@@ -481,7 +482,9 @@ export default function StudioPage({ locale }: StudioPageProps) {
       {selectedMatch ? (
         <div className={styles.previewWrap} style={{ width: maxPreviewW, height: scaledH }}>
           <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: cardW, height: cardH }}>
-            <StudioCard match={selectedMatch} config={config} />
+            <a href={`https://fanaticscores.com/${locale}/match/${selectedMatch.match.id}`} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textDecoration: 'none' }}>
+              <StudioCard match={selectedMatch} config={config} />
+            </a>
           </div>
         </div>
       ) : (
@@ -503,6 +506,16 @@ export default function StudioPage({ locale }: StudioPageProps) {
       {/* 04 Caption */}
       <section className={styles.section}>
         <div className={styles.sectionLabel}><span className={styles.sectionNum}>04</span> CAPTION</div>
+        {config.template === 'minimal' || config.template === 'stat' ? (
+          <div style={{
+            padding: '12px 14px', borderRadius: 8,
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            fontSize: 12, color: 'var(--text-faint)',
+            fontFamily: "'JetBrains Mono', monospace",
+          }}>
+            Not available for the {config.template === 'minimal' ? 'Minimal' : 'Stat'} card
+          </div>
+        ) : (
         <textarea
           className={styles.captionArea}
           placeholder={selectedMatch
@@ -513,24 +526,54 @@ export default function StudioPage({ locale }: StudioPageProps) {
           maxLength={280}
           disabled={!selectedMatch}
         />
+        )}
+        {config.template !== 'minimal' && config.template !== 'stat' && (
         <div className={styles.captionMeta}>
           <button
             className={styles.aiRewriteBtn}
-            disabled={!selectedMatch}
-            onClick={() => {
-              if (!selectedMatch) return;
-              const m = selectedMatch.match;
-              const hasScore = m.home.score !== null && m.away.score !== null;
-              const caption = hasScore
-                ? `${m.home.name} ${m.home.score}–${m.away.score} ${m.away.name} · ${selectedMatch.competition}`
-                : `${m.home.name} vs ${m.away.name} · ${selectedMatch.competition} · ${m.kickoff ?? 'upcoming'}`;
-              setConfig(c => ({ ...c, caption }));
+            disabled={!selectedMatch || aiLoading}
+            onClick={async () => {
+              if (!selectedMatch || aiLoading) return;
+              setAiLoading(true);
+              setAiError(false);
+              try {
+                const m = selectedMatch.match;
+                const res = await fetch('/api/captionRewrite', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    home:        m.home.name,
+                    away:        m.away.name,
+                    homeScore:   m.home.score,
+                    awayScore:   m.away.score,
+                    competition: selectedMatch.competition,
+                    status:      m.status,
+                    minute:      m.minute ?? null,
+                    template:    config.template,
+                    hashtags,
+                  }),
+                });
+                if (!res.ok) throw new Error(`${res.status}`);
+                const data = await res.json() as { caption?: string; error?: string };
+                if (data.caption) {
+                  setConfig(c => ({ ...c, caption: data.caption! }));
+                } else {
+                  throw new Error('no caption');
+                }
+              } catch {
+                setAiError(true);
+                setTimeout(() => setAiError(false), 3000);
+              } finally {
+                setAiLoading(false);
+              }
             }}
           >
-            <Icon name="sparkles" size={11} /> Rewrite with AI
+            <Icon name="sparkles" size={11} />
+            {' '}{aiLoading ? 'Writing…' : aiError ? 'Failed — try again' : 'Rewrite with AI'}
           </button>
           <span className={styles.captionCount}>{config.caption.length} / 280</span>
         </div>
+        )}
 
         {/* Hashtags */}
         {hashtags.length > 0 && (
@@ -575,18 +618,14 @@ export default function StudioPage({ locale }: StudioPageProps) {
           ))}
         </div>
 
-        {/* Schedule */}
-        <div className={styles.scheduleRow}>
+        {/* Schedule — coming soon */}
+        <div className={styles.scheduleRow} style={{ opacity: 0.4, pointerEvents: 'none' }}>
           <div className={styles.scheduleIcon}><Icon name="calendar" size={14} /></div>
           <div className={styles.scheduleText}>
-            <div className={styles.scheduleTitle}>Schedule</div>
+            <div className={styles.scheduleTitle}>Schedule <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', fontFamily: "'JetBrains Mono', monospace", marginLeft: 6 }}>COMING SOON</span></div>
             <div className={styles.scheduleSub}>Post at full-time automatically</div>
           </div>
-          <button
-            className={[styles.toggle, scheduleOn ? styles.toggleOn : ''].join(' ')}
-            onClick={() => setScheduleOn(s => !s)}
-            disabled={!selectedMatch}
-          >
+          <button className={styles.toggle} disabled>
             <span className={styles.toggleThumb} />
           </button>
         </div>
@@ -738,7 +777,9 @@ export default function StudioPage({ locale }: StudioPageProps) {
                 {selectedMatch ? (
                   <div className={styles.previewWrap} style={{ width: mobPreviewW, height: cardH * mobScale }}>
                     <div style={{ transform: `scale(${mobScale})`, transformOrigin: 'top left', width: cardW, height: cardH }}>
-                      <StudioCard match={selectedMatch} config={config} />
+                      <a href={`https://fanaticscores.com/${locale}/match/${selectedMatch.match.id}`} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textDecoration: 'none' }}>
+                        <StudioCard match={selectedMatch} config={config} />
+                      </a>
                     </div>
                   </div>
                 ) : (

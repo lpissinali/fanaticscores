@@ -176,7 +176,7 @@
 
 .body {
   display: grid;
-  grid-template-columns: 204px 1fr 268px;
+  grid-template-columns: 280px 1fr 280px;
   overflow: hidden;
   min-height: 0;
 }

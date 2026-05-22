@@ -2,7 +2,9 @@
   "name": "fanaticscores-functions",
   "version": "1.0.0",
   "private": true,
-  "engines": { "node": "22" },
+  "engines": {
+    "node": "22"
+  },
   "main": "lib/index.js",
   "scripts": {
     "build": "tsc"
@@ -10,7 +12,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.0",
     "firebase-admin": "latest",
-    "firebase-functions": "latest"
+    "firebase-functions": "^7.2.5"
   },
   "devDependencies": {
     "typescript": "^5.4.0"

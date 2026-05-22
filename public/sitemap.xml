@@ -3,73 +3,182 @@
 
   <!-- ── Home ─────────────────────────────────────────────────── -->
   <url>
-    <loc>https://fanaticstore.com/en/today</loc>
+    <loc>https://fanaticscores.com/en/today</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
 
+  <!-- ── Following ────────────────────────────────────────────── -->
+  <url>
+    <loc>https://fanaticscores.com/en/following</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- ── Studio ───────────────────────────────────────────────── -->
+  <url>
+    <loc>https://fanaticscores.com/en/studio</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
   <!-- ── Competitions list ────────────────────────────────────── -->
   <url>
-    <loc>https://fanaticstore.com/en/competitions</loc>
+    <loc>https://fanaticscores.com/en/competitions</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- ── International tournaments ───────────────────────────── -->
+  <url>
+    <loc>https://fanaticscores.com/en/competition/WC</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://fanaticscores.com/en/competition/CWC</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://fanaticscores.com/en/competition/EURO</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://fanaticscores.com/en/competition/CA</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://fanaticscores.com/en/competition/AFCN</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://fanaticscores.com/en/competition/UNL</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- ── UEFA club competitions ───────────────────────────────── -->
+  <url>
+    <loc>https://fanaticscores.com/en/competition/CL</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://fanaticscores.com/en/competition/EL</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://fanaticscores.com/en/competition/UECL</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
 
-  <!-- ── Competition pages ────────────────────────────────────── -->
+  <!-- ── South American club competitions ─────────────────────── -->
   <url>
-    <loc>https://fanaticstore.com/en/competition/CL</loc>
+    <loc>https://fanaticscores.com/en/competition/LIBT</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://fanaticstore.com/en/competition/PL</loc>
+    <loc>https://fanaticscores.com/en/competition/CSUD</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- ── Top 5 European leagues ───────────────────────────────── -->
+  <url>
+    <loc>https://fanaticscores.com/en/competition/PL</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://fanaticscores.com/en/competition/PD</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://fanaticscores.com/en/competition/SA</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://fanaticstore.com/en/competition/PD</loc>
+    <loc>https://fanaticscores.com/en/competition/BL1</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://fanaticstore.com/en/competition/SA</loc>
+    <loc>https://fanaticscores.com/en/competition/FL1</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
+
+  <!-- ── Other European leagues ───────────────────────────────── -->
   <url>
-    <loc>https://fanaticstore.com/en/competition/BL1</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://fanaticstore.com/en/competition/FL1</loc>
+    <loc>https://fanaticscores.com/en/competition/DED</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://fanaticstore.com/en/competition/BSA</loc>
+    <loc>https://fanaticscores.com/en/competition/PPL</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://fanaticscores.com/en/competition/SPL</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://fanaticstore.com/en/competition/PPL</loc>
+    <loc>https://fanaticscores.com/en/competition/JPL</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://fanaticscores.com/en/competition/TSL</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- ── Americas leagues ─────────────────────────────────────── -->
+  <url>
+    <loc>https://fanaticscores.com/en/competition/BSA</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://fanaticscores.com/en/competition/ARG</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://fanaticscores.com/en/competition/MX</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://fanaticscores.com/en/competition/MLS</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
 
   <!-- ── Legal ────────────────────────────────────────────────── -->
   <url>
-    <loc>https://fanaticstore.com/en/terms</loc>
+    <loc>https://fanaticscores.com/en/terms</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://fanaticstore.com/en/privacy</loc>
+    <loc>https://fanaticscores.com/en/privacy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://fanaticstore.com/en/cookies</loc>
+    <loc>https://fanaticscores.com/en/cookies</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
