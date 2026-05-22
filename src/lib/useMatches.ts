@@ -203,7 +203,9 @@ export function useMatches(date?: string): MatchesState {
       unsubRef.current = onSnapshot(ref, (snap) => {
         if (cancelledRef.current) return;
         if (!snap.exists()) {
-          setState(prev => ({ ...prev, loading: true }));
+          // Clear stale match rows and featured card so the UI doesn't show
+          // outdated LIVE data while the refetch is in progress.
+          setState(prev => ({ ...prev, competitions: [], featured: null, loading: true }));
           // Doc missing — kick off an on-demand fetch (once) so the scheduler
           // doesn't have to run before today's matches appear.
           if (!fetchTriggered) {

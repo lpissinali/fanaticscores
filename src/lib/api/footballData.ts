@@ -145,9 +145,19 @@ function mapTeam(af: AFTeam, score: number | null): TeamInfo {
   };
 }
 
+// Maximum realistic match duration (90 + HT + ET + penalties) with safety margin.
+const STALE_LIVE_MS = 3.5 * 3_600_000;
+
 function mapFixtureToMatch(f: AFFixture): Match {
-  const status  = mapStatus(f.fixture.status.short);
+  let status = mapStatus(f.fixture.status.short);
   const elapsed = f.fixture.status.elapsed;
+
+  // Stale-LIVE guard: if kickoff + 3.5 h has passed, the match must be over.
+  if ((status === 'LIVE' || status === 'HT') &&
+      Date.now() - new Date(f.fixture.date).getTime() > STALE_LIVE_MS) {
+    status = 'FT';
+  }
+
   const minute: string | number | null =
     (elapsed != null && (status === 'LIVE' || status === 'HT')) ? elapsed : null;
   return {
@@ -180,11 +190,18 @@ function pickFeatured(whitelisted: AFFixture[]): FeaturedMatch | null {
   const LIVE_CODES  = new Set(['1H', '2H', 'ET', 'BT', 'P', 'HT']);
   const SCHED_CODES = new Set(['NS', 'TBD']);
   const FIN_CODES   = new Set(['FT', 'AET', 'PEN']);
+  const now = Date.now();
+
+  // A fixture is effectively live only if it hasn't exceeded the stale threshold.
+  const isEffectivelyLive = (f: AFFixture) =>
+    LIVE_CODES.has(f.fixture.status.short) &&
+    now - new Date(f.fixture.date).getTime() <= STALE_LIVE_MS;
 
   const tryGroups = [
-    whitelisted.filter(f => LIVE_CODES.has(f.fixture.status.short)),
+    whitelisted.filter(isEffectivelyLive),
     whitelisted.filter(f => SCHED_CODES.has(f.fixture.status.short)),
-    whitelisted.filter(f => FIN_CODES.has(f.fixture.status.short)),
+    whitelisted.filter(f => FIN_CODES.has(f.fixture.status.short) ||
+      (LIVE_CODES.has(f.fixture.status.short) && !isEffectivelyLive(f))),
   ];
 
   for (const group of tryGroups) {

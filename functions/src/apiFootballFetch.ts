@@ -99,6 +99,7 @@ export interface MatchdayDoc {
   nextFetchAfter:     number;
   aiBrief:            string | null;
   aiBriefGeneratedAt: number;
+  aiBriefStateHash?:  string;   // hash of live/FT state — skips API call when unchanged
 }
 
 export interface CompetitionData {
@@ -154,6 +155,39 @@ function mapStatus(s: string): string {
   }
 }
 
+// Maximum realistic match duration: 90 min + 15 HT + 30 ET + 15 ET-HT + 20 penalties ≈ 170 min.
+// We use 210 min (3.5 h) as a very conservative safety margin.
+const STALE_LIVE_MS = 3.5 * 3_600_000;
+
+/**
+ * Map a raw api-football fixture to MatchData, applying a stale-LIVE guard.
+ * If the fixture is still marked LIVE/HT but kickoff + STALE_LIVE_MS has passed,
+ * we force the status to FT so stale data never gets written to Firestore.
+ */
+function mapFixtureToDoc(f: AFFixture, now: number): MatchData {
+  let status = mapStatus(f.fixture.status.short);
+  const kickoffMs = new Date(f.fixture.date).getTime();
+
+  // Stale-LIVE guard: override to FT if the match should be long finished.
+  if ((status === 'LIVE' || status === 'HT') && now - kickoffMs > STALE_LIVE_MS) {
+    console.warn(`[apiFootballFetch] stale LIVE override for fixture ${f.fixture.id} (kickoff ${f.fixture.date})`);
+    status = 'FT';
+  }
+
+  const elapsed = f.fixture.status.elapsed;
+  const minute: string | number | null =
+    (elapsed != null && (status === 'LIVE' || status === 'HT')) ? elapsed : null;
+
+  return {
+    id:      String(f.fixture.id),
+    status,
+    minute,
+    kickoff: status === 'SCHEDULED' ? formatKickoff(f.fixture.date) : undefined,
+    home:    mapTeam(f.teams.home, f.goals.home),
+    away:    mapTeam(f.teams.away, f.goals.away),
+  };
+}
+
 function formatKickoff(isoDate: string): string {
   return new Date(isoDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
@@ -203,7 +237,7 @@ export async function fetchMatchday(date: string, apiKey: string): Promise<Match
   let fixtures: AFFixture[] = [];
 
   try {
-    const res = await fetch(`${AF_BASE}/fixtures?date=${date}`, {
+    const res = await fetch(`${AF_BASE}/fixtures?date=${date}&timezone=UTC`, {
       headers: { 'x-apisports-key': apiKey },
     });
     if (res.status === 429 || !res.ok) {
@@ -246,53 +280,37 @@ export async function fetchMatchday(date: string, apiKey: string): Promise<Match
       short:   leagueDef.short,
       flag:    leagueDef.flag,
       stage:   parseRound(group[0].league.round),
-      matches: group.map(f => {
-        const status  = mapStatus(f.fixture.status.short);
-        const elapsed = f.fixture.status.elapsed;
-        const minute: string | number | null =
-          (elapsed != null && (status === 'LIVE' || status === 'HT')) ? elapsed : null;
-        return {
-          id:      String(f.fixture.id),
-          status,
-          minute,
-          kickoff: status === 'SCHEDULED' ? formatKickoff(f.fixture.date) : undefined,
-          home:    mapTeam(f.teams.home, f.goals.home),
-          away:    mapTeam(f.teams.away, f.goals.away),
-        };
-      }),
+      matches: group.map(f => mapFixtureToDoc(f, now)),
     });
   }
 
-  const LIVE_CODES = new Set(['1H', '2H', 'ET', 'BT', 'P', 'HT']);
-  const hasLive = fixtures.some(f => ALLOWED_IDS.has(f.league.id) && LIVE_CODES.has(f.fixture.status.short));
-
-  // Pick the highest-priority featured match
-  let featured: MatchData | null = null;
   const whitelisted = fixtures.filter(f => ALLOWED_IDS.has(f.league.id));
 
-  const tryGroups = [
-    whitelisted.filter(f => LIVE_CODES.has(f.fixture.status.short)),
-    whitelisted.filter(f => f.fixture.status.short === 'NS' || f.fixture.status.short === 'TBD'),
-    whitelisted.filter(f => ['FT', 'AET', 'PEN'].includes(f.fixture.status.short)),
-  ];
+  // A fixture is truly live only if it hasn't exceeded the stale threshold.
+  const LIVE_SHORT = ['1H', '2H', 'ET', 'BT', 'P', 'HT'];
+  const liveFx  = whitelisted.filter(f => LIVE_SHORT.includes(f.fixture.status.short) && now - new Date(f.fixture.date).getTime() <= STALE_LIVE_MS);
+  const schedFx = whitelisted.filter(f => f.fixture.status.short === 'NS' || f.fixture.status.short === 'TBD');
+  const finFx   = whitelisted.filter(f => {
+    if (['FT', 'AET', 'PEN'].includes(f.fixture.status.short)) return true;
+    // Stale LIVE/HT counts as finished
+    if (!LIVE_SHORT.includes(f.fixture.status.short)) return false;
+    return now - new Date(f.fixture.date).getTime() > STALE_LIVE_MS;
+  });
+
+  const hasLive = liveFx.length > 0;
+
+  // Pick the highest-priority featured match.
+  let featured: MatchData | null = null;
+  const tryGroups = [liveFx, schedFx, finFx];
 
   for (const group of tryGroups) {
     if (group.length === 0) continue;
     const best = group.reduce((b, m) =>
       (TIER[m.league.id] ?? 0) >= (TIER[b.league.id] ?? 0) ? m : b
     );
-    const status  = mapStatus(best.fixture.status.short);
-    const elapsed = best.fixture.status.elapsed;
-    const minute: string | number | null =
-      (elapsed != null && (status === 'LIVE' || status === 'HT')) ? elapsed : null;
     featured = {
-      id:          String(best.fixture.id),
-      status,
-      minute,
-      kickoff:     status === 'SCHEDULED' ? formatKickoff(best.fixture.date) : undefined,
+      ...mapFixtureToDoc(best, now),
       competition: LEAGUE_BY_ID.get(best.league.id)?.name ?? best.league.name,
-      home:        mapTeam(best.teams.home, best.goals.home),
-      away:        mapTeam(best.teams.away, best.goals.away),
     };
     break;
   }

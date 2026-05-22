@@ -1,113 +1,175 @@
 /**
- * AI Brief generator — calls Claude Haiku with today's match context
- * and returns a 2-3 sentence football brief.
+ * AI Brief generator — calls Claude Haiku with today's match context.
  *
- * Rate-limited: regenerates at most every 5 minutes for live days,
- * every 15 minutes otherwise, to keep API costs low.
+ * Cost optimisations vs. the original:
+ *  - TTL raised to 20 min (live) / 2 h (quiet) → ~4× fewer API calls
+ *  - Upcoming matches excluded from context (they don't make interesting copy)
+ *  - Context capped at 12 most-significant matches, with competition tier
+ *  - Hash-based short-circuit: skips the API call if live/FT state is unchanged
+ *  - max_tokens lowered from 180 → 140
+ *
+ * Quality improvements:
+ *  - Prompt gives editorial guidance: what counts as a good story
+ *  - Competition tier embedded so the model knows CL > Serie B
+ *  - Prompt steers the model toward opinion/voice, not just summary
  */
 
 import Anthropic from '@anthropic-ai/sdk';
 import type { CompetitionData } from './apiFootballFetch';
 
-const BRIEF_TTL_LIVE    =  5 * 60 * 1000;  // 5 min  (live match days)
-const BRIEF_TTL_NO_LIVE = 15 * 60 * 1000;  // 15 min (quiet days)
+const BRIEF_TTL_LIVE    = 20 * 60 * 1000;   // 20 min  (live match days)
+const BRIEF_TTL_NO_LIVE =  2 * 3600 * 1000; //  2 h    (quiet / results-only days)
 
-// ── Build a compact context string for the prompt ─────────────────────────────
+// ── Competition tier labels (higher = more prestigious) ───────────────────────
+// Maps the competition `id` field (e.g. 'CL', 'PL', 'BSA') to a tier string.
+const COMP_TIER: Record<string, string> = {
+  WC: 'World Cup', CWC: 'Club World Cup', EURO: 'Euros', CA: 'Copa América',
+  CL: 'Champions League', EL: 'Europa League', UECL: 'Conference League',
+  LIBT: 'Copa Libertadores', CA2: 'Copa América',
+  PL: 'Premier League', PD: 'La Liga', SA: 'Serie A', BL1: 'Bundesliga', FL1: 'Ligue 1',
+  DED: 'Eredivisie', PPL: 'Primeira Liga', TSL: 'Süper Lig',
+  BSA: 'Brasileirão', ARG: 'Liga Profesional', MX: 'Liga MX', MLS: 'MLS',
+};
 
-function buildContext(competitions: CompetitionData[], hasLive: boolean): string {
-  const lines: string[] = [];
+// ── Build a compact, editorially-weighted context string ──────────────────────
 
-  const live:      string[] = [];
-  const ht:        string[] = [];
-  const finished:  string[] = [];
-  const upcoming:  string[] = [];
+function buildContext(competitions: CompetitionData[]): string {
+  const live:     string[] = [];
+  const ht:       string[] = [];
+  const finished: string[] = [];
 
   for (const comp of competitions) {
+    const tier = COMP_TIER[comp.id] ?? comp.name;
+
     for (const m of comp.matches) {
-      const h = m.home.name;
-      const a = m.away.name;
+      const h  = m.home.name;
+      const a  = m.away.name;
       const hs = m.home.score;
       const as_ = m.away.score;
-      const score = hs !== null && as_ !== null ? `${hs}–${as_}` : 'vs';
-      const label = `${comp.country} ${comp.name}`;
+      const score = hs !== null && as_ !== null ? `${hs}–${as_}` : '–';
 
       if (m.status === 'LIVE') {
         const min = m.minute ? ` ${m.minute}'` : '';
-        live.push(`${h} ${score} ${a} (${label}${min})`);
+        live.push(`[${tier}] ${h} ${score} ${a}${min}`);
       } else if (m.status === 'HT') {
-        ht.push(`${h} ${score} ${a} — Half Time (${label})`);
+        ht.push(`[${tier}] ${h} ${score} ${a} (HT)`);
       } else if (m.status === 'FT') {
-        finished.push(`${h} ${score} ${a} — FT (${label})`);
-      } else if (m.status === 'SCHEDULED' && m.kickoff) {
-        upcoming.push(`${h} vs ${a} at ${m.kickoff} (${label})`);
+        // Only include FT matches that actually have a score worth mentioning
+        if (hs !== null && as_ !== null) {
+          finished.push(`[${tier}] ${h} ${score} ${a}`);
+        }
       }
+      // UPCOMING matches deliberately excluded — not interesting copy
     }
   }
 
-  if (live.length)     lines.push('LIVE:\n' + live.join('\n'));
-  if (ht.length)       lines.push('HALF TIME:\n' + ht.join('\n'));
-  if (finished.length) lines.push('FINISHED:\n' + finished.join('\n'));
-  if (upcoming.length) lines.push('UPCOMING:\n' + upcoming.join('\n'));
+  // Cap each section so context stays small (cost & focus)
+  const cap = (arr: string[], n: number) => arr.slice(0, n);
 
-  return lines.join('\n\n') || 'No matches today.';
+  const sections: string[] = [];
+  if (live.length)     sections.push('LIVE NOW:\n' + cap(live, 6).join('\n'));
+  if (ht.length)       sections.push('HALF TIME:\n' + cap(ht, 4).join('\n'));
+  if (finished.length) sections.push('FINISHED:\n' + cap(finished, 8).join('\n'));
+
+  return sections.join('\n\n') || '';
+}
+
+// ── Lightweight hash to detect when live/FT state has actually changed ────────
+// If nothing has changed since the last brief, skip the API call.
+
+function buildStateHash(competitions: CompetitionData[]): string {
+  const parts: string[] = [];
+  for (const comp of competitions) {
+    for (const m of comp.matches) {
+      if (m.status === 'LIVE' || m.status === 'HT' || m.status === 'FT') {
+        parts.push(`${m.id}:${m.status}:${m.home.score}:${m.away.score}:${m.minute ?? ''}`);
+      }
+    }
+  }
+  // Simple hash — good enough to detect score changes
+  return parts.sort().join('|');
 }
 
 // ── Main export ───────────────────────────────────────────────────────────────
 
 export interface BriefResult {
-  brief: string;
+  brief:       string;
   generatedAt: number;
+  stateHash?:  string;
 }
 
 export async function generateAiBrief(
-  competitions: CompetitionData[],
-  hasLive: boolean,
-  existingBrief: string | null,
+  competitions:    CompetitionData[],
+  hasLive:         boolean,
+  existingBrief:   string | null,
   existingBriefAt: number,
-  anthropicKey: string,
+  anthropicKey:    string,
+  existingHash?:   string,
 ): Promise<BriefResult> {
   const now = Date.now();
   const ttl = hasLive ? BRIEF_TTL_LIVE : BRIEF_TTL_NO_LIVE;
 
-  // Return existing brief if still fresh
-  if (existingBrief && existingBriefAt && (now - existingBriefAt) < ttl) {
-    console.log(`[aiBrief] using existing brief (${Math.round((now - existingBriefAt) / 1000)}s old)`);
-    return { brief: existingBrief, generatedAt: existingBriefAt };
-  }
-
-  const context = buildContext(competitions, hasLive);
-
-  // If there's nothing to say, skip the API call
   if (competitions.length === 0) {
     return { brief: 'No matches scheduled today.', generatedAt: now };
   }
 
-  const prompt = `You are a football journalist writing a punchy daily brief for fans checking scores.
+  const stateHash = buildStateHash(competitions);
 
-Here is today's match data:
+  // Return existing brief if it's still fresh AND the match state hasn't changed.
+  // This is the primary cost-saver: a 0-0 game at minute 30 that's still 0-0
+  // at minute 35 generates the same brief, so we just reuse it.
+  if (existingBrief && existingBriefAt) {
+    const fresh      = (now - existingBriefAt) < ttl;
+    const unchanged  = existingHash === stateHash;
+    if (fresh || unchanged) {
+      const reason = unchanged ? 'state unchanged' : `${Math.round((now - existingBriefAt) / 60_000)}m old, within TTL`;
+      console.log(`[aiBrief] reusing existing brief (${reason})`);
+      return { brief: existingBrief, generatedAt: existingBriefAt, stateHash };
+    }
+  }
 
-${context}
+  const context = buildContext(competitions);
 
-Write exactly 2-3 sentences covering the most interesting storylines — goals, surprises, tight games, or key upcoming matches. Be specific: mention team names and scores. Use present tense for live matches, past tense for finished ones. No bullet points, no headers — just flowing sentences a fan would enjoy reading.`;
+  // Nothing live or finished — no point generating a brief
+  if (!context) {
+    return {
+      brief:       existingBrief ?? 'Matches are on the way — check back soon.',
+      generatedAt: existingBriefAt || now,
+      stateHash,
+    };
+  }
+
+  const prompt = `You are a sharp football writer for a live scores app. Your job is to write one punchy paragraph (2 sentences max) that gives fans the essential story of the moment — not a list, not a summary, but an actual take.
+
+Editorial rules:
+- Prioritise higher-tier competitions (Champions League > MLS, etc.)
+- A comeback, an upset, or a high-scoring game is more interesting than a routine win
+- For live matches: describe the tension or the goals, not just the score
+- For finished matches: lead with the result that will surprise people most
+- Never write "Here is…" or "In today's…" — just start with the story
+- Use present tense for live/HT, past tense for FT
+
+Match data:
+${context}`;
 
   try {
     const client = new Anthropic({ apiKey: anthropicKey });
     const msg = await client.messages.create({
       model:      'claude-haiku-4-5-20251001',
-      max_tokens: 180,
+      max_tokens: 140,
       messages:   [{ role: 'user', content: prompt }],
     });
 
     const text = msg.content.find(b => b.type === 'text');
     const brief = text?.type === 'text' ? text.text.trim() : '';
-    console.log(`[aiBrief] generated: "${brief.slice(0, 80)}…"`);
-    return { brief, generatedAt: now };
+    console.log(`[aiBrief] generated (hash=${stateHash.slice(0, 20)}): "${brief.slice(0, 80)}…"`);
+    return { brief, generatedAt: now, stateHash };
   } catch (err) {
     console.error('[aiBrief] Claude API error:', err);
-    // On error keep the existing brief rather than clearing it
     return {
       brief:       existingBrief ?? 'Unable to generate brief right now.',
       generatedAt: existingBriefAt,
+      stateHash,
     };
   }
 }

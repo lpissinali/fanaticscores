@@ -17,7 +17,7 @@ function briefIsInvalid(doc) {
 exports.anthropicApiKey = (0, params_1.defineSecret)('ANTHROPIC_API_KEY');
 const db = adminInit_1.getDb;
 exports.scheduledMatchFetch = (0, scheduler_1.onSchedule)({ schedule: 'every 1 minutes', secrets: [apiFootballFetch_1.afApiKey, exports.anthropicApiKey], timeoutSeconds: 120 }, async () => {
-    var _a, _b;
+    var _a, _b, _c, _d;
     const today = new Date().toISOString().slice(0, 10);
     const now = Date.now();
     const ref = db().collection('matchdays').doc(today);
@@ -27,9 +27,13 @@ exports.scheduledMatchFetch = (0, scheduler_1.onSchedule)({ schedule: 'every 1 m
         if (data.nextFetchAfter && data.nextFetchAfter > now) {
             if (briefIsInvalid(data)) {
                 console.log('[scheduledFetch] doc fresh but brief missing/invalid -- generating');
-                const briefResult = await (0, aiBrief_1.generateAiBrief)(data.competitions, data.hasLive, null, 0, exports.anthropicApiKey.value());
+                const briefResult = await (0, aiBrief_1.generateAiBrief)(data.competitions, data.hasLive, null, 0, exports.anthropicApiKey.value(), data.aiBriefStateHash);
                 if (briefResult.brief) {
-                    await ref.update({ aiBrief: briefResult.brief, aiBriefGeneratedAt: briefResult.generatedAt });
+                    await ref.update({
+                        aiBrief: briefResult.brief,
+                        aiBriefGeneratedAt: briefResult.generatedAt,
+                        aiBriefStateHash: (_a = briefResult.stateHash) !== null && _a !== void 0 ? _a : '',
+                    });
                 }
             }
             else {
@@ -45,12 +49,12 @@ exports.scheduledMatchFetch = (0, scheduler_1.onSchedule)({ schedule: 'every 1 m
         const existingDoc = snap.data();
         if (existingDoc.competitions && existingDoc.competitions.length > 0) {
             console.log('[scheduledFetch] rate-limited -- preserving ' + existingDoc.competitions.length + ' existing comps');
-            docToWrite = Object.assign(Object.assign({}, newDoc), { competitions: existingDoc.competitions, featured: (_b = (_a = newDoc.featured) !== null && _a !== void 0 ? _a : existingDoc.featured) !== null && _b !== void 0 ? _b : null });
+            docToWrite = Object.assign(Object.assign({}, newDoc), { competitions: existingDoc.competitions, featured: (_c = (_b = newDoc.featured) !== null && _b !== void 0 ? _b : existingDoc.featured) !== null && _c !== void 0 ? _c : null });
         }
     }
     const existingData = snap.exists ? snap.data() : null;
-    const briefResult = await (0, aiBrief_1.generateAiBrief)(docToWrite.competitions, docToWrite.hasLive, existingData && !briefIsInvalid(existingData) ? existingData.aiBrief : null, existingData && !briefIsInvalid(existingData) ? existingData.aiBriefGeneratedAt : 0, exports.anthropicApiKey.value());
-    docToWrite = Object.assign(Object.assign({}, docToWrite), { aiBrief: briefResult.brief, aiBriefGeneratedAt: briefResult.generatedAt });
+    const briefResult = await (0, aiBrief_1.generateAiBrief)(docToWrite.competitions, docToWrite.hasLive, existingData && !briefIsInvalid(existingData) ? existingData.aiBrief : null, existingData && !briefIsInvalid(existingData) ? existingData.aiBriefGeneratedAt : 0, exports.anthropicApiKey.value(), existingData === null || existingData === void 0 ? void 0 : existingData.aiBriefStateHash);
+    docToWrite = Object.assign(Object.assign({}, docToWrite), { aiBrief: briefResult.brief, aiBriefGeneratedAt: briefResult.generatedAt, aiBriefStateHash: (_d = briefResult.stateHash) !== null && _d !== void 0 ? _d : '' });
     await ref.set(docToWrite);
     console.log('[scheduledFetch] wrote ' + today + ' hasLive=' + docToWrite.hasLive + ' comps=' + docToWrite.competitions.length + ' brief=' + !!briefResult.brief);
 });

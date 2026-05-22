@@ -33,9 +33,14 @@ export const scheduledMatchFetch = onSchedule(
           console.log('[scheduledFetch] doc fresh but brief missing/invalid -- generating');
           const briefResult = await generateAiBrief(
             data.competitions, data.hasLive, null, 0, anthropicApiKey.value(),
+            data.aiBriefStateHash,
           );
           if (briefResult.brief) {
-            await ref.update({ aiBrief: briefResult.brief, aiBriefGeneratedAt: briefResult.generatedAt });
+            await ref.update({
+              aiBrief:           briefResult.brief,
+              aiBriefGeneratedAt: briefResult.generatedAt,
+              aiBriefStateHash:   briefResult.stateHash ?? '',
+            });
           }
         } else {
           console.log('[scheduledFetch] skipping -- next fetch not yet due');
@@ -67,8 +72,14 @@ export const scheduledMatchFetch = onSchedule(
       existingData && !briefIsInvalid(existingData) ? existingData.aiBrief : null,
       existingData && !briefIsInvalid(existingData) ? existingData.aiBriefGeneratedAt : 0,
       anthropicApiKey.value(),
+      existingData?.aiBriefStateHash,
     );
-    docToWrite = { ...docToWrite, aiBrief: briefResult.brief, aiBriefGeneratedAt: briefResult.generatedAt };
+    docToWrite = {
+      ...docToWrite,
+      aiBrief:           briefResult.brief,
+      aiBriefGeneratedAt: briefResult.generatedAt,
+      aiBriefStateHash:   briefResult.stateHash ?? '',
+    };
 
     await ref.set(docToWrite);
     console.log('[scheduledFetch] wrote ' + today + ' hasLive=' + docToWrite.hasLive + ' comps=' + docToWrite.competitions.length + ' brief=' + !!briefResult.brief);
