@@ -304,7 +304,6 @@ function DesktopLayout({ locale, featured, competitions, loading, error, resolve
       />
 
       <main className={styles.main}>
-        <div className={styles.mainInner}>
         <div className={styles.pageHeader}>
           <div>
             <div className={styles.eyebrow}>{dateLabel}</div>
@@ -356,7 +355,6 @@ function DesktopLayout({ locale, featured, competitions, loading, error, resolve
         </div>
 
         <Footer />
-        </div>
       </main>
 
       <aside className={styles.rail}>
@@ -460,8 +458,8 @@ function MobileLayout({ featured, competitions, loading, error, aiBrief, locale,
     ? new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
     : new Date(resolvedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-  const liveCount = display.reduce((n, c) => n + c.matches.filter(m => m.status === 'LIVE').length, 0);
-  const allCount  = display.reduce((n, c) => n + c.matches.length, 0);
+  const liveCount = competitions.reduce((n, c) => n + c.matches.filter(m => LIVE_STATUSES.has(m.status)).length, 0);
+  const allCount  = competitions.reduce((n, c) => n + c.matches.length, 0);
 
   const tabs = [
     { id: 'live', label: 'Live', count: liveCount },

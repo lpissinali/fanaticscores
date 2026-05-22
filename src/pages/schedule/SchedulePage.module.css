@@ -1,26 +1,25 @@
 .page {
-  display: grid;
-  grid-template-columns: 240px 1fr 320px;
-  height: 100vh;
+  display: flex;
+  min-height: 100vh;
   background: var(--bg);
-  overflow: hidden;
 }
 
 .main {
-  overflow-y: auto;
-  padding: 24px 32px;
+  flex: 1;
+  min-width: 0;
+  padding: 28px 40px 80px;
 }
-.main::-webkit-scrollbar { display: none; }
 
 .rail {
+  width: var(--right-rail-width);
+  flex-shrink: 0;
   border-left: 1px solid var(--border);
-  padding: 24px 22px;
-  overflow-y: auto;
+  padding: 28px 20px 60px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
 }
-.rail::-webkit-scrollbar { display: none; }
+
 
 .pageHeader {
   margin-bottom: 22px;
@@ -34,11 +33,12 @@
   font-family: 'JetBrains Mono', monospace;
 }
 .pageTitle {
-  margin: 4px 0 0;
-  font-size: 30px;
-  font-weight: 900;
-  letter-spacing: -0.025em;
-  line-height: 1;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  line-height: 1.1;
+  color: var(--text);
+  margin: 0 0 4px;
 }
 
 .content {

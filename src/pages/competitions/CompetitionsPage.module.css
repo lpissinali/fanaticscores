@@ -17,8 +17,8 @@
 
 .main {
   flex: 1;
-  padding: 40px 48px 80px;
-  max-width: 900px;
+  min-width: 0;
+  padding: 28px 40px 80px;
 }
 
 .header {
@@ -186,4 +186,14 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.rail {
+  width: var(--right-rail-width);
+  flex-shrink: 0;
+  border-left: 1px solid var(--border);
+  padding: 28px 20px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }

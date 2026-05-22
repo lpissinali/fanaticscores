@@ -5,6 +5,7 @@ import type { CompStandingRow, CompScorer, CompInfo } from '../../lib/api/compet
 import type { SupportedLocale } from '../../i18n';
 import Sidebar from '../../components/layout/Sidebar/Sidebar';
 import Footer from '../../components/layout/Footer/Footer';
+import RailPromo from '../../components/shared/RailPromo/RailPromo';
 import Icon from '../../components/shared/Icon/Icon';
 import styles from './CompetitionPage.module.css';
 
@@ -218,6 +219,7 @@ export default function CompetitionPage({ locale }: CompetitionPageProps) {
           </main>
 
           <aside className={styles.rail}>
+            <RailPromo locale={locale} />
             {data && <ScorersTable scorers={data.scorers} compact />}
           </aside>
         </div>
@@ -228,9 +230,10 @@ export default function CompetitionPage({ locale }: CompetitionPageProps) {
         <div className={styles.mobScreen}>
           <div className={styles.mobTopBar}>
             <button className={styles.mobBackBtn} onClick={() => navigate(-1)}>
-              <Icon name="chevron-left" size={16} /> Back
+              <Icon name="chevron-left" size={20} />
             </button>
             <span className={styles.mobTopTitle}>{title}</span>
+            <div />
           </div>
 
           <div className={styles.mobContent}>

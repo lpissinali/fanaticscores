@@ -5,7 +5,7 @@ import { fetchTeamFixtures, type TeamMatch } from '../../lib/api/teamDetails';
 import { useSEO } from '../../lib/useSEO';
 import Sidebar from '../../components/layout/Sidebar/Sidebar';
 import Footer from '../../components/layout/Footer/Footer';
-import FSLogo from '../../components/shared/FSLogo/FSLogo';
+import RailPromo from '../../components/shared/RailPromo/RailPromo';
 import Icon from '../../components/shared/Icon/Icon';
 import MobileBottomNav from '../../components/shared/MobileBottomNav/MobileBottomNav';
 import type { SupportedLocale } from '../../i18n';
@@ -33,25 +33,6 @@ function groupByComp(matches: FixtureRow[]): Array<{ competition: string; matche
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function getResultTag(
-  match: FixtureRow,
-): 'W' | 'D' | 'L' | null {
-  if (match.status !== 'FINISHED') return null;
-  const hs = match.homeTeam.score;
-  const as_ = match.awayTeam.score;
-  if (hs === null || as_ === null) return null;
-
-  // Determine from the perspective of the first followed team
-  const followedId = match.followedIds[0];
-  const isHome = match.homeTeam.id === followedId;
-  const myScore  = isHome ? hs : as_;
-  const oppScore = isHome ? as_ : hs;
-
-  if (myScore > oppScore) return 'W';
-  if (myScore < oppScore) return 'L';
-  return 'D';
-}
 
 function formatDate(utcDate: string): string {
   const d = new Date(utcDate);
@@ -303,6 +284,9 @@ function DesktopLayout({ locale }: { locale: SupportedLocale }) {
         <FollowingContent locale={locale} />
         <Footer />
       </main>
+      <aside className={styles.rail}>
+        <RailPromo locale={locale} />
+      </aside>
     </div>
   );
 }
@@ -314,11 +298,11 @@ function MobileLayout({ locale }: { locale: SupportedLocale }) {
   return (
     <div className="screen">
       <div className={styles.mobTopBar}>
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-dim)', display: 'flex', alignItems: 'center' }}>
+        <button onClick={() => navigate(-1)} className={styles.mobBackBtn}>
           <Icon name="chevron-left" size={20} />
         </button>
-        <FSLogo size={24} />
         <span className={styles.mobTitle}>Following</span>
+        <div />
       </div>
       <div className="scroll" style={{ padding: '16px 16px 80px' }}>
         <FollowingContent locale={locale} />

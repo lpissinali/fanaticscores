@@ -6,6 +6,7 @@ import type { MatchEvent } from '../../lib/types';
 import type { SupportedLocale } from '../../i18n';
 import Sidebar from '../../components/layout/Sidebar/Sidebar';
 import Footer from '../../components/layout/Footer/Footer';
+import RailPromo from '../../components/shared/RailPromo/RailPromo';
 import Crest from '../../components/shared/Crest/Crest';
 import LiveDot from '../../components/shared/LiveDot/LiveDot';
 import Icon from '../../components/shared/Icon/Icon';
@@ -147,17 +148,7 @@ function FormCard({ d, rows }: { d: MatchDetailData; rows: StandingRow[] }) {
 function EventIcon({ type, detail }: { type: string; detail?: string }) {
   if (type === 'goal') {
     const cls = detail === 'own goal' ? styles.iconGoalOwn : detail === 'pen' ? styles.iconGoalPen : styles.iconGoal;
-    return (
-      <div>
-        <div className={cls}>
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-            <circle cx="5" cy="5" r="4.5" stroke="rgba(255,255,255,0.5)" strokeWidth="0.5"/>
-            <line x1="5" y1="0.5" x2="5" y2="9.5" stroke="rgba(255,255,255,0.4)" strokeWidth="0.5"/>
-            <line x1="0.5" y1="5" x2="9.5" y2="5" stroke="rgba(255,255,255,0.4)" strokeWidth="0.5"/>
-          </svg>
-        </div>
-      </div>
-    );
+    return <span className={cls} aria-hidden="true">⚽</span>;
   }
   if (type === 'yellow') return <div className={styles.iconYellow} aria-label="Yellow card" />;
   if (type === 'red')    return <div className={styles.iconRed}    aria-label="Red card" />;
@@ -473,6 +464,7 @@ export default function MatchPage({ locale }: MatchPageProps) {
           </main>
 
           <aside className={styles.rail}>
+            <RailPromo locale={locale} />
             {data && <MatchInfoCard d={data} />}
             {data && <FormCard d={data} rows={data.standings} />}
           </aside>
@@ -484,7 +476,7 @@ export default function MatchPage({ locale }: MatchPageProps) {
         <div className={styles.mobScreen}>
           <div className={styles.mobTopBar}>
             <button className={styles.mobBackBtn} onClick={() => navigate(-1)}>
-              <Icon name="chevron-left" size={16} /> Back
+              <Icon name="chevron-left" size={20} />
             </button>
             <span className={styles.mobTopTitle}>{matchTitle}</span>
             <Link

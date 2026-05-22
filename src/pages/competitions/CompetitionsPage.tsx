@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import type { SupportedLocale } from '../../i18n';
 import Sidebar from '../../components/layout/Sidebar/Sidebar';
+import RailPromo from '../../components/shared/RailPromo/RailPromo';
 import Footer from '../../components/layout/Footer/Footer';
 import Icon from '../../components/shared/Icon/Icon';
 import MobileBottomNav from '../../components/shared/MobileBottomNav/MobileBottomNav';
@@ -135,6 +136,9 @@ export default function CompetitionsPage({ locale }: CompetitionsPageProps) {
             ))}
           <Footer />
           </main>
+          <aside className={styles.rail}>
+            <RailPromo locale={locale} />
+          </aside>
         </div>
       </div>
 

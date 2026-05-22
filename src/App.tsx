@@ -27,12 +27,12 @@ function App() {
           <Route path="match/:matchId"        element={<MatchPage       locale="en" />} />
           <Route path="competitions"          element={<CompetitionsPage locale="en" />} />
           <Route path="competition/:compCode" element={<CompetitionPage  locale="en" />} />
-          <Route path="team/:teamId"         element={<TeamPage          locale="en" />} />
+          <Route path="team/:teamId"          element={<TeamPage         locale="en" />} />
           <Route path="terms"                element={<TermsPage       locale="en" />} />
           <Route path="privacy"              element={<PrivacyPage     locale="en" />} />
           <Route path="cookies"              element={<CookiesPage     locale="en" />} />
-          <Route path="following"             element={<FollowingPage   locale="en" />} />
-<Route path="studio"               element={<StudioPage      locale="en" />} />
+          <Route path="following"            element={<FollowingPage   locale="en" />} />
+          <Route path="studio"               element={<StudioPage      locale="en" />} />
           <Route path="studio/:matchId"      element={<StudioPage      locale="en" />} />
           <Route path=":date"                element={<HomePage        locale="en" />} />
         </Route>

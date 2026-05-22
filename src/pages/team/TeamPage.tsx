@@ -5,6 +5,7 @@ import type { TeamPlayer, TeamMatch } from '../../lib/api/teamDetails';
 import type { SupportedLocale } from '../../i18n';
 import Sidebar from '../../components/layout/Sidebar/Sidebar';
 import Footer from '../../components/layout/Footer/Footer';
+import RailPromo from '../../components/shared/RailPromo/RailPromo';
 import Icon from '../../components/shared/Icon/Icon';
 import MobileBottomNav from '../../components/shared/MobileBottomNav/MobileBottomNav';
 import { useFollowing } from '../../lib/useFollowing';
@@ -284,6 +285,7 @@ export default function TeamPage({ locale }: TeamPageProps) {
             const losses = recent.length - wins - draws;
             return (
               <aside className={styles.rail}>
+                <RailPromo locale={locale} />
                 {recent.length > 0 && (
                   <div className={styles.railCard}>
                     <div className={styles.railCardTitle}>Recent Form</div>
@@ -317,13 +319,11 @@ export default function TeamPage({ locale }: TeamPageProps) {
       <div className={styles.mobileOnly}>
         <div className="screen">
           <div className={styles.mobTopBar}>
-            <button className="fs-btn ghost"
-              style={{ width: 36, height: 36, padding: 0, borderColor: 'transparent' }}
-              onClick={() => navigate(-1)}>
+            <button className={styles.mobBackBtn} onClick={() => navigate(-1)}>
               <Icon name="chevron-left" size={20} />
             </button>
             <span className={styles.mobTitle}>{data?.info.shortName ?? 'Team'}</span>
-            <div style={{ width: 36 }} />
+            <div />
           </div>
           <div className="scroll" style={{ paddingBottom: 40 }}>
             {content(true)}

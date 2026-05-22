@@ -27,34 +27,26 @@
    DESKTOP
    ================================================================ */
 .desktop {
-  display: grid;
-  grid-template-columns: 240px 1fr 360px;
-  height: 100vh;
+  display: flex;
+  min-height: 100vh;
   background: var(--bg);
-  overflow: hidden;
 }
 
 .main {
-  overflow-y: auto;
-  padding: 24px 32px;
+  flex: 1;
+  min-width: 0;
+  padding: 28px 40px 80px;
 }
-
-.mainInner {
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-}
-.main::-webkit-scrollbar { display: none; }
 
 .rail {
+  width: var(--right-rail-width);
+  flex-shrink: 0;
   border-left: 1px solid var(--border);
-  padding: 24px 22px;
-  overflow-y: auto;
+  padding: 28px 20px 60px;
   display: flex;
   flex-direction: column;
   gap: 18px;
 }
-.rail::-webkit-scrollbar { display: none; }
 
 /* ── Page header ── */
 .pageHeader {
@@ -77,10 +69,11 @@
 
 .pageTitle {
   margin: 4px 0 0;
-  font-size: 30px;
-  font-weight: 900;
-  letter-spacing: -0.025em;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
   line-height: 1;
+  color: var(--text);
 }
 
 .searchField {

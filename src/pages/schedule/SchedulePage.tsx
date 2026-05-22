@@ -5,6 +5,7 @@ import type { Competition, Match } from '../../lib/types';
 import { useMatches } from '../../lib/useMatches';
 
 import Sidebar from '../../components/layout/Sidebar/Sidebar';
+import RailPromo from '../../components/shared/RailPromo/RailPromo';
 import Calendar from '../../components/shared/Calendar/Calendar';
 import MatchRow from '../../components/shared/MatchRow/MatchRow';
 import Icon from '../../components/shared/Icon/Icon';
@@ -93,6 +94,7 @@ export default function SchedulePage({ locale }: SchedulePageProps) {
       </main>
 
       <aside className={styles.rail}>
+        <RailPromo locale={locale} />
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-faint)', fontFamily: 'JetBrains Mono, monospace' }}>
           Quick jump
         </div>
