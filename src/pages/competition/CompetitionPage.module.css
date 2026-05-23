@@ -357,6 +357,97 @@
   color: var(--text-dim);
 }
 
+/* ── Fixture list ────────────────────────────────────────────────────────── */
+.matchList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Fixture row: date | home name | home crest | score/vs | away crest | away name */
+.fixtureRow {
+  display: grid;
+  grid-template-columns: 88px minmax(0,1fr) 22px 54px 22px minmax(0,1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.12s;
+  cursor: pointer;
+}
+.fixtureRow:hover { background: var(--surface-raised); }
+
+.dateCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dateText {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+.timeText {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+
+.teamCrest {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.teamName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.teamNameRight { text-align: right; }
+
+.scoreCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+  white-space: nowrap;
+}
+.scoreDash {
+  color: var(--text-faint);
+  font-weight: 400;
+}
+
+.vsSep {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+
+/* Mobile fixture adjustments */
+@media (max-width: 1023px) {
+  .fixtureRow {
+    grid-template-columns: 72px minmax(0,1fr) 22px 44px 22px minmax(0,1fr);
+    gap: 6px;
+    padding: 10px 10px;
+  }
+  .dateText { font-size: 11px; }
+}
+
 /* ── Placeholder ─────────────────────────────────────────────────────────── */
 .placeholder {
   color: var(--text-faint);

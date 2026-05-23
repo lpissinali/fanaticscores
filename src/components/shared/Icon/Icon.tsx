@@ -19,6 +19,7 @@ type IconName =
   | 'user'
   | 'x'
   | 'check'
+  | 'copy'
   | 'arrow-right'
   | 'download'
   | 'zap';
@@ -47,6 +48,7 @@ const PATHS: Record<IconName, string> = {
   user:           'M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z',
   x:              'M18 6L6 18M6 6l12 12',
   check:          'M20 6L9 17l-5-5',
+  copy:           'M8 4H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2M8 4a2 2 0 002 2h4a2 2 0 002-2M8 4a2 2 0 012-2h4a2 2 0 012 2',
   'arrow-right':  'M5 12h14M12 5l7 7-7 7',
   download:       'M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3',
   zap:            'M13 2L3 14h9l-1 8 10-12h-9l1-8z',

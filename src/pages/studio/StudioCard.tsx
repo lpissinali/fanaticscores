@@ -593,11 +593,11 @@ export default function StudioCard({ match, config }: { match: CachedMatch; conf
 export function CardThumb({ template, selected, onClick }: {
   template: CardTemplate; selected: boolean; onClick: () => void;
 }) {
-  const labels: Record<CardTemplate, [string, string]> = {
-    minimal: ['01 · MINIMAL', 'The Result'],
-    moment:  ['02 · MOMENT',  'The Goal'],
-    stat:    ['03 · STAT',    'The Snapshot'],
-    ticker:  ['04 · TICKER',  'The Headline'],
+  const labels: Record<CardTemplate, string> = {
+    minimal: '01 · MINIMAL',
+    moment:  '02 · MOMENT',
+    stat:    '03 · STAT',
+    ticker:  '04 · TICKER',
   };
 
   const icons: Record<CardTemplate, React.ReactNode> = {
@@ -637,17 +637,23 @@ export function CardThumb({ template, selected, onClick }: {
     ),
     ticker: (
       <svg width="44" height="34" viewBox="0 0 44 34" fill="none">
-        <rect x="3" y="3" width="38" height="28" rx="3" fill="#f6f6f8"/>
-        <rect x="3" y="3" width="38" height="2" rx="1" fill="#fc8003"/>
-        <rect x="7" y="8" width="7" height="7" rx="1.5" fill="#fc8003" opacity="0.9"/>
-        <rect x="7" y="17" width="30" height="3.5" rx="1.5" fill="rgba(0,0,0,0.5)"/>
-        <rect x="7" y="22" width="22" height="3.5" rx="1.5" fill="rgba(0,0,0,0.4)"/>
-        <rect x="7" y="29" width="30" height="0.75" rx="0.4" fill="rgba(0,0,0,0.1)"/>
+        {/* dark card */}
+        <rect x="3" y="3" width="38" height="28" rx="3" fill="#13131b"/>
+        {/* top: home badge · score · away badge */}
+        <rect x="7"  y="7" width="6" height="6" rx="1.2" fill="rgba(255,255,255,0.15)"/>
+        <rect x="17" y="8" width="10" height="2" rx="1" fill="rgba(252,128,3,0.9)"/>
+        <rect x="31" y="7" width="6" height="6" rx="1.2" fill="rgba(255,255,255,0.15)"/>
+        {/* headline — bold thick lines */}
+        <rect x="7" y="16" width="30" height="3.5" rx="1" fill="rgba(255,255,255,0.75)"/>
+        <rect x="7" y="21" width="20" height="3.5" rx="1" fill="rgba(255,255,255,0.5)"/>
+        {/* bottom stats strip */}
+        <rect x="7"  y="27" width="8" height="2" rx="0.8" fill="rgba(255,255,255,0.2)"/>
+        <rect x="18" y="27" width="8" height="2" rx="0.8" fill="rgba(255,255,255,0.2)"/>
+        <rect x="29" y="27" width="8" height="2" rx="0.8" fill="rgba(255,255,255,0.2)"/>
       </svg>
     ),
   };
 
-  const [name, sub] = labels[template];
   return (
     <button onClick={onClick} style={{
       background: selected ? 'rgba(252,128,3,0.1)' : '#1c1c26',
@@ -658,9 +664,8 @@ export function CardThumb({ template, selected, onClick }: {
       transition: 'border-color 0.15s, background 0.15s',
     }}>
       <div style={{ display: 'flex', justifyContent: 'center' }}>{icons[template]}</div>
-      <div>
-        <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(244,244,245,0.5)', fontFamily: MONO, letterSpacing: '0.05em' }}>{name}</div>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#f4f4f5', marginTop: 2, lineHeight: 1.2 }}>{sub}</div>
+      <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(244,244,245,0.5)', fontFamily: MONO, letterSpacing: '0.05em' }}>
+        {labels[template]}
       </div>
     </button>
   );

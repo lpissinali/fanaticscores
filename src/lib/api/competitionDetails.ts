@@ -137,10 +137,21 @@ export interface CompScorer {
   playedMatches: number;
 }
 
+export interface CompFixture {
+  id: number;
+  utcDate: string;
+  status: string;
+  round: string | null;
+  homeTeam: { id: number; name: string; crest: string; score: number | null; };
+  awayTeam: { id: number; name: string; crest: string; score: number | null; };
+}
+
 export interface CompetitionDetailData {
   info: CompInfo;
   standings: CompStandingRow[];
   scorers: CompScorer[];
+  upcomingFixtures: CompFixture[];
+  recentResults: CompFixture[];
 }
 
 // ── Retry helper ──────────────────────────────────────────────────────────────
@@ -319,16 +330,66 @@ async function fetchCompScorers(leagueId: number): Promise<CompScorer[]> {
   } catch (e) { console.warn('[competitionDetails] scorers error', e); return []; }
 }
 
+// ── Fetch fixtures (upcoming + recent) ───────────────────────────────────────
+
+interface AFFixtureRaw {
+  fixture: { id: number; date: string; status: { short: string } };
+  league:  { round: string | null };
+  teams:   { home: { id: number; name: string; logo: string }; away: { id: number; name: string; logo: string } };
+  goals:   { home: number | null; away: number | null };
+}
+
+function mapFixture(f: AFFixtureRaw): CompFixture {
+  return {
+    id:       f.fixture.id,
+    utcDate:  f.fixture.date,
+    status:   f.fixture.status.short,
+    round:    f.league.round ?? null,
+    homeTeam: { id: f.teams.home.id, name: f.teams.home.name, crest: f.teams.home.logo, score: f.goals.home },
+    awayTeam: { id: f.teams.away.id, name: f.teams.away.name, crest: f.teams.away.logo, score: f.goals.away },
+  };
+}
+
+async function fetchCompFixtures(leagueId: number): Promise<{ upcoming: CompFixture[]; recent: CompFixture[] }> {
+  const season = currentSeason();
+  const key = `comp_fixtures:af:${leagueId}:${season}`;
+  const hit = cacheGet<{ upcoming: CompFixture[]; recent: CompFixture[] }>(key);
+  if (hit) return hit;
+
+  const TTL_FIXTURES = 30 * 60 * 1000; // 30 min
+
+  try {
+    const [upRes, reRes] = await Promise.all([
+      fetchWithRetry(`${BASE}/fixtures?league=${leagueId}&season=${season}&next=5`),
+      fetchWithRetry(`${BASE}/fixtures?league=${leagueId}&season=${season}&last=5`),
+    ]);
+
+    const upJson  = upRes.ok  ? await upRes.json()  as { response: AFFixtureRaw[] } : { response: [] };
+    const reJson  = reRes.ok  ? await reRes.json()  as { response: AFFixtureRaw[] } : { response: [] };
+
+    const result = {
+      upcoming: (upJson.response ?? []).map(mapFixture),
+      recent:   (reJson.response ?? []).reverse().map(mapFixture),
+    };
+    cacheSet(key, result, TTL_FIXTURES);
+    return result;
+  } catch (e) {
+    console.warn('[competitionDetails] fixtures error', e);
+    return { upcoming: [], recent: [] };
+  }
+}
+
 // ── Public entry point ────────────────────────────────────────────────────────
 
 export async function fetchCompetitionDetail(code: string): Promise<CompetitionDetailData | null> {
   const leagueId = COMP_CODE_TO_LEAGUE_ID[code];
   if (!leagueId) { console.warn('[competitionDetails] unknown comp code', code); return null; }
 
-  const [info, standingsFetch, scorers] = await Promise.all([
+  const [info, standingsFetch, scorers, fixtures] = await Promise.all([
     fetchCompInfo(code, leagueId),
     fetchCompStandings(code, leagueId),
     fetchCompScorers(leagueId),
+    fetchCompFixtures(leagueId),
   ]);
 
   if (!info) return null;
@@ -358,5 +419,5 @@ export async function fetchCompetitionDetail(code: string): Promise<CompetitionD
   // Cache the final info (now that currentMatchday/winner are filled in).
   cacheSet(`comp_info:af:${leagueId}`, info, TTL);
 
-  return { info, standings: standingsFetch.rows, scorers };
+  return { info, standings: standingsFetch.rows, scorers, upcomingFixtures: fixtures.upcoming, recentResults: fixtures.recent };
 }

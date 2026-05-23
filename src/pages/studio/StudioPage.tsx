@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import html2canvas from 'html2canvas';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useSEO } from '../../lib/useSEO';
 import Icon from '../../components/shared/Icon/Icon';
@@ -89,12 +90,13 @@ function MatchList({ groups, onSelect }: {
 }
 
 function MatchPopover({
-  competitions, loading, onSelect, onClose,
+  competitions, loading, onSelect, onClose, mobile = false,
 }: {
   competitions: Competition[];
   loading: boolean;
   onSelect: (m: Match, comp: Competition) => void;
   onClose: () => void;
+  mobile?: boolean;
 }) {
   const [tab, setTab] = useState<PopoverTab>('today');
   const [query, setQuery] = useState('');
@@ -200,8 +202,8 @@ function MatchPopover({
 
   return (
     <>
-      <div className={styles.popoverBackdrop} onClick={onClose} />
-      <div className={styles.popover}>
+      <div className={mobile ? styles.mobModalBackdrop : styles.popoverBackdrop} onClick={onClose} />
+      <div className={mobile ? styles.mobModal : styles.popover}>
         {/* Search */}
         <div className={styles.popoverSearch}>
           <Icon name="search" size={13} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
@@ -255,7 +257,7 @@ const STYLES: { id: CardStyle; label: string; sub: string; swatch: string | [str
   { id: 'dark',  label: 'Dark',  sub: 'Default · feed-friendly', swatch: '#fc8003' },
   { id: 'light', label: 'Light', sub: 'Daylight feeds',          swatch: '#f8f8fa' },
   { id: 'paper', label: 'Paper', sub: 'Editorial · warm cream',  swatch: '#f5f0e8' },
-  { id: 'team',  label: 'Team',  sub: 'Auto: home & away colors', swatch: ['#3b82f6', '#f59e0b'] },
+  // { id: 'team',  label: 'Team',  sub: 'Auto: home & away colors', swatch: ['#3b82f6', '#f59e0b'] },
   { id: 'pitch', label: 'Pitch', sub: 'Matchday green',          swatch: '#25c264' },
 ];
 
@@ -300,12 +302,14 @@ export default function StudioPage({ locale }: StudioPageProps) {
   const [newTag, setNewTag] = useState('');
   const [addingTag, setAddingTag] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [capturing, setCapturing] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(false);
   const [mobileTab, setMobileTab] = useState<'customize' | 'preview' | 'share'>('preview');
 
   const previewRef    = useRef<HTMLDivElement>(null);
   const mobPreviewRef = useRef<HTMLDivElement>(null);
+  const captureRef    = useRef<HTMLDivElement>(null);
   const [previewWidth,    setPreviewWidth]    = useState(500);
   const [mobPreviewWidth, setMobPreviewWidth] = useState(window.innerWidth);
 
@@ -363,27 +367,74 @@ export default function StudioPage({ locale }: StudioPageProps) {
     navigate(`/${locale}/studio/${m.id}`, { replace: true });
   }, [locale, navigate]);
 
+  // ── Image capture helpers ───────────────────────────────────────────────────
+
+  const captureCardBlob = useCallback(async (): Promise<Blob | null> => {
+    const el = captureRef.current;
+    if (!el) return null;
+    setCapturing(true);
+    try {
+      const canvas = await html2canvas(el, {
+        useCORS: true,
+        allowTaint: true,
+        scale: 2,
+        logging: false,
+        backgroundColor: null,
+      });
+      return await new Promise<Blob | null>(resolve =>
+        canvas.toBlob(b => resolve(b), 'image/png'),
+      );
+    } finally {
+      setCapturing(false);
+    }
+  }, []);
+
+  const matchTitle = selectedMatch
+    ? `${selectedMatch.match.home.name} vs ${selectedMatch.match.away.name}`
+    : 'FanaticScores Card';
+
   const handleShare = useCallback(async () => {
     if (!selectedMatch) return;
-    const url = `https://fanaticscores.com/${locale}/match/${selectedMatch.match.id}`;
-    const title = `${selectedMatch.match.home.name} ${selectedMatch.match.home.score ?? ''} – ${selectedMatch.match.away.score ?? ''} ${selectedMatch.match.away.name}`;
-    const text = config.caption || title;
-    if (navigator.share) {
-      await navigator.share({ title, text, url }).catch(() => {});
+    const blob = await captureCardBlob();
+    if (!blob) return;
+    const file = new File([blob], 'fanatic-card.png', { type: 'image/png' });
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ files: [file], title: matchTitle }).catch(() => {});
     } else {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      // Fallback: download the image
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'fanatic-card.png'; a.click();
+      URL.revokeObjectURL(url);
     }
-  }, [selectedMatch, config.caption, locale]);
+  }, [selectedMatch, captureCardBlob, matchTitle]);
 
-  const handleCopyLink = useCallback(async () => {
+  const handleCopy = useCallback(async () => {
     if (!selectedMatch) return;
-    const url = `https://fanaticscores.com/${locale}/match/${selectedMatch.match.id}`;
-    await navigator.clipboard.writeText(url);
+    const blob = await captureCardBlob();
+    if (!blob) return;
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    } catch {
+      // ClipboardItem not supported — fall back to downloading
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'fanatic-card.png'; a.click();
+      URL.revokeObjectURL(url);
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }, [selectedMatch, locale]);
+  }, [selectedMatch, captureCardBlob]);
+
+  const handleSave = useCallback(async () => {
+    if (!selectedMatch) return;
+    const blob = await captureCardBlob();
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'fanatic-card.png'; a.click();
+    URL.revokeObjectURL(url);
+  }, [selectedMatch, captureCardBlob]);
 
   const addHashtag = () => {
     const tag = newTag.trim().replace(/^#/, '');
@@ -400,7 +451,7 @@ export default function StudioPage({ locale }: StudioPageProps) {
   const scale = maxPreviewW / cardW;
   const scaledH = cardH * scale;
   // Mobile preview scale
-  const mobPreviewW = Math.min(mobPreviewWidth - 32, cardW);
+  const mobPreviewW = Math.min(mobPreviewWidth - 40, cardW);
   const mobScale    = mobPreviewW / cardW;
 
   // Match info for top bar
@@ -648,7 +699,7 @@ export default function StudioPage({ locale }: StudioPageProps) {
             </div>
           ))}
         </div>
-        <p className={styles.exportNote}>Image export coming soon</p>
+        <p className={styles.exportNote}>Use Save or Copy above to export your card</p>
       </section>
     </div>
   );
@@ -657,6 +708,24 @@ export default function StudioPage({ locale }: StudioPageProps) {
 
   return (
     <>
+      {/* ── Hidden capture target (full natural size, off-screen) ────────────── */}
+      {selectedMatch && (
+        <div
+          ref={captureRef}
+          style={{
+            position: 'fixed',
+            left: '-9999px',
+            top: 0,
+            width: cardW,
+            height: cardH,
+            pointerEvents: 'none',
+            zIndex: -1,
+          }}
+        >
+          <StudioCard match={selectedMatch} config={config} />
+        </div>
+      )}
+
       {/* ── DESKTOP ─────────────────────────────────────────────────────────── */}
       <div className={styles.desktopOnly}>
         <div className={styles.studio}>
@@ -668,7 +737,7 @@ export default function StudioPage({ locale }: StudioPageProps) {
                 <Icon name="chevron-left" size={16} />
               </button>
               <Link to={`/${locale}/`} className={styles.topLogo}>
-                <span className={styles.topLogoText}>FS</span>
+                <img src="/assets/logo-mark-dark.png" alt="FanaticScores" height={22} style={{ display: 'block' }} />
                 <span className={styles.topLogoLabel}>SHARE STUDIO</span>
               </Link>
             </div>
@@ -712,15 +781,15 @@ export default function StudioPage({ locale }: StudioPageProps) {
 
             <div className={styles.topBarRight}>
               <span className={styles.autoSave}>Auto-saved · just now</span>
-              <button className={styles.topActionBtn} disabled={!selectedMatch}>
-                <Icon name="download" size={14} /> Save
+              <button className={styles.topActionBtn} onClick={handleSave} disabled={!selectedMatch || capturing}>
+                <Icon name="download" size={14} /> {capturing ? '…' : 'Save'}
               </button>
-              <button className={styles.topActionBtn} onClick={handleCopyLink} disabled={!selectedMatch}>
-                <Icon name={copied ? 'check' : 'share'} size={14} />
-                {copied ? 'Copied!' : 'Copy'}
+              <button className={styles.topActionBtn} onClick={handleCopy} disabled={!selectedMatch || capturing}>
+                <Icon name={copied ? 'check' : 'copy'} size={14} />
+                {copied ? 'Copied!' : capturing ? '…' : 'Copy'}
               </button>
-              <button className={[styles.topShareBtn, !selectedMatch ? styles.topShareBtnDisabled : ''].join(' ')} onClick={handleShare} disabled={!selectedMatch}>
-                <Icon name="share" size={14} /> Share
+              <button className={[styles.topShareBtn, !selectedMatch ? styles.topShareBtnDisabled : ''].join(' ')} onClick={handleShare} disabled={!selectedMatch || capturing}>
+                <Icon name="share" size={14} /> {capturing ? '…' : 'Share'}
               </button>
             </div>
           </header>
@@ -770,29 +839,31 @@ export default function StudioPage({ locale }: StudioPageProps) {
             </button>
           </header>
 
-          {/* Mobile tab content */}
+          {/* Mobile tab content — all tabs stay mounted, toggled via display */}
           <div className={styles.mobContent}>
-            {mobileTab === 'preview' && (
-              <div className={styles.mobPreview} ref={mobPreviewRef}>
-                {selectedMatch ? (
-                  <div className={styles.previewWrap} style={{ width: mobPreviewW, height: cardH * mobScale }}>
-                    <div style={{ transform: `scale(${mobScale})`, transformOrigin: 'top left', width: cardW, height: cardH }}>
-                      <a href={`https://fanaticscores.com/${locale}/match/${selectedMatch.match.id}`} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textDecoration: 'none' }}>
-                        <StudioCard match={selectedMatch} config={config} />
-                      </a>
-                    </div>
+            <div
+              className={styles.mobPreview}
+              ref={mobPreviewRef}
+              style={{ display: mobileTab === 'preview' ? 'flex' : 'none' }}
+            >
+              {selectedMatch ? (
+                <div className={styles.previewWrap} style={{ width: mobPreviewW, height: cardH * mobScale }}>
+                  <div style={{ transform: `scale(${mobScale})`, transformOrigin: 'top left', width: cardW, height: cardH }}>
+                    <a href={`https://fanaticscores.com/${locale}/match/${selectedMatch.match.id}`} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textDecoration: 'none' }}>
+                      <StudioCard match={selectedMatch} config={config} />
+                    </a>
                   </div>
-                ) : (
-                  <div className={styles.previewEmpty}>
-                    <Icon name="sparkles" size={28} style={{ color: 'var(--text-faint)' }} />
-                    <p className={styles.previewEmptyText}>Select a match to start</p>
-                    <button className="fs-btn primary sm" onClick={() => setShowPopover(true)}>Pick a match</button>
-                  </div>
-                )}
-              </div>
-            )}
-            {mobileTab === 'customize' && <div style={{ padding: 16 }}>{leftPanel}</div>}
-            {mobileTab === 'share'    && <div style={{ padding: 16 }}>{rightPanel}</div>}
+                </div>
+              ) : (
+                <div className={styles.previewEmpty}>
+                  <Icon name="sparkles" size={28} style={{ color: 'var(--text-faint)' }} />
+                  <p className={styles.previewEmptyText}>Select a match to start</p>
+                  <button className="fs-btn primary sm" onClick={() => setShowPopover(true)}>Pick a match</button>
+                </div>
+              )}
+            </div>
+            <div style={{ display: mobileTab === 'customize' ? 'block' : 'none', padding: 16 }}>{leftPanel}</div>
+            <div style={{ display: mobileTab === 'share'    ? 'block' : 'none', padding: 16 }}>{rightPanel}</div>
           </div>
 
           {/* Mobile tab bar */}
@@ -811,6 +882,7 @@ export default function StudioPage({ locale }: StudioPageProps) {
               loading={loading}
               onSelect={handleSelectMatch}
               onClose={() => setShowPopover(false)}
+              mobile
             />
           )}
         </div>

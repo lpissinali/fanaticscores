@@ -83,14 +83,11 @@
   color: var(--text-faint);
   text-decoration: none;
   flex-shrink: 0;
-  opacity: 0;
-  transition: opacity 0.15s, color 0.12s, background 0.12s;
+  transition: color 0.12s, background 0.12s;
   margin-left: 4px;
+  margin-bottom: 8px;
 }
-/* .match-row is a global class — use :global() to reach across the boundary */
-:global(.match-row:hover) .studioBtn { opacity: 1; }
 .studioBtn:hover {
   color: var(--orange);
   background: var(--orange-soft);
-  opacity: 1;
 }

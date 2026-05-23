@@ -66,6 +66,11 @@ function FixtureRowItem({ match, locale }: { match: FixtureRow; locale: string }
         {isScheduled && <span className={styles.timeText}>{formatTime(match.utcDate)}</span>}
       </div>
 
+      {/* Home name */}
+      <span className={[styles.teamName, styles.teamNameRight, homeFollowed ? styles.teamNameFollowed : ''].filter(Boolean).join(' ')}>
+        {match.homeTeam.name}
+      </span>
+
       {/* Home crest */}
       <img
         src={match.homeTeam.crest}
@@ -73,11 +78,6 @@ function FixtureRowItem({ match, locale }: { match: FixtureRow; locale: string }
         className={styles.teamCrest}
         onError={e => { (e.target as HTMLImageElement).style.visibility = 'hidden'; }}
       />
-
-      {/* Home name */}
-      <span className={[styles.teamName, homeFollowed ? styles.teamNameFollowed : ''].filter(Boolean).join(' ')}>
-        {match.homeTeam.name}
-      </span>
 
       {/* Score or vs separator */}
       {isScheduled ? (
@@ -90,11 +90,6 @@ function FixtureRowItem({ match, locale }: { match: FixtureRow; locale: string }
         </div>
       )}
 
-      {/* Away name */}
-      <span className={[styles.teamName, styles.teamNameRight, awayFollowed ? styles.teamNameFollowed : ''].filter(Boolean).join(' ')}>
-        {match.awayTeam.name}
-      </span>
-
       {/* Away crest */}
       <img
         src={match.awayTeam.crest}
@@ -102,6 +97,11 @@ function FixtureRowItem({ match, locale }: { match: FixtureRow; locale: string }
         className={styles.teamCrest}
         onError={e => { (e.target as HTMLImageElement).style.visibility = 'hidden'; }}
       />
+
+      {/* Away name */}
+      <span className={[styles.teamName, awayFollowed ? styles.teamNameFollowed : ''].filter(Boolean).join(' ')}>
+        {match.awayTeam.name}
+      </span>
     </div>
   );
 }

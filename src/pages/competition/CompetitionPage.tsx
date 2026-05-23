@@ -1,7 +1,7 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useSEO } from '../../lib/useSEO';
 import { useCompetitionDetails } from '../../lib/useCompetitionDetails';
-import type { CompStandingRow, CompScorer, CompInfo } from '../../lib/api/competitionDetails';
+import type { CompStandingRow, CompScorer, CompInfo, CompFixture } from '../../lib/api/competitionDetails';
 import type { SupportedLocale } from '../../i18n';
 import Sidebar from '../../components/layout/Sidebar/Sidebar';
 import Footer from '../../components/layout/Footer/Footer';
@@ -181,6 +181,94 @@ function ScorersTable({ scorers, compact = false }: { scorers: CompScorer[]; com
   );
 }
 
+// ── Fixture row ───────────────────────────────────────────────────────────────
+function formatDate(utcDate: string): string {
+  return new Date(utcDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+function formatTime(utcDate: string): string {
+  return new Date(utcDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+
+function FixtureRow({ fixture, locale }: { fixture: CompFixture; locale: string }) {
+  const navigate = useNavigate();
+  const isScheduled = fixture.homeTeam.score === null || fixture.awayTeam.score === null;
+
+  return (
+    <div
+      className={styles.fixtureRow}
+      role="link"
+      tabIndex={0}
+      onClick={() => navigate(`/${locale}/match/${fixture.id}`)}
+      onKeyDown={e => e.key === 'Enter' && navigate(`/${locale}/match/${fixture.id}`)}
+    >
+      {/* Date + time */}
+      <div className={styles.dateCell}>
+        <span className={styles.dateText}>{formatDate(fixture.utcDate)}</span>
+        {isScheduled && <span className={styles.timeText}>{formatTime(fixture.utcDate)}</span>}
+      </div>
+
+      {/* Home name */}
+      <span className={[styles.teamName, styles.teamNameRight].join(' ')}>
+        {fixture.homeTeam.name}
+      </span>
+
+      {/* Home crest */}
+      <img
+        src={fixture.homeTeam.crest}
+        alt={fixture.homeTeam.name}
+        className={styles.teamCrest}
+        onError={e => { (e.target as HTMLImageElement).style.visibility = 'hidden'; }}
+      />
+
+      {/* Score or vs */}
+      {isScheduled ? (
+        <div className={styles.vsSep}>vs</div>
+      ) : (
+        <div className={styles.scoreCell}>
+          <span>{fixture.homeTeam.score ?? '–'}</span>
+          <span className={styles.scoreDash}>–</span>
+          <span>{fixture.awayTeam.score ?? '–'}</span>
+        </div>
+      )}
+
+      {/* Away crest */}
+      <img
+        src={fixture.awayTeam.crest}
+        alt={fixture.awayTeam.name}
+        className={styles.teamCrest}
+        onError={e => { (e.target as HTMLImageElement).style.visibility = 'hidden'; }}
+      />
+
+      {/* Away name */}
+      <span className={styles.teamName}>
+        {fixture.awayTeam.name}
+      </span>
+    </div>
+  );
+}
+
+function FixtureSection({
+  title,
+  fixtures,
+  locale,
+}: {
+  title: string;
+  fixtures: CompFixture[];
+  locale: string;
+}) {
+  if (!fixtures || fixtures.length === 0) return null;
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <h2 className={styles.sectionTitle}>{title}</h2>
+      <div className={styles.matchList}>
+        {fixtures.map(f => (
+          <FixtureRow key={f.id} fixture={f} locale={locale} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function CompetitionPage({ locale }: CompetitionPageProps) {
   const { compCode } = useParams<{ compCode: string }>();
@@ -212,6 +300,8 @@ export default function CompetitionPage({ locale }: CompetitionPageProps) {
             {data && (
               <>
                 <HeroCard info={data.info} />
+                <FixtureSection title="Upcoming Fixtures" fixtures={data.upcomingFixtures} locale={locale} />
+                <FixtureSection title="Recent Results"   fixtures={data.recentResults}    locale={locale} />
                 <StandingsTable rows={data.standings} locale={locale} />
               </>
             )}
@@ -242,6 +332,8 @@ export default function CompetitionPage({ locale }: CompetitionPageProps) {
             {data && (
               <>
                 <HeroCard info={data.info} />
+                <FixtureSection title="Upcoming Fixtures" fixtures={data.upcomingFixtures} locale={locale} />
+                <FixtureSection title="Recent Results"   fixtures={data.recentResults}    locale={locale} />
                 <StandingsTable rows={data.standings} locale={locale} />
                 <ScorersTable scorers={data.scorers} />
               </>

@@ -835,6 +835,29 @@
   align-items: center;
   justify-content: center;
   min-height: 300px;
+  overflow: hidden;
+}
+
+/* Mobile match picker — full-screen modal */
+.mobModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0,0,0,0.5);
+}
+.mobModal {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 60px;
+  z-index: 201;
+  background: var(--surface);
+  border-radius: 16px 16px 0 0;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .mobTabBar {
