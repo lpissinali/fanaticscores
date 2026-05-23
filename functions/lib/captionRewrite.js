@@ -15,7 +15,7 @@ exports.captionRewrite = (0, https_1.onRequest)({ secrets: [secrets_1.anthropicA
         res.status(405).json({ error: 'POST only' });
         return;
     }
-    const { home, away, homeScore, awayScore, competition, status, minute, template, hashtags, } = req.body;
+    const { home, away, homeScore, awayScore, competition, status, minute, template, } = req.body;
     if (!home || !away) {
         res.status(400).json({ error: 'home and away required' });
         return;
@@ -30,16 +30,10 @@ exports.captionRewrite = (0, https_1.onRequest)({ secrets: [secrets_1.anthropicA
     const matchLine = hasScore
         ? `${home} ${scoreStr} ${away} (${statusStr}, ${competition})`
         : `${home} vs ${away} (${statusStr}, ${competition})`;
-    const hashtagLine = hashtags.length
-        ? `\nHashtags to include verbatim at the end: ${hashtags.join(' ')}`
-        : '';
     const templateGuidance = template === 'ticker'
-        ? 'Write a punchy bold news-ticker headline in ALL CAPS, max 10 words. No hashtags in the headline itself.'
-        : 'Write a short editorial headline, sentence-case, max 12 words. No hashtags in the headline itself.';
-    const hashtagInstructions = hashtags.length
-        ? 'Append the hashtags on a new line after the headline.'
-        : '';
-    const prompt = `You are a sharp football writer crafting social copy for a live scores card.\n\nMatch: ${matchLine}${hashtagLine}\n\n${templateGuidance}\n${hashtagInstructions}\nReply with the caption text only — no explanation, no quotes.`;
+        ? 'Write a punchy bold news-ticker headline in ALL CAPS, max 10 words.'
+        : 'Write a short editorial headline, sentence-case, max 12 words.';
+    const prompt = `You are a sharp football writer crafting social copy for a live scores card.\n\nMatch: ${matchLine}\n\n${templateGuidance}\nDo NOT include hashtags — reply with the headline text only, no explanation, no quotes.`;
     try {
         const client = new sdk_1.default({ apiKey: secrets_1.anthropicApiKey.value() });
         const msg = await client.messages.create({

@@ -607,7 +607,9 @@ export default function StudioPage({ locale }: StudioPageProps) {
                 if (!res.ok) throw new Error(`${res.status}`);
                 const data = await res.json() as { caption?: string; error?: string };
                 if (data.caption) {
-                  setConfig(c => ({ ...c, caption: data.caption! }));
+                  // Strip any hashtags Claude included — they live in the pills, not the card text
+                  const clean = data.caption.replace(/#\w+/g, '').replace(/\n+/g, ' ').trim();
+                  setConfig(c => ({ ...c, caption: clean }));
                 } else {
                   throw new Error('no caption');
                 }
@@ -627,28 +629,29 @@ export default function StudioPage({ locale }: StudioPageProps) {
         )}
 
         {/* Hashtags */}
-        {hashtags.length > 0 && (
-          <div className={styles.hashtags}>
-            {hashtags.map(tag => (
-              <span key={tag} className={styles.hashtagPill} onClick={() => setHashtags(prev => prev.filter(t => t !== tag))}>
-                {tag}
-              </span>
-            ))}
-            {addingTag ? (
-              <input
-                className={styles.hashtagInput}
-                autoFocus
-                placeholder="#tag"
-                value={newTag}
-                onChange={e => setNewTag(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') addHashtag(); if (e.key === 'Escape') setAddingTag(false); }}
-                onBlur={addHashtag}
-              />
-            ) : (
-              <button className={styles.hashtagAdd} onClick={() => setAddingTag(true)}>+ add</button>
-            )}
-          </div>
-        )}
+        <div className={styles.hashtags}>
+          {hashtags.map(tag => (
+            <span key={tag} className={styles.hashtagPill} onClick={() => {
+              setHashtags(prev => prev.filter(t => t !== tag));
+              setConfig(c => ({ ...c, caption: c.caption.replace(tag, '').replace(/\s{2,}/g, ' ').trim() }));
+            }}>
+              {tag}
+            </span>
+          ))}
+          {addingTag ? (
+            <input
+              className={styles.hashtagInput}
+              autoFocus
+              placeholder="#tag"
+              value={newTag}
+              onChange={e => setNewTag(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') addHashtag(); if (e.key === 'Escape') setAddingTag(false); }}
+              onBlur={addHashtag}
+            />
+          ) : (
+            <button className={styles.hashtagAdd} onClick={() => setAddingTag(true)}>+ add</button>
+          )}
+        </div>
       </section>
 
       {/* 05 Share To */}

@@ -18,12 +18,12 @@ export const captionRewrite = onRequest(
       home, away,
       homeScore, awayScore,
       competition, status, minute,
-      template, hashtags,
+      template,
     } = req.body as {
       home: string; away: string;
       homeScore: number | null; awayScore: number | null;
       competition: string; status: string; minute?: string;
-      template: string; hashtags: string[];
+      template: string;
     };
 
     if (!home || !away) {
@@ -43,19 +43,11 @@ export const captionRewrite = onRequest(
       ? `${home} ${scoreStr} ${away} (${statusStr}, ${competition})`
       : `${home} vs ${away} (${statusStr}, ${competition})`;
 
-    const hashtagLine = hashtags.length
-      ? `\nHashtags to include verbatim at the end: ${hashtags.join(' ')}`
-      : '';
-
     const templateGuidance = template === 'ticker'
-      ? 'Write a punchy bold news-ticker headline in ALL CAPS, max 10 words. No hashtags in the headline itself.'
-      : 'Write a short editorial headline, sentence-case, max 12 words. No hashtags in the headline itself.';
+      ? 'Write a punchy bold news-ticker headline in ALL CAPS, max 10 words.'
+      : 'Write a short editorial headline, sentence-case, max 12 words.';
 
-    const hashtagInstructions = hashtags.length
-      ? 'Append the hashtags on a new line after the headline.'
-      : '';
-
-    const prompt = `You are a sharp football writer crafting social copy for a live scores card.\n\nMatch: ${matchLine}${hashtagLine}\n\n${templateGuidance}\n${hashtagInstructions}\nReply with the caption text only — no explanation, no quotes.`;
+    const prompt = `You are a sharp football writer crafting social copy for a live scores card.\n\nMatch: ${matchLine}\n\n${templateGuidance}\nDo NOT include hashtags — reply with the headline text only, no explanation, no quotes.`;
 
     try {
       const client = new Anthropic({ apiKey: anthropicApiKey.value() });

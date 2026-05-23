@@ -24,6 +24,12 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite:      (path) => path.replace(/^\/api\/fetchMatchday/, '/fetchMatchdayHttp'),
         },
+        // AI caption rewrite (Cloud Function).
+        '/api/captionRewrite': {
+          target:       'https://us-central1-fanaticscores-b6af4.cloudfunctions.net',
+          changeOrigin: true,
+          rewrite:      (path) => path.replace(/^\/api\/captionRewrite/, '/captionRewrite'),
+        },
       },
     },
   }
