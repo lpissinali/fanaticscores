@@ -1,7 +1,7 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useSEO } from '../../lib/useSEO';
 import { useCompetitionDetails } from '../../lib/useCompetitionDetails';
-import type { CompStandingRow, CompScorer, CompInfo, CompFixture } from '../../lib/api/competitionDetails';
+import type { CompStandingRow, CompStandingGroup, CompScorer, CompInfo, CompFixture } from '../../lib/api/competitionDetails';
 import type { SupportedLocale } from '../../i18n';
 import Sidebar from '../../components/layout/Sidebar/Sidebar';
 import Footer from '../../components/layout/Footer/Footer';
@@ -66,42 +66,72 @@ function HeroCard({ info }: { info: CompInfo }) {
 }
 
 // ── Standings table ───────────────────────────────────────────────────────────
-function StandingsTable({ rows, locale }: { rows: CompStandingRow[]; locale: string }) {
-  if (rows.length === 0) return null;
+function StandingRows({ rows, locale }: { rows: CompStandingRow[]; locale: string }) {
+  return (
+    <>
+      <div className={styles.tableHead}>
+        <span className={styles.colPos}>#</span>
+        <span className={styles.colTeam}>Club</span>
+        <span className={styles.colNum}>P</span>
+        <span className={styles.colNum}>W</span>
+        <span className={styles.colNum}>D</span>
+        <span className={styles.colNum}>L</span>
+        <span className={styles.colNum}>GF</span>
+        <span className={styles.colNum}>GA</span>
+        <span className={styles.colNum}>GD</span>
+        <span className={styles.colPts}>Pts</span>
+      </div>
+      {rows.map(r => (
+        <div key={r.teamId} className={styles.tableRow}>
+          <span className={styles.colPos}>{r.position}</span>
+          <Link to={`/${locale}/team/${r.teamId}`} className={styles.colTeam} style={{ textDecoration: 'none' }}>
+            <img src={r.teamCrest} alt={r.teamName} width={16} height={16}
+              style={{ objectFit: 'contain', flexShrink: 0 }}
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+            {r.teamName}
+          </Link>
+          <span className={styles.colNum}>{r.played}</span>
+          <span className={styles.colNum}>{r.won}</span>
+          <span className={styles.colNum}>{r.draw}</span>
+          <span className={styles.colNum}>{r.lost}</span>
+          <span className={styles.colNum}>{r.goalsFor}</span>
+          <span className={styles.colNum}>{r.goalsAgainst}</span>
+          <span className={styles.colNum}>{r.goalDifference > 0 ? `+${r.goalDifference}` : r.goalDifference}</span>
+          <span className={styles.colPts}>{r.points}</span>
+        </div>
+      ))}
+    </>
+  );
+}
+
+function StandingsTable({ groups, locale }: { groups: CompStandingGroup[]; locale: string }) {
+  if (groups.length === 0) return null;
+  const isGrouped = groups.length > 1;
+
+  if (!isGrouped) {
+    // Single table — original flat layout
+    return (
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>Standings</h2>
+        <div className={styles.table}>
+          <StandingRows rows={groups[0].rows} locale={locale} />
+        </div>
+      </div>
+    );
+  }
+
+  // Multi-group layout
   return (
     <div className={styles.section}>
       <h2 className={styles.sectionTitle}>Standings</h2>
-      <div className={styles.table}>
-        <div className={styles.tableHead}>
-          <span className={styles.colPos}>#</span>
-          <span className={styles.colTeam}>Club</span>
-          <span className={styles.colNum}>P</span>
-          <span className={styles.colNum}>W</span>
-          <span className={styles.colNum}>D</span>
-          <span className={styles.colNum}>L</span>
-          <span className={styles.colNum}>GF</span>
-          <span className={styles.colNum}>GA</span>
-          <span className={styles.colNum}>GD</span>
-          <span className={styles.colPts}>Pts</span>
-        </div>
-        {rows.map(r => (
-          <div key={r.teamId} className={styles.tableRow}>
-            <span className={styles.colPos}>{r.position}</span>
-            <Link to={`/${locale}/team/${r.teamId}`} className={styles.colTeam} style={{ textDecoration: 'none' }}>
-              <img src={r.teamCrest} alt={r.teamName} width={16} height={16}
-                style={{ objectFit: 'contain', flexShrink: 0 }}
-                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-              />
-              {r.teamName}
-            </Link>
-            <span className={styles.colNum}>{r.played}</span>
-            <span className={styles.colNum}>{r.won}</span>
-            <span className={styles.colNum}>{r.draw}</span>
-            <span className={styles.colNum}>{r.lost}</span>
-            <span className={styles.colNum}>{r.goalsFor}</span>
-            <span className={styles.colNum}>{r.goalsAgainst}</span>
-            <span className={styles.colNum}>{r.goalDifference > 0 ? `+${r.goalDifference}` : r.goalDifference}</span>
-            <span className={styles.colPts}>{r.points}</span>
+      <div className={styles.groupsGrid}>
+        {groups.map(g => (
+          <div key={g.name} className={styles.standingGroup}>
+            {g.name && <div className={styles.standingGroupName}>{g.name}</div>}
+            <div className={styles.table}>
+              <StandingRows rows={g.rows} locale={locale} />
+            </div>
           </div>
         ))}
       </div>
@@ -302,7 +332,7 @@ export default function CompetitionPage({ locale }: CompetitionPageProps) {
                 <HeroCard info={data.info} />
                 <FixtureSection title="Upcoming Fixtures" fixtures={data.upcomingFixtures} locale={locale} />
                 <FixtureSection title="Recent Results"   fixtures={data.recentResults}    locale={locale} />
-                <StandingsTable rows={data.standings} locale={locale} />
+                <StandingsTable groups={data.standingGroups} locale={locale} />
               </>
             )}
             <Footer />
@@ -334,7 +364,7 @@ export default function CompetitionPage({ locale }: CompetitionPageProps) {
                 <HeroCard info={data.info} />
                 <FixtureSection title="Upcoming Fixtures" fixtures={data.upcomingFixtures} locale={locale} />
                 <FixtureSection title="Recent Results"   fixtures={data.recentResults}    locale={locale} />
-                <StandingsTable rows={data.standings} locale={locale} />
+                <StandingsTable groups={data.standingGroups} locale={locale} />
                 <ScorersTable scorers={data.scorers} />
               </>
             )}

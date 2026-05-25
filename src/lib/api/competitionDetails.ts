@@ -23,11 +23,8 @@ const COMP_CODE_TO_LEAGUE_ID: Record<string, number> = {
   FAC:  45,  LCC:  48, CDR: 143, DFB:  81, CI:  137, CDF:  66,
 };
 
-// Cup codes — no standings fetch for these.
+// Knockout-only cups — no standings at any stage, skip fetch entirely.
 const CUP_CODES = new Set([
-  'WC', 'CWC', 'EURO', 'CA', 'AFCN', 'UNL',
-  'CL', 'EL', 'UECL',
-  'LIBT', 'CSUD',
   'FAC', 'LCC', 'CDR', 'DFB', 'CI', 'CDF',
 ]);
 
@@ -78,6 +75,7 @@ interface AFStandingsLeague {
 
 interface AFStandingsEntry {
   rank:      number;
+  group:     string | null;
   team:      { id: number; name: string; logo: string };
   points:    number;
   goalsDiff: number;
@@ -146,9 +144,14 @@ export interface CompFixture {
   awayTeam: { id: number; name: string; crest: string; score: number | null; };
 }
 
+export interface CompStandingGroup {
+  name: string;   // e.g. "Group A", or "" for ungrouped leagues
+  rows: CompStandingRow[];
+}
+
 export interface CompetitionDetailData {
   info: CompInfo;
-  standings: CompStandingRow[];
+  standingGroups: CompStandingGroup[];
   scorers: CompScorer[];
   upcomingFixtures: CompFixture[];
   recentResults: CompFixture[];
@@ -216,9 +219,9 @@ async function fetchCompInfo(code: string, leagueId: number): Promise<CompInfo |
 // ── Fetch standings (with season fallback) ────────────────────────────────────
 
 interface StandingsFetch {
-  rows:            CompStandingRow[];
+  groups:          CompStandingGroup[];
   currentMatchday: number | null;
-  winner:          { name: string; crest: string | null } | null; // rank-1 team (= champion of this season if finished, or null)
+  winner:          { name: string; crest: string | null } | null;
 }
 
 async function fetchStandingsRaw(leagueId: number, season: number): Promise<StandingsFetch | 'plan_error' | null> {
@@ -237,10 +240,10 @@ async function fetchStandingsRaw(leagueId: number, season: number): Promise<Stan
     const league = data.response?.[0]?.league;
     if (!league) return null;
 
-    const table = league.standings?.[0] ?? [];
-    if (table.length === 0) return null;   // no data yet for this season
+    const allTables = league.standings ?? [];
+    if (allTables.length === 0 || allTables[0].length === 0) return null;
 
-    const rows: CompStandingRow[] = table.map(r => ({
+    const mapRow = (r: AFStandingsEntry): CompStandingRow => ({
       position:       r.rank,
       teamId:         String(r.team.id),
       teamName:       r.team.name,
@@ -255,12 +258,17 @@ async function fetchStandingsRaw(leagueId: number, season: number): Promise<Stan
       goalDifference: r.goalsDiff,
       points:         r.points,
       form:           r.form ?? null,
+    });
+
+    const groups: CompStandingGroup[] = allTables.map(table => ({
+      name: table[0]?.group ?? '',
+      rows: table.map(mapRow),
     }));
 
-    const champion = table.find(r => r.rank === 1) ?? null;
+    const champion = allTables[0].find(r => r.rank === 1) ?? null;
 
     return {
-      rows,
+      groups,
       currentMatchday: parseMatchday(league.round),
       winner: champion ? { name: champion.team.name, crest: champion.team.logo } : null,
     };
@@ -270,25 +278,26 @@ async function fetchStandingsRaw(leagueId: number, season: number): Promise<Stan
   }
 }
 
-async function fetchCompStandings(code: string, leagueId: number): Promise<{
-  rows: CompStandingRow[];
-  currentMatchday: number | null;
-  winner: { name: string; crest: string | null } | null;
-}> {
-  const empty = { rows: [], currentMatchday: null, winner: null };
+async function fetchCompStandings(code: string, leagueId: number): Promise<StandingsFetch> {
+  const empty: StandingsFetch = { groups: [], currentMatchday: null, winner: null };
   if (CUP_CODES.has(code)) return empty;
 
-  const baseSeason = currentSeason();
+  const calendarYear = new Date().getFullYear();
+  const baseSeason   = currentSeason();
 
-  for (let offset = 0; offset <= 2; offset++) {
-    const season = baseSeason - offset;
+  // Build a deduped list: try the actual calendar year first (catches WC/EURO
+  // which are stored under the tournament year, e.g. 2026), then the European-
+  // league season and up to 5 years further back (catches WC 2022 from 2026).
+  const seasons = [...new Set([calendarYear, baseSeason, ...Array.from({ length: 5 }, (_, i) => baseSeason - i - 1)])];
+
+  for (const season of seasons) {
     const key = `comp_standings:af2:${leagueId}:${season}`;
-    const hit = cacheGet<{ rows: CompStandingRow[]; currentMatchday: number | null; winner: { name: string; crest: string | null } | null }>(key);
+    const hit = cacheGet<StandingsFetch>(key);
     if (hit !== null) return hit;
 
     const result = await fetchStandingsRaw(leagueId, season);
-    if (result === 'plan_error') { console.warn(`[competitionDetails] plan_error for season ${season}, trying ${season - 1}`); continue; }
-    if (result === null) continue;  // empty season or fetch error — try previous
+    if (result === 'plan_error') { console.warn(`[competitionDetails] plan_error for season ${season}, skipping`); continue; }
+    if (result === null) continue;
 
     cacheSet(key, result, TTL);
     return result;
@@ -398,10 +407,7 @@ export async function fetchCompetitionDetail(code: string): Promise<CompetitionD
   if (info.season) {
     info.season.currentMatchday = standingsFetch.currentMatchday;
 
-    // Winner = rank-1 team from the PREVIOUS season (current season winner not yet decided).
-    // If the current season standings show a played count suggesting the season is over (e.g. 38+ games),
-    // use the current season's rank-1 team as champion. Otherwise fall back to previous season.
-    const topRow = standingsFetch.rows[0];
+    const topRow = standingsFetch.groups[0]?.rows[0];
     const seasonOver = topRow && topRow.played >= 34;
     if (seasonOver) {
       info.season.winner = standingsFetch.winner;
@@ -419,5 +425,5 @@ export async function fetchCompetitionDetail(code: string): Promise<CompetitionD
   // Cache the final info (now that currentMatchday/winner are filled in).
   cacheSet(`comp_info:af:${leagueId}`, info, TTL);
 
-  return { info, standings: standingsFetch.rows, scorers, upcomingFixtures: fixtures.upcoming, recentResults: fixtures.recent };
+  return { info, standingGroups: standingsFetch.groups, scorers, upcomingFixtures: fixtures.upcoming, recentResults: fixtures.recent };
 }

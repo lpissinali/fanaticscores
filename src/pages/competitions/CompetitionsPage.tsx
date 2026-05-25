@@ -13,6 +13,16 @@ interface CompetitionsPageProps { locale: SupportedLocale; }
 // Mirrors LEAGUE_LIST in apiFootballFetch.ts — grouped by region
 const COMPETITIONS = [
   {
+    region: 'Europe — Top Leagues',
+    comps: [
+      { code: 'PL',  name: 'Premier League',  country: 'England',      flag: '#3d0d6b', type: 'League' },
+      { code: 'PD',  name: 'La Liga',         country: 'Spain',        flag: '#8b0000', type: 'League' },
+      { code: 'SA',  name: 'Serie A',         country: 'Italy',        flag: '#003580', type: 'League' },
+      { code: 'BL1', name: 'Bundesliga',      country: 'Germany',      flag: '#cc0000', type: 'League' },
+      { code: 'FL1', name: 'Ligue 1',         country: 'France',       flag: '#003189', type: 'League' },
+    ],
+  },
+  {
     region: 'International',
     comps: [
       { code: 'WC',   name: 'FIFA World Cup',              country: 'World',      flag: '#8b6914', type: 'Cup'    },
@@ -31,16 +41,6 @@ const COMPETITIONS = [
       { code: 'UECL', name: 'UEFA Conference League',      country: 'Europe',     flag: '#1a6b3a', type: 'Cup'    },
       { code: 'LIBT', name: 'Copa Libertadores',           country: 'S. America', flag: '#006400', type: 'Cup'    },
       { code: 'CSUD', name: 'Copa Sudamericana',           country: 'S. America', flag: '#005500', type: 'Cup'    },
-    ],
-  },
-  {
-    region: 'Europe — Top Leagues',
-    comps: [
-      { code: 'PL',  name: 'Premier League',  country: 'England',      flag: '#3d0d6b', type: 'League' },
-      { code: 'PD',  name: 'La Liga',         country: 'Spain',        flag: '#8b0000', type: 'League' },
-      { code: 'SA',  name: 'Serie A',         country: 'Italy',        flag: '#003580', type: 'League' },
-      { code: 'BL1', name: 'Bundesliga',      country: 'Germany',      flag: '#cc0000', type: 'League' },
-      { code: 'FL1', name: 'Ligue 1',         country: 'France',       flag: '#003189', type: 'League' },
     ],
   },
   {

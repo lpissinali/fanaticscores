@@ -51,6 +51,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
   margin: 0 0 12px;
 }
 
@@ -138,6 +139,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
   padding: 16px 16px 8px;
 }
 
