@@ -7,7 +7,7 @@
 import { useEffect } from 'react';
 
 export const SITE_NAME = 'FanaticScores';
-export const BASE_URL  = 'https://fanaticscores.com';
+export const BASE_URL  = 'https://www.fanaticscores.com';
 const DEFAULT_DESC     = 'Real-time football scores, live match data and AI-powered match cards — all in one place.';
 const DEFAULT_IMAGE    = `${BASE_URL}/og-default.png`;
 

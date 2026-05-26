@@ -8,21 +8,21 @@
     <title>FanaticScores — Today's Football Scores</title>
     <meta name="description" content="Real-time football scores, live match data and AI-powered match cards — all in one place." />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://fanaticscores.com/en/today" />
+    <link rel="canonical" href="https://www.fanaticscores.com/en/today" />
 
     <!-- Open Graph -->
     <meta property="og:type"        content="website" />
     <meta property="og:site_name"   content="FanaticScores" />
     <meta property="og:title"       content="FanaticScores — Today's Football Scores" />
     <meta property="og:description" content="Real-time football scores, live match data and AI-powered match cards — all in one place." />
-    <meta property="og:url"         content="https://fanaticscores.com/en/today" />
-    <meta property="og:image"       content="https://fanaticscores.com/og-default.png" />
+    <meta property="og:url"         content="https://www.fanaticscores.com/en/today" />
+    <meta property="og:image"       content="https://www.fanaticscores.com/og-default.png" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card"        content="summary_large_image" />
     <meta name="twitter:title"       content="FanaticScores — Today's Football Scores" />
     <meta name="twitter:description" content="Real-time football scores, live match data and AI-powered match cards." />
-    <meta name="twitter:image"       content="https://fanaticscores.com/og-default.png" />
+    <meta name="twitter:image"       content="https://www.fanaticscores.com/og-default.png" />
 
     <!-- Favicon -->
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -36,6 +36,42 @@
       href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,100..900;1,75..125,100..900&family=JetBrains+Mono:wght@400;500;700&family=Saira:ital,wght@1,900&display=swap"
       rel="stylesheet"
     />
+
+    <!-- Organization structured data — tells Google exactly what this site is,
+         disambiguating it from any other entity using the "FanaticScores" name. -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "FanaticScores",
+      "url": "https://www.fanaticscores.com",
+      "description": "Real-time football scores, live match data and AI-powered match cards — all in one place.",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://www.fanaticscores.com/en/today"
+        },
+        "query-input": "required name=search_term_string"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FanaticScores",
+        "url": "https://www.fanaticscores.com",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.fanaticscores.com/assets/logo-mark-dark.png",
+          "width": 512,
+          "height": 512
+        },
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "email": "legal@fanaticscores.com",
+          "contactType": "customer support"
+        }
+      }
+    }
+    </script>
 
     <!-- Google Analytics 4 — Consent Mode v2 -->
     <!-- Script loads but collects nothing until consent is granted via gtag('consent','update') -->
