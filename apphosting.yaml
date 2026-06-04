@@ -1,0 +1,20 @@
+runConfig:
+  runtime: nodejs20
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+  minInstances: 0
+  maxInstances: 100
+
+env:
+  - variable: AF_API_KEY
+    secret: AF_API_KEY
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: FIREBASE_PROJECT_ID
+    value: fanaticscores-b6af4
+    availability:
+      - BUILD
+      - RUNTIME

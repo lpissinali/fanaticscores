@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@apphosting/adapter-nextjs": "latest",
     "firebase": "^11.0.0",
     "next": "^15.1.0",
     "react": "^19.0.0",
