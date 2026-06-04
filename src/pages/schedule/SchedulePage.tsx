@@ -1,3 +1,4 @@
+'use client';
 import { useState } from 'react';
 import styles from './SchedulePage.module.css';
 import type { SupportedLocale } from '../../i18n';

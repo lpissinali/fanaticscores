@@ -1,4 +1,6 @@
-import { useParams, useNavigate, Link } from 'react-router-dom';
+'use client';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useSEO } from '../../lib/useSEO';
 import { useTeamDetails } from '../../lib/useTeamDetails';
 import type { TeamPlayer, TeamMatch } from '../../lib/api/teamDetails';
@@ -99,7 +101,7 @@ function MatchRow({ m, teamId, locale }: { m: TeamMatch; teamId: string; locale:
   });
 
   return (
-    <Link to={`/${locale}/match/${m.id}`} className={styles.matchRow}>
+    <Link href={`/${locale}/match/${m.id}`} className={styles.matchRow}>
       <div className={styles.matchDateCell}>
         <span className={styles.matchDate}>{kickoffDate}</span>
         {isScheduled && <span className={styles.matchTime}>{kickoffTime}</span>}
@@ -127,8 +129,8 @@ function MatchRow({ m, teamId, locale }: { m: TeamMatch; teamId: string; locale:
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function TeamPage({ locale }: TeamPageProps) {
-  const { teamId = '' } = useParams<{ teamId: string }>();
-  const navigate = useNavigate();
+  const { teamId = '' } = useParams() as { teamId: string };
+  const router = useRouter();
   const { data, loading, error } = useTeamDetails(teamId);
   const teamObj = data ? {
     id:      teamId,
@@ -194,7 +196,7 @@ export default function TeamPage({ locale }: TeamPageProps) {
               {info.runningCompetitions.length > 0 && (
                 <div className={styles.compChips}>
                   {info.runningCompetitions.map(c => (
-                    <Link key={c.id} to={`/${locale}/competition/${c.code}`} className={styles.compChip}>
+                    <Link key={c.id} href={`/${locale}/competition/${c.code}`} className={styles.compChip}>
                       {c.emblem && (
                         <img src={c.emblem} alt={c.name} width={14} height={14}
                           onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
@@ -271,7 +273,7 @@ export default function TeamPage({ locale }: TeamPageProps) {
         <div className={styles.desktop}>
           <Sidebar locale={locale} />
           <main className={styles.main}>
-            <button className={styles.backBtn} onClick={() => navigate(-1)}>
+            <button className={styles.backBtn} onClick={() => router.back()}>
               <Icon name="chevron-left" size={14} /> Back
             </button>
             {content(false)}
@@ -319,7 +321,7 @@ export default function TeamPage({ locale }: TeamPageProps) {
       <div className={styles.mobileOnly}>
         <div className="screen">
           <div className={styles.mobTopBar}>
-            <button className={styles.mobBackBtn} onClick={() => navigate(-1)}>
+            <button className={styles.mobBackBtn} onClick={() => router.back()}>
               <Icon name="chevron-left" size={20} />
             </button>
             <span className={styles.mobTitle}>{data?.info.shortName ?? 'Team'}</span>

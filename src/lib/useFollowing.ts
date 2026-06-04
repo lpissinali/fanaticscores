@@ -1,3 +1,4 @@
+'use client';
 /**
  * Following store — persisted to localStorage.
  * Exposes both React hooks and plain helpers so non-hook

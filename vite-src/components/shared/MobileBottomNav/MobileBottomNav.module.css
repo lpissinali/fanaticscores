@@ -1,0 +1,9 @@
+.bottomTabs {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  padding: 8px 8px 22px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  gap: 4px;
+  flex-shrink: 0;
+}

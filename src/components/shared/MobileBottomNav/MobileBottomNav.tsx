@@ -1,5 +1,7 @@
+'use client';
+import Link from 'next/link';
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import styles from './MobileBottomNav.module.css';
 import Icon from '../Icon/Icon';
 import SearchModal from '../SearchModal/SearchModal';
@@ -19,7 +21,7 @@ const TABS = [
 ];
 
 export default function MobileBottomNav({ locale, activeTab }: MobileBottomNavProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [showSearch, setShowSearch] = useState(false);
 
   return (
@@ -27,7 +29,7 @@ export default function MobileBottomNav({ locale, activeTab }: MobileBottomNavPr
       <nav className={styles.bottomTabs} aria-label="Main navigation">
         {TABS.map((t) =>
           t.accent ? (
-            <Link key={t.id} to={`/${locale}/studio`} className="fs-btn" style={{
+            <Link key={t.id} href={`/${locale}/studio`} className="fs-btn" style={{
               flexDirection: 'column', gap: 2, height: 50, padding: 0,
               borderColor: 'transparent', background: 'var(--orange)', color: '#1a0d04',
               textDecoration: 'none',
@@ -39,9 +41,9 @@ export default function MobileBottomNav({ locale, activeTab }: MobileBottomNavPr
             <button key={t.id} className="fs-btn ghost"
               onClick={
                 t.id === 'search' ? () => setShowSearch(true) :
-                t.id === 'home'   ? () => navigate(`/${locale}/today`) :
-                t.id === 'comp'   ? () => navigate(`/${locale}/competitions`) :
-                t.id === 'follow' ? () => navigate(`/${locale}/following`) :
+                t.id === 'home'   ? () => router.push(`/${locale}/today`) :
+                t.id === 'comp'   ? () => router.push(`/${locale}/competitions`) :
+                t.id === 'follow' ? () => router.push(`/${locale}/following`) :
                 undefined
               }
               style={{

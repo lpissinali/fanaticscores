@@ -1,3 +1,4 @@
+'use client';
 import { useState, useEffect } from 'react';
 import { fetchMatchDetail } from './api/matchDetails';
 import type { MatchDetailData } from './api/matchDetails';

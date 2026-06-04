@@ -50,7 +50,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
 }
 
 /* Day grid */

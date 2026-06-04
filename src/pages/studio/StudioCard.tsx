@@ -1,3 +1,4 @@
+'use client';
 /**
  * StudioCard — renders one of 4 card templates.
  * All styles are intentionally inline so html2canvas can capture them.

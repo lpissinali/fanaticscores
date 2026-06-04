@@ -2,7 +2,6 @@
    Fanatic Scores — Global styles & utility classes
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,100..900;1,75..125,100..900&family=JetBrains+Mono:wght@400;500;700&family=Saira:ital,wght@1,900&display=swap');
 
 @import './tokens.css';
 
@@ -19,7 +18,7 @@ html, body, #root {
 }
 
 body {
-  font-family: 'Archivo', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-archivo), 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg);
   color: var(--text);
   font-size: 14px;
@@ -29,11 +28,11 @@ body {
 
 /* ---- utility ---- */
 .fs-mono {
-  font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  font-family: var(--font-jetbrains-mono), ui-monospace, Menlo, monospace;
 }
 
 .fs-display {
-  font-family: 'Archivo', sans-serif;
+  font-family: var(--font-archivo), sans-serif;
   font-stretch: 125%;
   font-weight: 800;
   letter-spacing: -0.03em;
@@ -192,7 +191,7 @@ body {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-dim);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
 }
 .list-header .lh-flag {
   width: 16px;
@@ -243,7 +242,7 @@ body {
 .match-row .team-name.muted { color: var(--text-dim); }
 
 .match-row .score-col {
-  font-family: 'Archivo', sans-serif;
+  font-family: var(--font-archivo), sans-serif;
   font-weight: 800;
   font-size: 18px;
   display: flex;

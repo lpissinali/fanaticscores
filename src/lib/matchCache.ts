@@ -1,3 +1,4 @@
+'use client';
 /**
  * Match cache — populated by useMatches whenever home-page data loads.
  * Backed by sessionStorage so the match details page works after refresh.

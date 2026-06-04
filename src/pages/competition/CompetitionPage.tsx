@@ -1,4 +1,6 @@
-import { useParams, useNavigate, Link } from 'react-router-dom';
+'use client';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useSEO } from '../../lib/useSEO';
 import { useCompetitionDetails } from '../../lib/useCompetitionDetails';
 import type { CompStandingRow, CompStandingGroup, CompScorer, CompInfo, CompFixture } from '../../lib/api/competitionDetails';
@@ -84,7 +86,7 @@ function StandingRows({ rows, locale }: { rows: CompStandingRow[]; locale: strin
       {rows.map(r => (
         <div key={r.teamId} className={styles.tableRow}>
           <span className={styles.colPos}>{r.position}</span>
-          <Link to={`/${locale}/team/${r.teamId}`} className={styles.colTeam} style={{ textDecoration: 'none' }}>
+          <Link href={`/${locale}/team/${r.teamId}`} className={styles.colTeam} style={{ textDecoration: 'none' }}>
             <img src={r.teamCrest} alt={r.teamName} width={16} height={16}
               style={{ objectFit: 'contain', flexShrink: 0 }}
               onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
@@ -220,7 +222,7 @@ function formatTime(utcDate: string): string {
 }
 
 function FixtureRow({ fixture, locale }: { fixture: CompFixture; locale: string }) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const isScheduled = fixture.homeTeam.score === null || fixture.awayTeam.score === null;
 
   return (
@@ -228,8 +230,8 @@ function FixtureRow({ fixture, locale }: { fixture: CompFixture; locale: string 
       className={styles.fixtureRow}
       role="link"
       tabIndex={0}
-      onClick={() => navigate(`/${locale}/match/${fixture.id}`)}
-      onKeyDown={e => e.key === 'Enter' && navigate(`/${locale}/match/${fixture.id}`)}
+      onClick={() => router.push(`/${locale}/match/${fixture.id}`)}
+      onKeyDown={e => e.key === 'Enter' && router.push(`/${locale}/match/${fixture.id}`)}
     >
       {/* Date + time */}
       <div className={styles.dateCell}>
@@ -301,8 +303,8 @@ function FixtureSection({
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function CompetitionPage({ locale }: CompetitionPageProps) {
-  const { compCode } = useParams<{ compCode: string }>();
-  const navigate = useNavigate();
+  const { compCode } = useParams() as { compCode: string };
+  const router = useRouter();
   const { data, loading, error } = useCompetitionDetails(compCode ?? '');
 
   useSEO({
@@ -321,7 +323,7 @@ export default function CompetitionPage({ locale }: CompetitionPageProps) {
           <Sidebar locale={locale} />
 
           <main className={styles.main}>
-            <button className={styles.backBtn} onClick={() => navigate(-1)}>
+            <button className={styles.backBtn} onClick={() => router.back()}>
               <Icon name="chevron-left" size={14} /> Back
             </button>
 
@@ -349,7 +351,7 @@ export default function CompetitionPage({ locale }: CompetitionPageProps) {
       <div className={styles.mobileOnly}>
         <div className={styles.mobScreen}>
           <div className={styles.mobTopBar}>
-            <button className={styles.mobBackBtn} onClick={() => navigate(-1)}>
+            <button className={styles.mobBackBtn} onClick={() => router.back()}>
               <Icon name="chevron-left" size={20} />
             </button>
             <span className={styles.mobTopTitle}>{title}</span>

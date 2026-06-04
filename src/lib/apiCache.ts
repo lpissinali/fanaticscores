@@ -1,3 +1,4 @@
+'use client';
 /**
  * Generic TTL-based localStorage cache.
  * Keys are prefixed with 'fs_cache_v2_' to avoid collisions.

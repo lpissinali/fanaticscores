@@ -1,3 +1,4 @@
+'use client';
 /**
  * useSEO — lightweight DOM-based SEO helper (no extra library).
  *

@@ -20,7 +20,7 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--orange);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
 }
 
 .body {

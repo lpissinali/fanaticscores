@@ -1,10 +1,17 @@
+'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import Icon from '../Icon/Icon';
-import Crest from '../Crest/Crest';
-import { getAllCachedTeams } from '../../../lib/matchCache';
-import type { CachedTeam } from '../../../lib/matchCache';
 import styles from './SearchModal.module.css';
+
+interface TeamResult {
+  id: string;
+  name: string;
+  crest: string;
+  country: string;
+  compCode: string;
+  compName: string;
+}
 
 // ── Static competitions list ───────────────────────────────────────────────
 
@@ -40,9 +47,31 @@ interface SearchModalProps {
 
 export default function SearchModal({ onClose, locale }: SearchModalProps) {
   const [query, setQuery] = useState('');
+  const [teams, setTeams] = useState<TeamResult[]>([]);
+  const [teamsLoading, setTeamsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const navigate = useNavigate();
-  const teams = getAllCachedTeams();
+  const router = useRouter();
+
+  // Search teams via API as the user types (debounced 300 ms)
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) { setTeams([]); return; }
+
+    const timer = setTimeout(async () => {
+      setTeamsLoading(true);
+      try {
+        const res = await fetch(`/api/search-teams?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        setTeams(data);
+      } catch {
+        setTeams([]);
+      } finally {
+        setTeamsLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [query]);
 
   // Focus input on mount
   useEffect(() => {
@@ -68,16 +97,10 @@ export default function SearchModal({ onClose, locale }: SearchModalProps) {
     : COMPETITIONS.filter(c => score(c.name, q) > 0 || score(c.country, q) > 0)
         .sort((a, b) => score(b.name, q) - score(a.name, q));
 
-  const matchedTeams: CachedTeam[] = q.length < 2
-    ? []
-    : teams.filter(t => score(t.name, q) > 0)
-        .sort((a, b) => score(b.name, q) - score(a.name, q))
-        .slice(0, 8);
-
-  const isEmpty = matchedComps.length === 0 && matchedTeams.length === 0;
+  const isEmpty = matchedComps.length === 0 && teams.length === 0 && !teamsLoading;
 
   function goComp(code: string) {
-    navigate(`/${locale}/competition/${code}`);
+    router.push(`/${locale}/competition/${code}`);
     onClose();
   }
 
@@ -121,46 +144,25 @@ export default function SearchModal({ onClose, locale }: SearchModalProps) {
           )}
 
           {/* Teams section */}
-          {matchedTeams.length > 0 && (
+          {(teams.length > 0 || teamsLoading) && (
             <div className={styles.section}>
               <div className={styles.sectionLabel}>Teams</div>
-              {matchedTeams.map(team => (
+              {teamsLoading && teams.length === 0 && (
+                <div style={{ padding: '8px 12px', color: 'var(--text-faint)', fontSize: 12 }}>Searching…</div>
+              )}
+              {teams.map(team => (
                 <button
                   key={team.id}
                   className={styles.row}
-                  onClick={() => { navigate(`/${locale}/team/${team.id}`); onClose(); }}
+                  onClick={() => { router.push(`/${locale}/team/${team.id}`); onClose(); }}
                 >
-                  <Crest
-                    team={{ initial: team.name.slice(0, 3).toUpperCase(), color: '#3a3a48', name: team.name, crest: team.crest }}
-                    size="sm"
-                  />
+                  {team.crest
+                    ? <img src={team.crest} alt={team.name} width={24} height={24} style={{ objectFit: 'contain', flexShrink: 0 }} />
+                    : <div style={{ width: 24, height: 24, borderRadius: 4, background: 'var(--surface-2)', flexShrink: 0 }} />
+                  }
                   <div className={styles.rowBody}>
                     <div className={styles.rowName}>{team.name}</div>
-                    <div className={styles.rowSub}>{team.compCountry} · {team.compName}</div>
+                    {team.country && <div className={styles.rowSub}>{team.country}</div>}
                   </div>
                   <Icon name="chevron-right" size={13} style={{ color: 'var(--text-faint)' }} />
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Empty state */}
-          {q.length > 1 && isEmpty && (
-            <div className={styles.empty}>
-              <Icon name="search" size={24} style={{ color: 'var(--text-faint)', marginBottom: 8 }} />
-              <div>No results for <strong>"{q}"</strong></div>
-              <div className={styles.emptySub}>Try a team or competition name</div>
-            </div>
-          )}
-
-          {/* Hint when nothing typed */}
-          {q.length === 0 && (
-            <div className={styles.hint}>
-              Start typing to search teams or competitions
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
+       

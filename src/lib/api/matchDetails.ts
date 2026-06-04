@@ -1,3 +1,4 @@
+'use client';
 /* ============================================================
    Match details API -- fixture detail + events + stats + h2h + standings
    Basic match data comes from the in-memory match cache

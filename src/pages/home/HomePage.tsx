@@ -1,7 +1,9 @@
+'use client';
 import styles from './HomePage.module.css';
 import { useState } from 'react';
 import { useSEO } from '../../lib/useSEO';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useRouter} from 'next/navigation';
+import Link from 'next/link';
 import type { SupportedLocale } from '../../i18n';
 import type { Competition, FeaturedMatch, Match, TrendingItem } from '../../lib/types';
 import { useMatches } from '../../lib/useMatches';
@@ -60,7 +62,7 @@ function DesktopFeatured({ featured, locale }: { featured: FeaturedMatch | null;
           )}
           <span className={styles.featuredCompLabel}>{m.compCountry ? `${m.compCountry} · ` : ''}{m.competition}</span>
         </div>
-        <Link to={`/${locale}/studio/${m.id}`} className="fs-btn ghost" style={{ height: 32, padding: '0 12px', fontSize: 12, textDecoration: 'none' }}>
+        <Link href={`/${locale}/studio/${m.id}`} className="fs-btn ghost" style={{ height: 32, padding: '0 12px', fontSize: 12, textDecoration: 'none' }}>
           <Icon name="share" size={14} /> Share match
         </Link>
       </div>
@@ -122,11 +124,11 @@ function DesktopFeatured({ featured, locale }: { featured: FeaturedMatch | null;
 }
 
 function DesktopMatchSection({ comp }: { comp: Competition }) {
-  const navigate = useNavigate();
-  const handleClick = (m: Match) => navigate(`/en/match/${m.id}`);
+  const router = useRouter();
+  const handleClick = (m: Match) => router.push(`/en/match/${m.id}`);
   return (
     <div className={styles.compBlock}>
-      <div className={styles.compHeader} style={{ cursor: 'pointer' }} onClick={() => navigate(`/en/competition/${comp.id}`)}>
+      <div className={styles.compHeader} style={{ cursor: 'pointer' }} onClick={() => router.push(`/en/competition/${comp.id}`)}>
         <div className="lh-title">
           <span className="lh-flag" style={{ backgroundColor: comp.flag }} aria-hidden="true" />
           {comp.country} – {comp.name}
@@ -162,7 +164,7 @@ function ShareStudioPromo({ locale }: { locale: string }) {
       <p className={styles.studioPromoHeading}>
         Turn any moment into a card you will want to post.
       </p>
-      <Link to={`/${locale}/studio`} className="fs-btn primary" style={{ height: 34, fontSize: 12, textDecoration: 'none' }}>
+      <Link href={`/${locale}/studio`} className="fs-btn primary" style={{ height: 34, fontSize: 12, textDecoration: 'none' }}>
         Open Studio &rarr;
       </Link>
     </div>
@@ -324,7 +326,7 @@ function DesktopLayout({ locale, featured, competitions, loading, error, resolve
                 Search teams, competitions&hellip;
               </span>
             </div>
-            <Link to={`/${locale}/studio`} className="fs-btn primary" style={{ height: 38, textDecoration: 'none' }}>
+            <Link href={`/${locale}/studio`} className="fs-btn primary" style={{ height: 38, textDecoration: 'none' }}>
               <Icon name="sparkles" size={14} style={{ color: '#1a0d04' }} />
               Share Studio
             </Link>
@@ -400,7 +402,7 @@ function MobileFeatured({ featured, locale }: { featured: FeaturedMatch | null; 
           )}
           <span className={styles.mobCompLabel}>{m.compCountry ? `${m.compCountry} · ` : ''}{m.competition}</span>
         </div>
-        <Link to={`/${locale}/studio/${m.id}`} className="fs-btn ghost" style={{ height: 28, padding: '0 10px', borderColor: 'transparent', fontSize: 12, textDecoration: 'none' }}>
+        <Link href={`/${locale}/studio/${m.id}`} className="fs-btn ghost" style={{ height: 28, padding: '0 10px', borderColor: 'transparent', fontSize: 12, textDecoration: 'none' }}>
           <Icon name="share" size={14} /> Share
         </Link>
       </div>
@@ -434,7 +436,7 @@ function MobileFeatured({ featured, locale }: { featured: FeaturedMatch | null; 
 }
 
 function MobileLayout({ featured, competitions, loading, error, aiBrief, locale, resolvedDate }: LayoutProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [activeTab,    setActiveTab]    = useState('all');
   const [showSchedule, setShowSchedule] = useState(false);
   const LIVE_STATUSES = new Set(['LIVE', 'HT']);
@@ -478,7 +480,7 @@ function MobileLayout({ featured, competitions, loading, error, aiBrief, locale,
               <button
                 key={label}
                 className="chip"
-                onClick={() => navigate(ymd === todayYmd ? `/${locale ?? 'en'}/today` : `/${locale ?? 'en'}/${ymd}`)}
+                onClick={() => router.push(ymd === todayYmd ? `/${locale ?? 'en'}/today` : `/${locale ?? 'en'}/${ymd}`)}
                 style={{
                   background:  isActive ? 'var(--orange)' : 'var(--surface)',
                   color:       isActive ? '#1a0d04'       : 'var(--text-dim)',
@@ -553,7 +555,7 @@ function MobileLayout({ featured, competitions, loading, error, aiBrief, locale,
         ) : (
           display.map((comp) => (
             <div key={comp.id}>
-              <div className="list-header" style={{ cursor: 'pointer' }} onClick={() => navigate(`/en/competition/${comp.id}`)}>
+              <div className="list-header" style={{ cursor: 'pointer' }} onClick={() => router.push(`/en/competition/${comp.id}`)}>
                 <div className="lh-title">
                   <span className="lh-flag" style={{ backgroundColor: comp.flag }} aria-hidden="true" />
                   {comp.country} – {comp.name}
@@ -565,7 +567,7 @@ function MobileLayout({ featured, competitions, loading, error, aiBrief, locale,
                 </div>
                 <Icon name="chevron-right" size={14} style={{ color: 'var(--text-faint)' }} />
               </div>
-              {comp.matches.map((m) => <MatchRow key={m.id} match={m} locale="en" onClick={(m) => navigate(`/en/match/${m.id}`)} />)}
+              {comp.matches.map((m) => <MatchRow key={m.id} match={m} locale="en" onClick={(m) => router.push(`/en/match/${m.id}`)} />)}
             </div>
           ))
         )}
@@ -587,7 +589,7 @@ function MobileLayout({ featured, competitions, loading, error, aiBrief, locale,
 // -----------------------------------------------------------------------
 
 export default function HomePage({ locale }: HomePageProps) {
-  const { date: dateParam } = useParams<{ date?: string }>();
+  const { date: dateParam } = useParams() as { date?: string };
   const today = new Date().toISOString().slice(0, 10);
   const resolvedDate = (!dateParam || dateParam === 'today') ? today : dateParam;
 
@@ -608,4 +610,3 @@ export default function HomePage({ locale }: HomePageProps) {
       </div>
     </>
   );
-}

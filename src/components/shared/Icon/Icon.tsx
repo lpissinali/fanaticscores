@@ -1,3 +1,4 @@
+'use client';
 /**
  * Inline SVG icon set — single-stroke, 1.6px.
  * All icons use currentColor so they inherit from the parent.

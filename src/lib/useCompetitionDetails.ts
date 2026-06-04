@@ -1,3 +1,4 @@
+'use client';
 import { useState, useEffect } from 'react';
 import { fetchCompetitionDetail } from './api/competitionDetails';
 import type { CompetitionDetailData } from './api/competitionDetails';

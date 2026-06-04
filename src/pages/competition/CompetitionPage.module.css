@@ -96,7 +96,7 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
 }
 .heroName {
   margin: 0;
@@ -115,12 +115,12 @@
 .heroSeason {
   font-size: 11px;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
 }
 .heroMatchday {
   font-size: 11px;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   background: var(--surface-raised, var(--bg));
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -137,7 +137,7 @@
 .winnerLabel {
   font-size: 11px;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -167,7 +167,7 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   margin: 0 0 14px;
 }
 
@@ -184,7 +184,7 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   margin-bottom: 8px;
 }
 
@@ -204,7 +204,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   border-bottom: 1px solid var(--border);
   margin-bottom: 4px;
 }
@@ -214,7 +214,7 @@
   transition: background 0.1s;
 }
 .tableRow:hover { background: var(--bg); }
-.colPos  { color: var(--text-faint); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+.colPos  { color: var(--text-faint); font-family: var(--font-jetbrains-mono), monospace; font-size: 11px; }
 .colTeam {
   display: flex;
   align-items: center;
@@ -230,8 +230,8 @@
 .colTeam:hover {
   color: var(--orange);
 }
-.colNum { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
-.colPts { text-align: center; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text); }
+.colNum { text-align: center; font-family: var(--font-jetbrains-mono), monospace; font-size: 11px; }
+.colPts { text-align: center; font-weight: 700; font-family: var(--font-jetbrains-mono), monospace; font-size: 12px; color: var(--text); }
 
 /* ── Scorers ─────────────────────────────────────────────────────────────── */
 .scorersTable { width: 100%; min-width: 400px; }
@@ -249,7 +249,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   border-bottom: 1px solid var(--border);
   margin-bottom: 4px;
 }
@@ -261,7 +261,7 @@
 .scorerRow:hover { background: var(--bg); }
 .scorerRank {
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   font-size: 11px;
   text-align: center;
 }
@@ -289,13 +289,13 @@
 }
 .scorerNum {
   text-align: center;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   font-size: 11px;
 }
 .scorersLegend {
   font-size: 10px;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   margin-top: 12px;
   padding-top: 10px;
   border-top: 1px solid var(--border);
@@ -314,7 +314,7 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   margin-bottom: 10px;
 }
 .railScorerHead,
@@ -332,7 +332,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   border-bottom: 1px solid var(--border);
   margin-bottom: 2px;
   padding-bottom: 6px;
@@ -368,7 +368,7 @@
 }
 .railScorerNum {
   text-align: center;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   font-size: 11px;
   font-weight: 600;
   color: var(--text-dim);
@@ -405,13 +405,13 @@
 .dateText {
   font-size: 12px;
   color: var(--text-dim);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   white-space: nowrap;
 }
 .timeText {
   font-size: 12px;
   color: var(--text-dim);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   white-space: nowrap;
 }
 
@@ -469,7 +469,7 @@
 .placeholder {
   color: var(--text-faint);
   font-size: 13px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   padding: 48px 0;
   text-align: center;
 }

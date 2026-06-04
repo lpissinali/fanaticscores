@@ -46,7 +46,7 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   margin-bottom: 12px;
 }
 
@@ -92,7 +92,7 @@
 .recordNum {
   font-size: 20px;
   font-weight: 800;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   color: var(--text);
   line-height: 1;
 }
@@ -354,7 +354,7 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   margin: 0 0 14px;
 }
 
@@ -390,14 +390,14 @@
 .matchDate {
   font-size: 12px;
   color: var(--text-dim);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   white-space: nowrap;
 }
 
 .matchTime {
   font-size: 12px;
   color: var(--text-dim);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   white-space: nowrap;
 }
 
@@ -438,7 +438,7 @@
   font-size: 13px;
   font-weight: 800;
   color: var(--text);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   white-space: nowrap;
   min-width: 48px;
   text-align: right;
@@ -492,7 +492,7 @@
   letter-spacing: 0.06em;
   padding: 2px 7px;
   border-radius: 4px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   flex-shrink: 0;
 }
 
@@ -544,7 +544,7 @@
   font-size: 11px;
   font-weight: 600;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   text-align: right;
 }
 
@@ -575,7 +575,7 @@
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: 1px 5px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   flex-shrink: 0;
   white-space: nowrap;
 }

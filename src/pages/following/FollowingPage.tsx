@@ -1,5 +1,7 @@
+'use client';
 import { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAllFollowed } from '../../lib/useFollowing';
 import { fetchTeamFixtures, type TeamMatch } from '../../lib/api/teamDetails';
 import { useSEO } from '../../lib/useSEO';
@@ -46,7 +48,7 @@ function formatTime(utcDate: string): string {
 // ── Fixture row component ────────────────────────────────────────────────────
 
 function FixtureRowItem({ match, locale }: { match: FixtureRow; locale: string }) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const isScheduled = match.status === 'SCHEDULED' || match.status === 'TIMED';
 
   const homeFollowed = match.followedIds.includes(match.homeTeam.id);
@@ -57,8 +59,8 @@ function FixtureRowItem({ match, locale }: { match: FixtureRow; locale: string }
       className={styles.fixtureRow}
       role="link"
       tabIndex={0}
-      onClick={() => navigate(`/${locale}/match/${match.id}`)}
-      onKeyDown={e => e.key === 'Enter' && navigate(`/${locale}/match/${match.id}`)}
+      onClick={() => router.push(`/${locale}/match/${match.id}`)}
+      onKeyDown={e => e.key === 'Enter' && router.push(`/${locale}/match/${match.id}`)}
     >
       {/* Date + time */}
       <div className={styles.dateCell}>
@@ -198,7 +200,7 @@ function FollowingContent({ locale }: { locale: string }) {
         <div className={styles.stateBody}>
           Visit any team page and tap the star to follow them. Their upcoming fixtures and recent results will appear here.
         </div>
-        <Link to={`/${locale}/competitions`} className="fs-btn ghost" style={{ textDecoration: 'none', height: 36, fontSize: 13 }}>
+        <Link href={`/${locale}/competitions`} className="fs-btn ghost" style={{ textDecoration: 'none', height: 36, fontSize: 13 }}>
           Browse competitions
         </Link>
       </div>
@@ -294,11 +296,11 @@ function DesktopLayout({ locale }: { locale: SupportedLocale }) {
 // ── Mobile layout ─────────────────────────────────────────────────────────────
 
 function MobileLayout({ locale }: { locale: SupportedLocale }) {
-  const navigate = useNavigate();
+  const router = useRouter();
   return (
     <div className="screen">
       <div className={styles.mobTopBar}>
-        <button onClick={() => navigate(-1)} className={styles.mobBackBtn}>
+        <button onClick={() => router.back()} className={styles.mobBackBtn}>
           <Icon name="chevron-left" size={20} />
         </button>
         <span className={styles.mobTitle}>Following</span>

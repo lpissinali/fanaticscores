@@ -1,8 +1,9 @@
 {
-  "/en/[date]/page": "app/en/[date]/page.js",
   "/en/today/page": "app/en/today/page.js",
-  "/en/privacy/page": "app/en/privacy/page.js",
-  "/en/team/[teamId]/page": "app/en/team/[teamId]/page.js",
+  "/en/[date]/page": "app/en/[date]/page.js",
   "/en/competitions/page": "app/en/competitions/page.js",
-  "/en/studio/page": "app/en/studio/page.js"
+  "/en/studio/page": "app/en/studio/page.js",
+  "/en/privacy/page": "app/en/privacy/page.js",
+  "/en/following/page": "app/en/following/page.js",
+  "/en/team/[teamId]/page": "app/en/team/[teamId]/page.js"
 }

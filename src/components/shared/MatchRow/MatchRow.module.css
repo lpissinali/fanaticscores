@@ -10,27 +10,27 @@
   color: var(--live);
   font-weight: 700;
   font-size: 12px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
 }
 
 .timeHT {
   font-weight: 700;
   font-size: 12px;
   color: var(--yellow);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
 }
 
 .timeFT {
   font-weight: 700;
   font-size: 12px;
   color: var(--text-dim);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
 }
 
 .timeScheduled {
   font-size: 12px;
   color: var(--text-dim);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   min-width: 56px;
   white-space: nowrap;
 }

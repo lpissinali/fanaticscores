@@ -1,4 +1,5 @@
-import { useNavigate } from 'react-router-dom';
+'use client';
+import { useRouter } from 'next/navigation';
 import { useSEO } from '../../lib/useSEO';
 import type { SupportedLocale } from '../../i18n';
 import Footer from '../../components/layout/Footer/Footer';
@@ -105,14 +106,14 @@ function Content() {
 
 export default function TermsPage({ locale }: Props) {
   useSEO({ title: 'Terms of Service', description: 'Read the FanaticScores Terms of Service.', canonical: '/en/terms' });
-  const navigate = useNavigate();
+  const router = useRouter();
   return (
     <>
       <div className={styles.desktopOnly}>
         <div className={styles.desktop}>
           <Sidebar locale={locale} />
           <main className={styles.main}>
-            <button className={styles.backBtn} onClick={() => navigate(-1)}>
+            <button className={styles.backBtn} onClick={() => router.back()}>
               <Icon name="chevron-left" size={14} /> Back
             </button>
             <Content />
@@ -123,7 +124,7 @@ export default function TermsPage({ locale }: Props) {
       <div className={styles.mobileOnly}>
         <div className={styles.mobScreen}>
           <div className={styles.mobTopBar}>
-            <button className={styles.mobBackBtn} onClick={() => navigate(-1)}>
+            <button className={styles.mobBackBtn} onClick={() => router.back()}>
               <Icon name="chevron-left" size={16} /> Back
             </button>
             <span className={styles.mobTopTitle}>Terms &amp; Conditions</span>

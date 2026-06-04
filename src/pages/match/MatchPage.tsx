@@ -1,4 +1,6 @@
-import { useParams, useNavigate, Link } from 'react-router-dom';
+'use client';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useSEO } from '../../lib/useSEO';
 import { useMatchDetails } from '../../lib/useMatchDetails';
 import type { MatchDetailData, StandingRow } from '../../lib/api/matchDetails';
@@ -322,13 +324,13 @@ function MatchCard({ d, locale, matchId }: { d: MatchDetailData; locale: string;
           <span className={styles.compLabel}>{d.compCountry ? `${d.compCountry} · ` : ''}{d.competition}</span>
           {d.matchday && <span className={styles.matchday}>MD {d.matchday}</span>}
         </div>
-        <Link to={`/${locale}/studio/${matchId}`} className="fs-btn ghost" style={{ height: 32, padding: '0 12px', fontSize: 12, textDecoration: 'none' }}>
+        <Link href={`/${locale}/studio/${matchId}`} className="fs-btn ghost" style={{ height: 32, padding: '0 12px', fontSize: 12, textDecoration: 'none' }}>
           <Icon name="share" size={14} /> Share Studio
         </Link>
       </div>
 
       <div className={styles.scoreGrid}>
-        <Link to={`/${locale}/team/${d.home.id}`} className={styles.teamLeft} style={{ textDecoration: 'none' }}>
+        <Link href={`/${locale}/team/${d.home.id}`} className={styles.teamLeft} style={{ textDecoration: 'none' }}>
           <Crest team={d.home} size="xl" />
           <div>
             <div className={styles.teamRole}>Home</div>
@@ -340,7 +342,7 @@ function MatchCard({ d, locale, matchId }: { d: MatchDetailData; locale: string;
           <span className={styles.scoreDash}>–</span>
           <span className={styles.score}>{d.away.score ?? '–'}</span>
         </div>
-        <Link to={`/${locale}/team/${d.away.id}`} className={styles.teamRight} style={{ textDecoration: 'none' }}>
+        <Link href={`/${locale}/team/${d.away.id}`} className={styles.teamRight} style={{ textDecoration: 'none' }}>
           <div style={{ textAlign: 'right' }}>
             <div className={styles.teamRole}>Away</div>
             <div className={styles.teamName}>{d.away.name}</div>
@@ -379,13 +381,13 @@ function MobMatchCard({ d, locale, matchId }: { d: MatchDetailData; locale: stri
           )}
           <span className={styles.compLabel}>{d.compCountry ? `${d.compCountry} · ` : ''}{d.competition}</span>
         </div>
-        <Link to={`/${locale}/studio/${matchId}`} className="fs-btn ghost" style={{ height: 28, padding: '0 10px', fontSize: 12, textDecoration: 'none' }}>
+        <Link href={`/${locale}/studio/${matchId}`} className="fs-btn ghost" style={{ height: 28, padding: '0 10px', fontSize: 12, textDecoration: 'none' }}>
           <Icon name="share" size={13} /> Share Studio
         </Link>
       </div>
 
       <div className={styles.mobScoreGrid}>
-        <Link to={`/${locale}/team/${d.home.id}`} className={styles.mobTeamLeft} style={{ textDecoration: 'none' }}>
+        <Link href={`/${locale}/team/${d.home.id}`} className={styles.mobTeamLeft} style={{ textDecoration: 'none' }}>
           <Crest team={d.home} size="lg" />
           <div className={styles.mobTeamName}>{d.home.short || d.home.name}</div>
         </Link>
@@ -394,7 +396,7 @@ function MobMatchCard({ d, locale, matchId }: { d: MatchDetailData; locale: stri
           <span className={styles.mobScoreDash}>–</span>
           <span className={styles.mobScore}>{d.away.score ?? '–'}</span>
         </div>
-        <Link to={`/${locale}/team/${d.away.id}`} className={styles.mobTeamRight} style={{ textDecoration: 'none' }}>
+        <Link href={`/${locale}/team/${d.away.id}`} className={styles.mobTeamRight} style={{ textDecoration: 'none' }}>
           <Crest team={d.away} size="lg" />
           <div className={styles.mobTeamName}>{d.away.short || d.away.name}</div>
         </Link>
@@ -414,8 +416,8 @@ function MobMatchCard({ d, locale, matchId }: { d: MatchDetailData; locale: stri
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function MatchPage({ locale }: MatchPageProps) {
-  const { matchId } = useParams<{ matchId: string }>();
-  const navigate = useNavigate();
+  const { matchId } = useParams() as { matchId: string };
+  const router = useRouter();
   const { data, loading, error } = useMatchDetails(matchId ?? '');
 
   useSEO({
@@ -434,7 +436,7 @@ export default function MatchPage({ locale }: MatchPageProps) {
           <Sidebar locale={locale} />
 
           <main className={styles.main}>
-            <button className={styles.backBtn} onClick={() => navigate(-1)}>
+            <button className={styles.backBtn} onClick={() => router.back()}>
               <Icon name="chevron-left" size={14} /> Back to matches
             </button>
 
@@ -475,12 +477,12 @@ export default function MatchPage({ locale }: MatchPageProps) {
       <div className={styles.mobileOnly}>
         <div className={styles.mobScreen}>
           <div className={styles.mobTopBar}>
-            <button className={styles.mobBackBtn} onClick={() => navigate(-1)}>
+            <button className={styles.mobBackBtn} onClick={() => router.back()}>
               <Icon name="chevron-left" size={20} />
             </button>
             <span className={styles.mobTopTitle}>{matchTitle}</span>
             <Link
-              to={`/${locale}/studio/${matchId}`}
+              href={`/${locale}/studio/${matchId}`}
               className={styles.mobStudioBtn}
               title="Share Studio"
             >

@@ -1,6 +1,8 @@
+'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import html2canvas from 'html2canvas';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useSEO } from '../../lib/useSEO';
 import Icon from '../../components/shared/Icon/Icon';
 import StudioCard, { CardThumb, CARD_DIMS, type CardConfig, type CardTemplate, type CardFormat, type CardStyle } from './StudioCard';
@@ -280,8 +282,8 @@ const SHARE_PLATFORMS = [
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function StudioPage({ locale }: StudioPageProps) {
-  const { matchId } = useParams<{ matchId?: string }>();
-  const navigate = useNavigate();
+  const { matchId } = useParams() as { matchId?: string };
+  const router = useRouter();
 
   useSEO({
     title: 'Share Studio — Create Football Match Cards',
@@ -311,7 +313,7 @@ export default function StudioPage({ locale }: StudioPageProps) {
   const mobPreviewRef = useRef<HTMLDivElement>(null);
   const captureRef    = useRef<HTMLDivElement>(null);
   const [previewWidth,    setPreviewWidth]    = useState(500);
-  const [mobPreviewWidth, setMobPreviewWidth] = useState(window.innerWidth);
+  const [mobPreviewWidth, setMobPreviewWidth] = useState(375);
 
   const { competitions, loading } = useMatches();
 
@@ -364,8 +366,8 @@ export default function StudioPage({ locale }: StudioPageProps) {
     setSelectedMatch(cached);
     setHashtags(generateHashtags(cached));
     setShowPopover(false);
-    navigate(`/${locale}/studio/${m.id}`, { replace: true });
-  }, [locale, navigate]);
+    router.push(`/${locale}/studio/${m.id}`, { replace: true });
+  }, [locale, router]);
 
   // ── Image capture helpers ───────────────────────────────────────────────────
 
@@ -736,10 +738,10 @@ export default function StudioPage({ locale }: StudioPageProps) {
           {/* Top bar */}
           <header className={styles.topBar}>
             <div className={styles.topBarLeft}>
-              <button className={styles.topBackBtn} onClick={() => navigate(-1)} title="Back">
+              <button className={styles.topBackBtn} onClick={() => router.back()} title="Back">
                 <Icon name="chevron-left" size={16} />
               </button>
-              <Link to={`/${locale}/`} className={styles.topLogo}>
+              <Link href={`/${locale}/`} className={styles.topLogo}>
                 <img src="/assets/logo-mark-dark.png" alt="FanaticScores" height={22} style={{ display: 'block' }} />
                 <span className={styles.topLogoLabel}>SHARE STUDIO</span>
               </Link>
@@ -825,7 +827,7 @@ export default function StudioPage({ locale }: StudioPageProps) {
       <div className={styles.mobileOnly}>
         <div className={styles.mobScreen}>
           <header className={styles.mobTopBar}>
-            <button className="fs-btn ghost" style={{ width: 36, height: 36, padding: 0 }} onClick={() => navigate(-1)}>
+            <button className="fs-btn ghost" style={{ width: 36, height: 36, padding: 0 }} onClick={() => router.back()}>
               <Icon name="chevron-left" size={20} />
             </button>
             <div className={styles.mobMatchPill} onClick={() => setShowPopover(true)}>
@@ -893,3 +895,4 @@ export default function StudioPage({ locale }: StudioPageProps) {
     </>
   );
 }
+                

@@ -1,4 +1,5 @@
-import { useNavigate } from 'react-router-dom';
+'use client';
+import { useRouter } from 'next/navigation';
 import type { SupportedLocale } from '../../i18n';
 import { useSEO } from '../../lib/useSEO';
 import Sidebar from '../../components/layout/Sidebar/Sidebar';
@@ -96,7 +97,7 @@ const COMPETITIONS = [
 ] as const;
 
 export default function CompetitionsPage({ locale }: CompetitionsPageProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
   useSEO({
     title: 'Competitions',
     description: 'Browse all football competitions on FanaticScores — Champions League, Premier League, La Liga, Serie A and more.',
@@ -123,7 +124,7 @@ export default function CompetitionsPage({ locale }: CompetitionsPageProps) {
                     <button
                       key={comp.code}
                       className={styles.card}
-                      onClick={() => navigate(`/${locale}/competition/${comp.code}`)}
+                      onClick={() => router.push(`/${locale}/competition/${comp.code}`)}
                     >
                       <div className={styles.cardFlag} style={{ backgroundColor: comp.flag }} aria-hidden="true" />
                       <div className={styles.cardBody}>
@@ -153,7 +154,7 @@ export default function CompetitionsPage({ locale }: CompetitionsPageProps) {
         <div className="screen">
           <div className={styles.mobTopBar}>
             <button className="fs-btn ghost" style={{ width: 36, height: 36, padding: 0, borderColor: 'transparent' }}
-              onClick={() => navigate(-1)}>
+              onClick={() => router.back()}>
               <Icon name="chevron-left" size={20} />
             </button>
             <span className={styles.mobTitle}>Competitions</span>
@@ -168,7 +169,7 @@ export default function CompetitionsPage({ locale }: CompetitionsPageProps) {
                   <button
                     key={comp.code}
                     className={styles.mobRow}
-                    onClick={() => navigate(`/${locale}/competition/${comp.code}`)}
+                    onClick={() => router.push(`/${locale}/competition/${comp.code}`)}
                   >
                     <div className={styles.mobFlag} style={{ backgroundColor: comp.flag }} aria-hidden="true" />
                     <div className={styles.mobRowBody}>

@@ -1,3 +1,4 @@
+'use client';
 import styles from './FSLogo.module.css';
 
 interface FSLogoProps {

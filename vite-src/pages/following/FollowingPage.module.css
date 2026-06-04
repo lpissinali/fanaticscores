@@ -1,0 +1,323 @@
+/* ── Responsive visibility ─────────────────────────────────────────────────── */
+
+.desktopOnly { display: flex; flex-direction: column; min-height: 100vh; }
+.mobileOnly  { display: none; }
+
+@media (max-width: 1023px) {
+  .desktopOnly { display: none; }
+  .mobileOnly  { display: block; height: 100vh; }
+}
+
+/* ── Desktop layout ─────────────────────────────────────────────────────────── */
+
+.desktop {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main {
+  flex: 1;
+  padding: 32px 48px 80px;
+  min-width: 0;
+}
+
+.pageHeader {
+  margin-bottom: 28px;
+}
+
+.pageTitle {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--text);
+  margin: 0 0 6px;
+}
+
+.pageSubtitle {
+  font-size: 13px;
+  color: var(--text-faint);
+  margin: 0;
+}
+
+.rail {
+  width: var(--right-rail-width);
+  flex-shrink: 0;
+  border-left: 1px solid var(--border);
+  padding: 28px 20px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Section ────────────────────────────────────────────────────────────────── */
+
+.section {
+  margin-bottom: 32px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.sectionTitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+  margin: 0;
+}
+
+.sectionCount {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-faint);
+}
+
+/* ── Competition group ──────────────────────────────────────────────────────── */
+
+.compGroup {
+  margin-bottom: 16px;
+}
+
+.compGroupHeader {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+  padding: 0 2px 6px;
+}
+
+/* ── Match list ─────────────────────────────────────────────────────────────── */
+
+.matchList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Fixture row: date | home name | home crest | score/vs | away crest | away name */
+.fixtureRow {
+  display: grid;
+  grid-template-columns: 88px minmax(0,1fr) 22px 54px 22px minmax(0,1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.12s;
+  cursor: pointer;
+}
+
+.fixtureRow:hover {
+  background: var(--surface-raised);
+}
+
+.dateCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dateText {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+
+.timeText {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+
+.teamCrest {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.teamName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.teamNameFollowed {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.teamNameRight {
+  text-align: right;
+}
+
+.scoreCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.scoreDash {
+  color: var(--text-faint);
+  font-weight: 400;
+}
+
+
+.vsSep {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+
+.kickoffTime {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--orange);
+  text-align: center;
+}
+
+.compName {
+  font-size: 11px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+}
+
+.resultTag {
+  font-size: 10px;
+  font-weight: 800;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  justify-self: end;
+}
+
+.resultW { background: #0d3320; color: #4ade80; }
+.resultD { background: var(--surface-raised); color: var(--text-dim); }
+.resultL { background: #3d0d0d; color: #f87171; }
+.resultBlank { width: 22px; }
+
+/* ── Empty / loading states ─────────────────────────────────────────────────── */
+
+.stateBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  gap: 12px;
+  text-align: center;
+}
+
+.stateTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.stateBody {
+  font-size: 12px;
+  color: var(--text-faint);
+  max-width: 280px;
+  line-height: 1.5;
+}
+
+.emptySection {
+  padding: 16px 14px;
+  font-size: 12px;
+  color: var(--text-faint);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+/* ── Mobile top bar ─────────────────────────────────────────────────────────── */
+
+.mobTopBar {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 10;
+}
+
+.mobBackBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.mobTitle {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+  text-align: center;
+  margin: 0;
+}
+
+/* ── Mobile adjustments ─────────────────────────────────────────────────────── */
+
+@media (max-width: 1023px) {
+  .main {
+    padding: 20px 16px 80px;
+  }
+
+  .fixtureRow {
+    grid-template-columns: 72px minmax(0,1fr) 20px 44px 20px minmax(0,1fr);
+    gap: 6px;
+    padding: 8px 10px;
+  }
+
+  .dateText {
+    font-size: 10px;
+  }
+
+  .teamName {
+    font-size: 12px;
+  }
+
+  .scoreCell {
+    font-size: 14px;
+  }
+}

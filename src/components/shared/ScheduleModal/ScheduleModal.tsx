@@ -1,5 +1,6 @@
+'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import styles from './ScheduleModal.module.css';
 import Calendar from '../Calendar/Calendar';
 import type { SupportedLocale } from '../../../i18n';
@@ -28,7 +29,7 @@ const QUICK = [
 
 export default function ScheduleModal({ locale, onClose }: ScheduleModalProps) {
   const [selected] = useState(TODAY());
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const handleKey = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose();
@@ -43,7 +44,7 @@ export default function ScheduleModal({ locale, onClose }: ScheduleModalProps) {
     const path = ymd === TODAY()
       ? `/${locale}/today`
       : `/${locale}/${ymd}`;
-    navigate(path);
+    router.push(path);
     onClose();
   }
 
@@ -79,4 +80,3 @@ export default function ScheduleModal({ locale, onClose }: ScheduleModalProps) {
       </div>
     </div>
   );
-}

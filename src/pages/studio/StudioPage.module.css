@@ -74,7 +74,7 @@
   font-weight: 800;
   letter-spacing: 0.14em;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
 }
 
 /* Match indicator */
@@ -107,7 +107,7 @@
   font-size: 11px;
   font-weight: 700;
   color: #ff3b3b;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
 }
 
 .changeBtn {
@@ -133,7 +133,7 @@
 .autoSave {
   font-size: 10px;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   margin-right: 4px;
 }
 .topActionBtn {
@@ -211,7 +211,7 @@
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   margin-bottom: 12px;
   display: flex;
   align-items: center;
@@ -268,7 +268,7 @@
 .formatRatio {
   font-size: 9px;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
 }
 
 /* ── Style list ────────────────────────────────────────────────────────────── */
@@ -393,7 +393,7 @@
 .captionCount {
   font-size: 10px;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
 }
 
 /* ── Hashtags ──────────────────────────────────────────────────────────────── */
@@ -471,7 +471,7 @@
   font-size: 12px;
   font-weight: 800;
   color: var(--text);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
 }
 .platformLabel {
   font-size: 8px;
@@ -550,7 +550,7 @@
   margin: 10px 0 0;
   font-size: 10px;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   text-align: center;
 }
 
@@ -569,7 +569,7 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
 }
 .zoomControls { display: flex; align-items: center; gap: 8px; }
 .zoomBtn {
@@ -590,7 +590,7 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
 }
 
 /* ================================================================
@@ -640,7 +640,7 @@
 .popoverShortcut {
   font-size: 10px;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -677,7 +677,7 @@
   background: var(--bg);
   border-radius: 999px;
   padding: 1px 5px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
 }
 
 .popoverList {
@@ -703,7 +703,7 @@
   font-weight: 800;
   letter-spacing: 0.14em;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   text-transform: uppercase;
 }
 .popoverGroupDot {
@@ -759,7 +759,7 @@
   font-size: 12px;
   font-weight: 800;
   color: var(--text);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -767,7 +767,7 @@
   font-size: 9px;
   font-weight: 700;
   color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   text-align: right;
   min-width: 28px;
   flex-shrink: 0;

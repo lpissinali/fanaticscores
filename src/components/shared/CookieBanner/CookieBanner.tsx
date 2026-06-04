@@ -1,3 +1,5 @@
+'use client';
+import Link from 'next/link';
 /**
  * CookieBanner — GDPR / ePrivacy consent notice.
  *
@@ -13,7 +15,7 @@
  */
 import { useState, useEffect } from 'react';
 import { enableAnalytics, disableAnalytics } from '../../../lib/useAnalytics';
-import { Link } from 'react-router-dom';
+;
 
 const CONSENT_KEY = 'fs_consent';
 
@@ -77,7 +79,7 @@ export default function CookieBanner() {
         We use browser storage to cache match data and keep the app fast.
         No tracking, no ads.{' '}
         <Link
-          to="/en/cookies"
+          href="/en/cookies"
           style={{ color: 'var(--orange, #fc8003)', textDecoration: 'none', fontWeight: 600 }}
         >
           Cookies policy

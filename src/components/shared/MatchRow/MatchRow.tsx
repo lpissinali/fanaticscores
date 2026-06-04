@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom';
+'use client';
+import Link from 'next/link';
+;
 import styles from './MatchRow.module.css';
 import Icon from '../Icon/Icon';
 import Crest from '../Crest/Crest';
@@ -59,7 +61,7 @@ function TeamName({ team, muted, locale }: { team: TeamInfo; muted: boolean; loc
   if (team.id) {
     return (
       <Link
-        to={`/${locale}/team/${team.id}`}
+        href={`/${locale}/team/${team.id}`}
         className={`${cls} ${styles.teamLink}`}
         onClick={e => e.stopPropagation()}
       >
@@ -95,7 +97,7 @@ export default function MatchRow({ match, featured = false, locale = 'en', onCli
     >
       <div className="time-col">
         <Link
-          to={`/${locale}/studio/${match.id}`}
+          href={`/${locale}/studio/${match.id}`}
           className={styles.studioBtn}
           onClick={e => e.stopPropagation()}
           title="Open in Share Studio"

@@ -1,0 +1,257 @@
+/* ============================================================
+   Fanatic Scores — Global styles & utility classes
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,100..900;1,75..125,100..900&family=JetBrains+Mono:wght@400;500;700&family=Saira:ital,wght@1,900&display=swap');
+
+@import './tokens.css';
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: 'Archivo', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.35;
+  letter-spacing: -0.005em;
+}
+
+/* ---- utility ---- */
+.fs-mono {
+  font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+}
+
+.fs-display {
+  font-family: 'Archivo', sans-serif;
+  font-stretch: 125%;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+/* hairline divider */
+.hr {
+  height: 1px;
+  background: var(--border);
+  border: 0;
+  margin: 0;
+}
+
+/* ---- chip ---- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+}
+.chip.live   { color: var(--live);   background: rgba(255, 59, 59, 0.08); border-color: rgba(255, 59, 59, 0.25); }
+.chip.ht     { color: var(--yellow); background: rgba(255, 181, 71, 0.08); border-color: rgba(255, 181, 71, 0.25); }
+.chip.ft     { color: var(--text-faint); }
+.chip.orange { color: var(--orange); background: var(--orange-soft); border-color: var(--orange-line); }
+
+/* ---- button ---- */
+.fs-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  font: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: transform 0.08s, background 0.15s;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.fs-btn:hover  { background: #25252c; }
+.fs-btn:active { transform: scale(0.98); }
+.fs-btn.primary { background: var(--orange); color: #1a0d04; border-color: transparent; }
+.fs-btn.primary:hover { background: #ff9933; }
+.fs-btn.ghost { background: transparent; }
+.fs-btn.sm { height: 32px; padding: 0 12px; font-size: 12px; border-radius: 8px; }
+
+/* ---- live pulse dot ---- */
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--live);
+  box-shadow: 0 0 0 0 rgba(255, 59, 59, 0.7);
+  animation: live-pulse 1.6s infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+@keyframes live-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 59, 59, 0.6); }
+  70%  { box-shadow: 0 0 0 7px rgba(255, 59, 59, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 59, 59, 0); }
+}
+
+/* ---- AI shimmer ---- */
+.ai-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.95) 50%,
+    rgba(255, 255, 255, 0.55) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 3.4s linear infinite;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* ---- sparkline draw-in ---- */
+@keyframes draw {
+  from { stroke-dashoffset: var(--len); }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* ---- number tick (live score update) ---- */
+.tick-up {
+  animation: tick-up 0.4s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+@keyframes tick-up {
+  0%   { transform: translateY(8px); opacity: 0; }
+  100% { transform: translateY(0);   opacity: 1; }
+}
+
+/* ---- crest placeholder ---- */
+.crest {
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+/* ---- match row (list cell) ---- */
+.match-row {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  align-items: stretch;   /* stretch so score-col spans full height */
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.match-row:hover { background: rgba(255, 255, 255, 0.02); }
+.match-row:last-child { border-bottom: none; }
+
+/* Time column — centred within its stretched cell */
+.match-row .time-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---- section list header ---- */
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 8px;
+}
+.list-header .lh-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+.list-header .lh-flag {
+  width: 16px;
+  height: 12px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+/* ---- screen scaffold (mobile) ---- */
+.screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg);
+}
+.screen .scroll {
+  flex: 1;
+  overflow-y: auto;
+}
+.screen .scroll::-webkit-scrollbar { display: none; }
+
+/* ---- match row sub-elements ---- */
+.match-row .teams {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.match-row .team-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;      /* crest → name gap */
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+
+.match-row .team-name {
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 0;
+  flex: 0 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.match-row .team-name.muted { color: var(--text-dim); }
+
+.match-row .score-col {
+  font-family: 'Archivo', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: flex-end;
+  line-height: 1;
+  min-width: 22px;
+}
+.match-row .score-col .num { display: block; }
+.match-row .score-col .num.muted { color: var(--text-dim); font-weight: 700; }

@@ -1,3 +1,4 @@
+'use client';
 /* ============================================================
    Team details API — api-football v3
    Fetches team info, squad, coach, recent results & upcoming fixtures.

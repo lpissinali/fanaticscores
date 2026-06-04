@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom';
+'use client';
+import Link from 'next/link';
+;
 import Icon from '../Icon/Icon';
 
 interface RailPromoProps { locale: string; }
@@ -29,7 +31,7 @@ export default function RailPromo({ locale }: RailPromoProps) {
       }}>
         Turn any moment into a card you will want to post.
       </p>
-      <Link to={`/${locale}/studio`} className="fs-btn primary" style={{ height: 34, fontSize: 12, textDecoration: 'none' }}>
+      <Link href={`/${locale}/studio`} className="fs-btn primary" style={{ height: 34, fontSize: 12, textDecoration: 'none' }}>
         Open Studio &rarr;
       </Link>
     </div>

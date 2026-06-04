@@ -1,3 +1,4 @@
+'use client';
 /**
  * Firebase client SDK initialisation.
  * Config comes from VITE_ env vars (set in .env.local, never committed).
@@ -7,19 +8,19 @@ import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 
 const cfg = {
-  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY            ?? '',
-  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN        ?? '',
-  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID         ?? '',
-  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET     ?? '',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? '',
-  appId:             import.meta.env.VITE_FIREBASE_APP_ID             ?? '',
+  apiKey:            process.env.NEXT_PUBLIC_FIREBASE_API_KEY            ?? '',
+  authDomain:        process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN        ?? '',
+  projectId:         process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID         ?? '',
+  storageBucket:     process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET     ?? '',
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? '',
+  appId:             process.env.NEXT_PUBLIC_FIREBASE_APP_ID             ?? '',
 };
 
 export function isFirebaseReady(): boolean {
   // Set VITE_FORCE_PROXY=true in .env.local to bypass Firestore and use the
   // api-football proxy directly (useful when functions aren't yet deployed).
   // Only respected in dev mode — production always uses Firestore if configured.
-  if (import.meta.env.DEV && import.meta.env.VITE_FORCE_PROXY === 'true') return false;
+  if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_FORCE_PROXY === 'true') return false;
   return Boolean(cfg.projectId && cfg.apiKey);
 }
 

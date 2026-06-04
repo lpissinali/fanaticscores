@@ -29,3 +29,12 @@ firebase-debug.log
 firestore-debug.log
 ui-debug.log
 .env.local
+
+# Next.js
+.next/
+nextjs/.next/
+nextjs/node_modules/
+
+# Vite backup files
+*.bak
+vite.config.ts.timestamp*

@@ -1,3 +1,4 @@
+'use client';
 /**
  * useMatches — data hook with two modes:
  *

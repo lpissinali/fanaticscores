@@ -1,3 +1,4 @@
+'use client';
 /* ============================================================
    api-football.com v3  --  API service layer (frontend)
    Single /fixtures?date=DATE call returns all leagues at once.
