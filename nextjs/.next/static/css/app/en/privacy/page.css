@@ -1,0 +1,650 @@
+/*!******************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[3]!./src/components/shared/FSLogo/FSLogo.module.css ***!
+  \******************************************************************************************************************************************************************************************************************************************************************************************/
+.FSLogo_root__4PXPk {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  text-decoration: none;
+}
+
+.FSLogo_mark__5MejI {
+  display: block;
+  flex-shrink: 0;
+}
+
+.FSLogo_wordmark__ZNzEs {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+  font-family: var(--font-saira), 'Archivo', sans-serif;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -0.01em;
+}
+
+.FSLogo_line1__MU0Yn {
+  color: var(--text);
+}
+
+.FSLogo_line2__6XYtZ {
+  color: var(--orange);
+}
+
+/*!******************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[3]!./src/components/layout/Footer/Footer.module.css ***!
+  \******************************************************************************************************************************************************************************************************************************************************************************************/
+/* ── Footer ── */
+.Footer_footer__rZB2Q {
+  margin-top: 48px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.Footer_grid__G4Mer {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-gap: 20px;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (min-width: 1200px) {
+  .Footer_grid__G4Mer {
+    grid-template-columns: 260px 1fr;
+    gap: 48px;
+  }
+}
+
+/* ── Brand ── */
+.Footer_tagline__OY2CF {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.55;
+  max-width: 280px;
+}
+
+.Footer_social__qlZ7e {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.Footer_socialIcon__OLRN_ {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 800;
+  transition: border-color 0.12s, color 0.12s;
+}
+.Footer_socialIcon__OLRN_:hover { border-color: var(--orange); color: var(--orange); }
+
+/* ── SEO block ── */
+.Footer_seoBlock__ZFWiB {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.Footer_seoPara__p15oA {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text-faint);
+}
+
+/* ── Bottom bar ── */
+.Footer_bottom__wsfnU {
+  grid-column: 1 / -1;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.Footer_copy__XKVYq {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  font-family: var(--font-jetbrains-mono), monospace;
+  letter-spacing: 0.04em;
+}
+
+.Footer_legalLinks__CABWi {
+  display: flex;
+  gap: 22px;
+}
+
+.Footer_legalLink__8xdD6 {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 0.12s;
+}
+.Footer_legalLink__8xdD6:hover { color: var(--text); }
+
+/*!********************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[3]!./src/components/layout/Sidebar/Sidebar.module.css ***!
+  \********************************************************************************************************************************************************************************************************************************************************************************************/
+.Sidebar_sidebar__KA_NC {
+  width: var(--sidebar-width);
+  height: 100vh;
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 20px 12px;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.Sidebar_sidebar__KA_NC::-webkit-scrollbar { display: none; }
+
+.Sidebar_logoLink__NWW1k {
+  display: block;
+  padding: 8px 8px 20px;
+  text-decoration: none;
+}
+
+/* Nav */
+.Sidebar_nav__p4LZT {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.Sidebar_navItem__eS59H {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: background 0.12s, color 0.12s;
+}
+
+.Sidebar_navItem__eS59H:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.Sidebar_navItem__eS59H.Sidebar_active__mVsA6 {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.Sidebar_navItem__eS59H.Sidebar_accentItem__EddhW {
+  color: var(--orange);
+}
+
+.Sidebar_navItem__eS59H.Sidebar_accentItem__EddhW:hover {
+  background: var(--orange-soft);
+}
+
+/* Following section */
+.Sidebar_following__HTapT {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.Sidebar_followLabel__ryl16 {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  font-family: var(--font-jetbrains-mono), monospace;
+  padding: 0 12px;
+  margin-bottom: 6px;
+}
+
+.Sidebar_followRow__4FetT {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.1s;
+  text-decoration: none;
+}
+
+.Sidebar_followRow__4FetT:hover {
+  background: var(--surface);
+}
+
+.Sidebar_followRowActive__HaJSE {
+  background: var(--surface);
+}
+
+.Sidebar_followRowActive__HaJSE .Sidebar_followName__YhGS6 {
+  color: var(--text);
+}
+
+.Sidebar_followName__YhGS6 {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
+/* Button reset so a <button> can use .navItem styles */
+.Sidebar_navButton__OlNon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+
+/* Live count / match count badge inside nav items */
+.Sidebar_navBadge__Jhv1U {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+/*!****************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[3]!./src/components/shared/Crest/Crest.module.css ***!
+  \****************************************************************************************************************************************************************************************************************************************************************************************/
+.Crest_crest__7lr_E {
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/*!********************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[3]!./src/components/shared/ScheduleModal/ScheduleModal.module.css ***!
+  \********************************************************************************************************************************************************************************************************************************************************************************************************/
+.ScheduleModal_overlay__JsaNK {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(4px);
+          backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: ScheduleModal_fadeIn__2Hxy3 0.15s ease;
+}
+@keyframes ScheduleModal_fadeIn__2Hxy3 { from { opacity: 0; } to { opacity: 1; } }
+
+.ScheduleModal_modal__dBEgk {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: ScheduleModal_slideUp__5W_gt 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+@keyframes ScheduleModal_slideUp__5W_gt {
+  from { transform: translateY(12px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.ScheduleModal_header__ZRgKr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.ScheduleModal_title__V2LSL {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.ScheduleModal_closeBtn__TnjDb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  transition: background 0.1s, color 0.1s;
+}
+.ScheduleModal_closeBtn__TnjDb:hover { background: var(--surface); color: var(--text); }
+
+.ScheduleModal_body__HXfdk {
+  padding: 14px 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ScheduleModal_quickJump__SEZCR {
+  display: flex;
+  gap: 6px;
+}
+.ScheduleModal_pill__hvZJg {
+  flex: 1 1;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+.ScheduleModal_pill__hvZJg:hover { border-color: var(--border-strong); color: var(--text); }
+.ScheduleModal_pill__hvZJg.ScheduleModal_activePill__A1O1S { background: var(--orange); color: #1a0d04; border-color: transparent; }
+
+/*!**********************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[3]!./src/components/shared/Calendar/Calendar.module.css ***!
+  \**********************************************************************************************************************************************************************************************************************************************************************************************/
+.Calendar_calendar__gVGMe {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+
+/* Header */
+.Calendar_header__qiLvK {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.Calendar_monthLabel__pB9Bk {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.Calendar_navBtn__J6iKw {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  font-size: 14px;
+  line-height: 1;
+}
+.Calendar_navBtn__J6iKw:hover { background: var(--surface-2); color: var(--text); }
+
+/* Weekday labels */
+.Calendar_weekdays__rukrf {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 8px 12px 4px;
+}
+.Calendar_weekday__ocTx_ {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  font-family: var(--font-jetbrains-mono), monospace;
+}
+
+/* Day grid */
+.Calendar_grid__TttKd {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-gap: 2px;
+  gap: 2px;
+  padding: 4px 12px 14px;
+}
+
+.Calendar_day__K_QYX {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  transition: background 0.1s, color 0.1s;
+}
+.Calendar_day__K_QYX:hover { background: var(--surface-2); }
+
+.Calendar_day__K_QYX.Calendar_otherMonth__AL7wj { color: var(--text-faint); }
+
+.Calendar_day__K_QYX.Calendar_today__W03kL {
+  color: var(--orange);
+  font-weight: 800;
+}
+
+.Calendar_day__K_QYX.Calendar_selected__cmVrU {
+  background: var(--orange);
+  color: #1a0d04;
+  font-weight: 800;
+}
+.Calendar_day__K_QYX.Calendar_selected__cmVrU:hover { background: #ff9933; }
+.Calendar_day__K_QYX.Calendar_selected__cmVrU.Calendar_today__W03kL { background: var(--orange); color: #1a0d04; }
+
+/*!********************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[3]!./src/pages/legal/LegalPage.module.css ***!
+  \********************************************************************************************************************************************************************************************************************************************************************************/
+/* ── Breakpoint guards ───────────────────────────────────────────────────── */
+.LegalPage_desktopOnly__1ReyT { display: none; }
+.LegalPage_mobileOnly__7mHPP  { display: block; min-height: 100vh; }
+@media (min-width: 1024px) {
+  .LegalPage_desktopOnly__1ReyT { display: block; }
+  .LegalPage_mobileOnly__7mHPP  { display: none; }
+}
+
+/* ================================================================
+   DESKTOP
+   ================================================================ */
+.LegalPage_desktop__YSM4T {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg);
+}
+.LegalPage_main__jQDDd {
+  flex: 1 1;
+  min-width: 0;
+  padding: 28px 48px 80px;
+}
+
+.LegalPage_backBtn__Ri0yg {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 32px;
+  transition: color 0.12s;
+}
+.LegalPage_backBtn__Ri0yg:hover { color: var(--text); }
+
+/* ── Document body ───────────────────────────────────────────────────────── */
+.LegalPage_doc__cAP1H { color: var(--text-dim); }
+
+.LegalPage_docEyebrow__tlUS6 {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  font-family: var(--font-jetbrains-mono), monospace;
+  margin: 0 0 10px;
+}
+.LegalPage_docTitle__9nnv9 {
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: -0.025em;
+  margin: 0 0 6px;
+  line-height: 1.1;
+}
+.LegalPage_docDate__3LT3c {
+  font-size: 12px;
+  color: var(--text-faint);
+  font-family: var(--font-jetbrains-mono), monospace;
+  margin: 0 0 36px;
+}
+
+.LegalPage_doc__cAP1H h2 {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+  margin: 32px 0 10px;
+  letter-spacing: -0.01em;
+}
+.LegalPage_doc__cAP1H h2:first-of-type { margin-top: 0; }
+
+.LegalPage_doc__cAP1H p {
+  font-size: 14px;
+  line-height: 1.75;
+  margin: 0 0 14px;
+  color: var(--text-dim);
+}
+
+.LegalPage_doc__cAP1H ul {
+  margin: 0 0 14px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.LegalPage_doc__cAP1H li {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-dim);
+}
+
+.LegalPage_doc__cAP1H a {
+  color: var(--orange);
+  text-decoration: none;
+}
+.LegalPage_doc__cAP1H a:hover { text-decoration: underline; }
+
+.LegalPage_doc__cAP1H strong { color: var(--text); font-weight: 700; }
+
+.LegalPage_divider__BJRIo {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 36px 0;
+}
+
+/* ================================================================
+   MOBILE
+   ================================================================ */
+.LegalPage_mobScreen__l4gZa {
+  background: var(--bg);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.LegalPage_mobTopBar__oBrva {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.LegalPage_mobBackBtn__yLWjt {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+  flex-shrink: 0;
+}
+.LegalPage_mobBackBtn__yLWjt:hover { color: var(--text); }
+.LegalPage_mobTopTitle__6b6sp {
+  flex: 1 1;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+.LegalPage_mobContent__YegiH {
+  flex: 1 1;
+  padding: 24px 20px 80px;
+  overflow-y: auto;
+}
+
+/* placeholder */
+.LegalPage_placeholder__rETRE {
+  color: var(--text-faint);
+  font-size: 13px;
+  font-family: var(--font-jetbrains-mono), monospace;
+  padding: 48px 0;
+  text-align: center;
+}
+

@@ -1,0 +1,84 @@
+{
+  "pages": {
+    "/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/layout.css",
+      "static/chunks/app/layout.js"
+    ],
+    "/en/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/en/layout.js"
+    ],
+    "/en/today/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/en/today/page.css",
+      "static/chunks/app/en/today/page.js"
+    ],
+    "/api/search-teams/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/search-teams/route.js"
+    ],
+    "/en/team/[teamId]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/en/team/[teamId]/page.css",
+      "static/chunks/app/en/team/[teamId]/page.js"
+    ],
+    "/en/match/[matchId]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/en/match/[matchId]/page.css",
+      "static/chunks/app/en/match/[matchId]/page.js"
+    ],
+    "/en/studio/[matchId]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/en/studio/[matchId]/page.css",
+      "static/chunks/app/en/studio/[matchId]/page.js"
+    ],
+    "/api/match-cache/[matchId]/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/match-cache/[matchId]/route.js"
+    ],
+    "/en/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/en/page.js"
+    ],
+    "/en/[date]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/en/[date]/page.css",
+      "static/chunks/app/en/[date]/page.js"
+    ],
+    "/en/following/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/en/following/page.css",
+      "static/chunks/app/en/following/page.js"
+    ],
+    "/en/competitions/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/en/competitions/page.css",
+      "static/chunks/app/en/competitions/page.js"
+    ],
+    "/en/studio/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/en/studio/page.css",
+      "static/chunks/app/en/studio/page.js"
+    ],
+    "/en/privacy/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/en/privacy/page.css",
+      "static/chunks/app/en/privacy/page.js"
+    ]
+  }
+}

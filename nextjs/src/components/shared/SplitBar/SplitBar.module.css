@@ -1,0 +1,55 @@
+.root {
+  display: grid;
+  grid-template-columns: 28px 1fr 28px;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 0 8px;
+}
+
+.valHome {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: right;
+}
+
+.valAway {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: left;
+}
+
+.track {
+  height: 4px;
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex;
+  background: var(--surface-2);
+}
+
+.fillHome {
+  height: 100%;
+  border-radius: 999px 0 0 999px;
+  transition: width 0.5s ease;
+}
+
+.fillAway {
+  height: 100%;
+  border-radius: 0 999px 999px 0;
+  transition: width 0.5s ease;
+}
+
+.label {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-faint);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 3px;
+  font-family: var(--font-jetbrains-mono), monospace;
+}

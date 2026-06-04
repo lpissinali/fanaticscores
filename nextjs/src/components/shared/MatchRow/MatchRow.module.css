@@ -1,0 +1,93 @@
+/* ── Time column variants ── */
+.timeLive {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.timeLiveMin {
+  color: var(--live);
+  font-weight: 700;
+  font-size: 12px;
+  font-family: var(--font-jetbrains-mono), monospace;
+}
+
+.timeHT {
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--yellow);
+  font-family: var(--font-jetbrains-mono), monospace;
+}
+
+.timeFT {
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: var(--font-jetbrains-mono), monospace;
+}
+
+.timeScheduled {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: var(--font-jetbrains-mono), monospace;
+  min-width: 56px;
+  white-space: nowrap;
+}
+
+/* ── Follow star ── */
+.followBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-faint);
+  flex-shrink: 0;
+  margin-left: auto;
+  border-radius: 4px;
+  transition: transform 0.12s, color 0.12s;
+}
+.followBtn:hover  { color: var(--orange); }
+.followBtn:active { transform: scale(0.85); }
+.followBtn[aria-pressed="true"] { color: var(--orange); }
+
+/* ── Team name link ── */
+.teamLink {
+  text-decoration: none;
+  color: inherit;
+}
+.teamLink:hover {
+  color: var(--orange);
+  text-decoration: none;
+}
+
+/* ── Scheduled score placeholder ── */
+.noScore {
+  color: var(--text-faint);
+  font-size: 14px;
+}
+
+/* ── Share Studio button ── */
+.studioBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  color: var(--text-faint);
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: color 0.12s, background 0.12s;
+  margin-left: 4px;
+  margin-bottom: 8px;
+}
+.studioBtn:hover {
+  color: var(--orange);
+  background: var(--orange-soft);
+}

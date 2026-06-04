@@ -1,0 +1,132 @@
+.sidebar {
+  width: var(--sidebar-width);
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 20px 12px;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.sidebar::-webkit-scrollbar { display: none; }
+
+.logoLink {
+  display: block;
+  padding: 8px 8px 20px;
+  text-decoration: none;
+}
+
+/* Nav */
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: background 0.12s, color 0.12s;
+}
+
+.navItem:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.navItem.active {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.navItem.accentItem {
+  color: var(--orange);
+}
+
+.navItem.accentItem:hover {
+  background: var(--orange-soft);
+}
+
+/* Following section */
+.following {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.followLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  font-family: var(--font-jetbrains-mono), monospace;
+  padding: 0 12px;
+  margin-bottom: 6px;
+}
+
+.followRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.1s;
+  text-decoration: none;
+}
+
+.followRow:hover {
+  background: var(--surface);
+}
+
+.followRowActive {
+  background: var(--surface);
+}
+
+.followRowActive .followName {
+  color: var(--text);
+}
+
+.followName {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
+/* Button reset so a <button> can use .navItem styles */
+.navButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+
+/* Live count / match count badge inside nav items */
+.navBadge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--orange-soft);
+  color: var(--orange);
+}

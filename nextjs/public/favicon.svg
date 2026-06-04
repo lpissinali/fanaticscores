@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <text
+    x="0" y="26"
+    font-family="'Arial Black', Arial, sans-serif"
+    font-size="26"
+    font-weight="900"
+    font-style="italic"
+    fill="#000000"
+  >F</text>
+  <text
+    x="14" y="26"
+    font-family="'Arial Black', Arial, sans-serif"
+    font-size="26"
+    font-weight="900"
+    font-style="italic"
+    fill="#fc8003"
+  >S</text>
+</svg>

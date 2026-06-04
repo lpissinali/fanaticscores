@@ -1,0 +1,1398 @@
+/*!******************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[3]!./src/components/shared/FSLogo/FSLogo.module.css ***!
+  \******************************************************************************************************************************************************************************************************************************************************************************************/
+.FSLogo_root__4PXPk {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  text-decoration: none;
+}
+
+.FSLogo_mark__5MejI {
+  display: block;
+  flex-shrink: 0;
+}
+
+.FSLogo_wordmark__ZNzEs {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+  font-family: var(--font-saira), 'Archivo', sans-serif;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -0.01em;
+}
+
+.FSLogo_line1__MU0Yn {
+  color: var(--text);
+}
+
+.FSLogo_line2__6XYtZ {
+  color: var(--orange);
+}
+
+/*!******************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[3]!./src/components/layout/Footer/Footer.module.css ***!
+  \******************************************************************************************************************************************************************************************************************************************************************************************/
+/* ── Footer ── */
+.Footer_footer__rZB2Q {
+  margin-top: 48px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.Footer_grid__G4Mer {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-gap: 20px;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (min-width: 1200px) {
+  .Footer_grid__G4Mer {
+    grid-template-columns: 260px 1fr;
+    gap: 48px;
+  }
+}
+
+/* ── Brand ── */
+.Footer_tagline__OY2CF {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.55;
+  max-width: 280px;
+}
+
+.Footer_social__qlZ7e {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.Footer_socialIcon__OLRN_ {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 800;
+  transition: border-color 0.12s, color 0.12s;
+}
+.Footer_socialIcon__OLRN_:hover { border-color: var(--orange); color: var(--orange); }
+
+/* ── SEO block ── */
+.Footer_seoBlock__ZFWiB {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.Footer_seoPara__p15oA {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text-faint);
+}
+
+/* ── Bottom bar ── */
+.Footer_bottom__wsfnU {
+  grid-column: 1 / -1;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.Footer_copy__XKVYq {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  font-family: var(--font-jetbrains-mono), monospace;
+  letter-spacing: 0.04em;
+}
+
+.Footer_legalLinks__CABWi {
+  display: flex;
+  gap: 22px;
+}
+
+.Footer_legalLink__8xdD6 {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 0.12s;
+}
+.Footer_legalLink__8xdD6:hover { color: var(--text); }
+
+/*!********************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[3]!./src/components/layout/Sidebar/Sidebar.module.css ***!
+  \********************************************************************************************************************************************************************************************************************************************************************************************/
+.Sidebar_sidebar__KA_NC {
+  width: var(--sidebar-width);
+  height: 100vh;
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 20px 12px;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.Sidebar_sidebar__KA_NC::-webkit-scrollbar { display: none; }
+
+.Sidebar_logoLink__NWW1k {
+  display: block;
+  padding: 8px 8px 20px;
+  text-decoration: none;
+}
+
+/* Nav */
+.Sidebar_nav__p4LZT {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.Sidebar_navItem__eS59H {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: background 0.12s, color 0.12s;
+}
+
+.Sidebar_navItem__eS59H:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.Sidebar_navItem__eS59H.Sidebar_active__mVsA6 {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.Sidebar_navItem__eS59H.Sidebar_accentItem__EddhW {
+  color: var(--orange);
+}
+
+.Sidebar_navItem__eS59H.Sidebar_accentItem__EddhW:hover {
+  background: var(--orange-soft);
+}
+
+/* Following section */
+.Sidebar_following__HTapT {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.Sidebar_followLabel__ryl16 {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  font-family: var(--font-jetbrains-mono), monospace;
+  padding: 0 12px;
+  margin-bottom: 6px;
+}
+
+.Sidebar_followRow__4FetT {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.1s;
+  text-decoration: none;
+}
+
+.Sidebar_followRow__4FetT:hover {
+  background: var(--surface);
+}
+
+.Sidebar_followRowActive__HaJSE {
+  background: var(--surface);
+}
+
+.Sidebar_followRowActive__HaJSE .Sidebar_followName__YhGS6 {
+  color: var(--text);
+}
+
+.Sidebar_followName__YhGS6 {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
+/* Button reset so a <button> can use .navItem styles */
+.Sidebar_navButton__OlNon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+
+/* Live count / match count badge inside nav items */
+.Sidebar_navBadge__Jhv1U {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+/*!****************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[3]!./src/components/shared/Crest/Crest.module.css ***!
+  \****************************************************************************************************************************************************************************************************************************************************************************************/
+.Crest_crest__7lr_E {
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/*!********************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[3]!./src/components/shared/ScheduleModal/ScheduleModal.module.css ***!
+  \********************************************************************************************************************************************************************************************************************************************************************************************************/
+.ScheduleModal_overlay__JsaNK {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(4px);
+          backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: ScheduleModal_fadeIn__2Hxy3 0.15s ease;
+}
+@keyframes ScheduleModal_fadeIn__2Hxy3 { from { opacity: 0; } to { opacity: 1; } }
+
+.ScheduleModal_modal__dBEgk {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: ScheduleModal_slideUp__5W_gt 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+@keyframes ScheduleModal_slideUp__5W_gt {
+  from { transform: translateY(12px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.ScheduleModal_header__ZRgKr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.ScheduleModal_title__V2LSL {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.ScheduleModal_closeBtn__TnjDb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  transition: background 0.1s, color 0.1s;
+}
+.ScheduleModal_closeBtn__TnjDb:hover { background: var(--surface); color: var(--text); }
+
+.ScheduleModal_body__HXfdk {
+  padding: 14px 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ScheduleModal_quickJump__SEZCR {
+  display: flex;
+  gap: 6px;
+}
+.ScheduleModal_pill__hvZJg {
+  flex: 1 1;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+.ScheduleModal_pill__hvZJg:hover { border-color: var(--border-strong); color: var(--text); }
+.ScheduleModal_pill__hvZJg.ScheduleModal_activePill__A1O1S { background: var(--orange); color: #1a0d04; border-color: transparent; }
+
+/*!**********************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[3]!./src/components/shared/Calendar/Calendar.module.css ***!
+  \**********************************************************************************************************************************************************************************************************************************************************************************************/
+.Calendar_calendar__gVGMe {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+
+/* Header */
+.Calendar_header__qiLvK {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.Calendar_monthLabel__pB9Bk {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.Calendar_navBtn__J6iKw {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  font-size: 14px;
+  line-height: 1;
+}
+.Calendar_navBtn__J6iKw:hover { background: var(--surface-2); color: var(--text); }
+
+/* Weekday labels */
+.Calendar_weekdays__rukrf {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 8px 12px 4px;
+}
+.Calendar_weekday__ocTx_ {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  font-family: var(--font-jetbrains-mono), monospace;
+}
+
+/* Day grid */
+.Calendar_grid__TttKd {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-gap: 2px;
+  gap: 2px;
+  padding: 4px 12px 14px;
+}
+
+.Calendar_day__K_QYX {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  transition: background 0.1s, color 0.1s;
+}
+.Calendar_day__K_QYX:hover { background: var(--surface-2); }
+
+.Calendar_day__K_QYX.Calendar_otherMonth__AL7wj { color: var(--text-faint); }
+
+.Calendar_day__K_QYX.Calendar_today__W03kL {
+  color: var(--orange);
+  font-weight: 800;
+}
+
+.Calendar_day__K_QYX.Calendar_selected__cmVrU {
+  background: var(--orange);
+  color: #1a0d04;
+  font-weight: 800;
+}
+.Calendar_day__K_QYX.Calendar_selected__cmVrU:hover { background: #ff9933; }
+.Calendar_day__K_QYX.Calendar_selected__cmVrU.Calendar_today__W03kL { background: var(--orange); color: #1a0d04; }
+
+/*!******************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[3]!./src/components/shared/FollowButton/FollowButton.module.css ***!
+  \******************************************************************************************************************************************************************************************************************************************************************************************************/
+.FollowButton_followBtn__MgSbJ {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  z-index: 2;
+}
+.FollowButton_followBtn__MgSbJ:hover {
+  border-color: #f59e0b;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+}
+.FollowButton_active__JbZbu {
+  border-color: #f59e0b;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+}
+
+/*!************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[3]!./src/components/shared/MobileBottomNav/MobileBottomNav.module.css ***!
+  \************************************************************************************************************************************************************************************************************************************************************************************************************/
+.MobileBottomNav_bottomTabs__5d54S {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  padding: 8px 8px 22px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  grid-gap: 4px;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/*!****************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[3]!./src/components/shared/SearchModal/SearchModal.module.css ***!
+  \****************************************************************************************************************************************************************************************************************************************************************************************************/
+/* ── Overlay ───────────────────────────────────────────────────────────────── */
+
+.SearchModal_overlay__36nXB {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 200;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 80px 16px 16px;
+  animation: SearchModal_fadeIn__nYtOJ 0.15s ease;
+}
+
+@keyframes SearchModal_fadeIn__nYtOJ {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Modal panel ───────────────────────────────────────────────────────────── */
+
+.SearchModal_modal__4fPIs {
+  width: 100%;
+  max-width: 560px;
+  background: var(--surface);
+  border: 1px solid var(--border-mid);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  animation: SearchModal_slideDown__TATcb 0.15s ease;
+}
+
+@keyframes SearchModal_slideDown__TATcb {
+  from { transform: translateY(-12px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── Input row ─────────────────────────────────────────────────────────────── */
+
+.SearchModal_inputRow__ZCy3h {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.SearchModal_input__7DDry {
+  flex: 1 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--text);
+}
+
+.SearchModal_input__7DDry::placeholder {
+  color: var(--text-faint);
+}
+
+.SearchModal_clearBtn__EP42a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: var(--surface-raised);
+  color: var(--text-dim);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.SearchModal_clearBtn__EP42a:hover {
+  background: var(--border-mid);
+}
+
+.SearchModal_escBtn__TNnbn {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-faint);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 3px 7px;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-family: inherit;
+}
+
+.SearchModal_escBtn__TNnbn:hover {
+  border-color: var(--border-mid);
+  color: var(--text-dim);
+}
+
+/* ── Results container ─────────────────────────────────────────────────────── */
+
+.SearchModal_results__6K_uI {
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+/* ── Section ───────────────────────────────────────────────────────────────── */
+
+.SearchModal_section__7NZCZ {
+  padding-bottom: 4px;
+}
+
+.SearchModal_sectionLabel__ECCeB {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 8px 16px 4px;
+}
+
+/* ── Result row ────────────────────────────────────────────────────────────── */
+
+.SearchModal_row__DY68d {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.SearchModal_row__DY68d:hover {
+  background: var(--surface-raised);
+}
+
+.SearchModal_flagBar__2VMpq {
+  width: 3px;
+  height: 32px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.SearchModal_rowBody__fLFtC {
+  flex: 1 1;
+  min-width: 0;
+}
+
+.SearchModal_rowName___hoYP {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.SearchModal_rowSub__W9MAE {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Empty / hint states ───────────────────────────────────────────────────── */
+
+.SearchModal_empty__hi4G1 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 16px;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+.SearchModal_emptySub__33gUM {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-top: 4px;
+}
+
+.SearchModal_hint__NGQ_W {
+  padding: 32px 16px;
+  font-size: 13px;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+/* ── Mobile adjustments ────────────────────────────────────────────────────── */
+
+@media (max-width: 1023px) {
+  .SearchModal_overlay__36nXB {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .SearchModal_modal__4fPIs {
+    max-width: 100%;
+    border-radius: 0;
+    border: none;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    animation: none;
+  }
+
+  .SearchModal_results__6K_uI {
+    flex: 1 1;
+    max-height: none;
+  }
+}
+
+/*!******************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[3]!./src/pages/team/TeamPage.module.css ***!
+  \******************************************************************************************************************************************************************************************************************************************************************************/
+/* ── Responsive visibility ─────────────────────────────────────────────────── */
+
+.TeamPage_desktopOnly__Disee { display: flex; flex-direction: column; min-height: 100vh; }
+.TeamPage_mobileOnly__RAVmp  { display: none; }
+
+@media (max-width: 1023px) {
+  .TeamPage_desktopOnly__Disee { display: none; }
+  .TeamPage_mobileOnly__RAVmp  { display: block; height: 100vh; }
+}
+
+/* ── Desktop layout ────────────────────────────────────────────────────────── */
+
+.TeamPage_desktop__SsKDA {
+  display: flex;
+  min-height: 100vh;
+}
+
+.TeamPage_main__4KrRg {
+  flex: 1 1;
+  padding: 32px 48px 80px;
+  min-width: 0;
+}
+
+.TeamPage_rail__TyqAX {
+  width: var(--right-rail-width);
+  flex-shrink: 0;
+  padding: 28px 20px 60px;
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  
+}
+
+
+.TeamPage_railCard__fuySN {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.TeamPage_railCardTitle____6Ab {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  font-family: var(--font-jetbrains-mono), monospace;
+  margin-bottom: 12px;
+}
+
+.TeamPage_formDots__1V_CN {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.TeamPage_formDot__SAv_7 {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.TeamPage_formW__9Xo15 { background: #0d3320; color: #4ade80; }
+.TeamPage_formD__DQVJx { background: var(--surface-raised); color: var(--text-dim); }
+.TeamPage_formL__LoNW_ { background: #3d0d0d; color: #f87171; }
+
+.TeamPage_recordGrid__vWKnO {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-gap: 8px;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.TeamPage_recordCell__LGbSP {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 8px 4px;
+}
+
+.TeamPage_recordNum__3i2nf {
+  font-size: 20px;
+  font-weight: 800;
+  font-family: var(--font-jetbrains-mono), monospace;
+  color: var(--text);
+  line-height: 1;
+}
+
+.TeamPage_recordLabel__Bd32E {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.TeamPage_backBtn__r0pny {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 24px;
+}
+
+.TeamPage_backBtn__r0pny:hover { color: var(--text); }
+
+/* ── Hero ──────────────────────────────────────────────────────────────────── */
+
+.TeamPage_hero__CEgUq {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+/* ── Follow button ──────────────────────────────────────────────────────────── */
+
+.TeamPage_followBtn__kwM6h {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  z-index: 2;
+}
+
+.TeamPage_followBtn__kwM6h:hover {
+  border-color: #f59e0b;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.TeamPage_followBtnActive__UQB9A {
+  border-color: #f59e0b;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.TeamPage_followBtnActive__UQB9A:hover {
+  background: rgba(245, 158, 11, 0.06);
+  color: var(--text-faint);
+  border-color: var(--border);
+}
+
+.TeamPage_mobFollowBtn__OzpOS {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.TeamPage_mobFollowBtn__OzpOS:hover {
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.TeamPage_heroGlow___OqRb {
+  position: absolute;
+  top: -60px; left: -60px;
+  width: 260px; height: 260px;
+  background: radial-gradient(circle, rgba(255,107,0,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.TeamPage_heroInner__4L3vD {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  position: relative;
+}
+
+.TeamPage_crest__6Igim {
+  width: 88px;
+  height: 88px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.TeamPage_crestPlaceholder__kbZaS {
+  width: 88px; height: 88px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+  border-radius: 12px;
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+
+.TeamPage_heroText__DvxRD {
+  flex: 1 1;
+  min-width: 0;
+}
+
+.TeamPage_heroTla__qhj0Z {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 4px;
+}
+
+.TeamPage_heroName__GPLz7 {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--text);
+  margin: 0 0 12px;
+  line-height: 1.1;
+}
+
+.TeamPage_heroChips__wXrfe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.TeamPage_colorChip__9Hu5A {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.TeamPage_compChips__LHVo0 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.TeamPage_compChip__OXWvA {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.TeamPage_compChip__OXWvA:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
+/* ── Info grid ─────────────────────────────────────────────────────────────── */
+
+.TeamPage_infoGrid__9bDIn {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-gap: 8px;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+.TeamPage_infoCard___N3eS {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.TeamPage_infoLabel__nHSp4 {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 4px;
+}
+
+.TeamPage_infoValue__oVp6i {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.TeamPage_infoSub__er3Tp {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: 2px;
+}
+
+.TeamPage_websiteLink__U_W9f {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--orange);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  word-break: break-all;
+}
+
+.TeamPage_websiteLink__U_W9f:hover { text-decoration: underline; }
+
+/* ── Section ───────────────────────────────────────────────────────────────── */
+
+.TeamPage_section__kuHvB {
+  margin-bottom: 32px;
+}
+
+.TeamPage_sectionTitle__dxdgQ {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  font-family: var(--font-jetbrains-mono), monospace;
+  margin: 0 0 14px;
+}
+
+/* ── Match list ────────────────────────────────────────────────────────────── */
+
+.TeamPage_matchList__GSeKF {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.TeamPage_matchRow__P4ium {
+  display: grid;
+  grid-template-columns: 100px 22px 24px 1fr auto auto auto;
+  align-items: center;
+  grid-gap: 8px;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.12s;
+}
+
+.TeamPage_matchRow__P4ium:hover { background: var(--surface-raised); }
+
+.TeamPage_matchDateCell__bTrRe {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.TeamPage_matchDate__8DsLR {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: var(--font-jetbrains-mono), monospace;
+  white-space: nowrap;
+}
+
+.TeamPage_matchTime__ArEkz {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: var(--font-jetbrains-mono), monospace;
+  white-space: nowrap;
+}
+
+.TeamPage_matchVenue__Pvdg6 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-faint);
+  background: var(--surface-raised);
+  border-radius: 4px;
+  padding: 1px 4px;
+  text-align: center;
+}
+
+.TeamPage_matchCrest__RuhE2 {
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.TeamPage_matchOpponent__CjU7I {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.TeamPage_matchComp__Ijas7 {
+  font-size: 14px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+}
+
+.TeamPage_matchScore__QXQKl {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+  font-family: var(--font-jetbrains-mono), monospace;
+  white-space: nowrap;
+  min-width: 48px;
+  text-align: right;
+}
+
+
+.TeamPage_resultTag__ufz_y {
+  font-size: 10px;
+  font-weight: 800;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.TeamPage_resultW__6GVzD { background: #0d3320; color: #4ade80; }
+.TeamPage_resultD__aaHwo { background: var(--surface-raised); color: var(--text-dim); }
+.TeamPage_resultL__Os1ZH { background: #3d0d0d; color: #f87171; }
+
+/* ── Squad ─────────────────────────────────────────────────────────────────── */
+
+.TeamPage_squadWrapper__Z9PEk {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.TeamPage_positionGroup__Lss7F {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.TeamPage_positionHeader__6N_sI {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid transparent;
+}
+
+.TeamPage_positionAbbr__Uwfgh {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-family: var(--font-jetbrains-mono), monospace;
+  flex-shrink: 0;
+}
+
+.TeamPage_positionLabel__NyeMD {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  flex: 1 1;
+}
+
+.TeamPage_positionCount__x_qjd {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-faint);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.TeamPage_playerList__9yBi2 {
+  display: flex;
+  flex-direction: column;
+}
+
+.TeamPage_playerRow__EXtkA {
+  display: grid;
+  grid-template-columns: 28px 1fr auto auto;
+  align-items: center;
+  grid-gap: 8px;
+  gap: 8px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+
+.TeamPage_playerRow__EXtkA:last-child {
+  border-bottom: none;
+}
+
+.TeamPage_playerRow__EXtkA:hover {
+  background: var(--surface-raised);
+}
+
+.TeamPage_playerIndex__PpHvO {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-faint);
+  font-family: var(--font-jetbrains-mono), monospace;
+  text-align: right;
+}
+
+.TeamPage_playerRowName__DU0wW {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.TeamPage_playerNat__CgzSE {
+  font-size: 11px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+  text-align: right;
+}
+
+.TeamPage_playerAge__KFmeH {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-faint);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: var(--font-jetbrains-mono), monospace;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ── State boxes ───────────────────────────────────────────────────────────── */
+
+.TeamPage_stateBox__dNTb4 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  gap: 8px;
+}
+
+/* ── Mobile ────────────────────────────────────────────────────────────────── */
+
+.TeamPage_mobTopBar__QWNv5 {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 10;
+}
+
+.TeamPage_mobBackBtn__4nqyj {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.TeamPage_mobTitle__Qc7PE {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+  text-align: center;
+  margin: 0;
+}
+
+@media (max-width: 1023px) {
+  .TeamPage_hero__CEgUq { border-radius: 0; border-left: none; border-right: none; margin-bottom: 12px; padding: 20px 16px; }
+  .TeamPage_heroInner__4L3vD { gap: 16px; }
+  .TeamPage_crest__6Igim { width: 64px; height: 64px; }
+  .TeamPage_crestPlaceholder__kbZaS { width: 64px; height: 64px; }
+  .TeamPage_heroName__GPLz7 { font-size: 20px; }
+  .TeamPage_infoGrid__9bDIn { grid-template-columns: 1fr 1fr; gap: 6px; padding: 12px 16px; margin-bottom: 0; }
+  .TeamPage_infoCard___N3eS { border-radius: 8px; }
+  .TeamPage_section__kuHvB { padding: 0 16px; margin-bottom: 20px; }
+  .TeamPage_section__kuHvB:first-of-type { margin-top: 16px; }
+  .TeamPage_matchRow__P4ium { grid-template-columns: 80px 20px 20px 1fr auto auto auto; padding: 10px 12px; gap: 6px; }
+  .TeamPage_matchDate__8DsLR { font-size: 12px; }
+  .TeamPage_matchComp__Ijas7 { display: none; }
+  .TeamPage_playerNat__CgzSE { max-width: 80px; }
+  .TeamPage_squadWrapper__Z9PEk { gap: 12px; }
+}
+
