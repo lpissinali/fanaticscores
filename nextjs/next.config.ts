@@ -1,8 +1,6 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  // Required for Cloud Run / Firebase App Hosting
-  output: 'standalone',
   // Allow team/competition crests from api-football CDN
   images: {
     remotePatterns: [
