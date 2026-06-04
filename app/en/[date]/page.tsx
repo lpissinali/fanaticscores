@@ -1,4 +1,4 @@
-import HomePageClient from '@/src/pages/home/HomePage';
+import HomePageClient from '@/src/views/home/HomePage';
 
 interface Props { params: Promise<{ date: string }> }
 

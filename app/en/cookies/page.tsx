@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import CookiesPageClient from '@/src/pages/legal/CookiesPage';
+import CookiesPageClient from '@/src/views/legal/CookiesPage';
 
 export const metadata: Metadata = {
   title: 'Cookie Policy',

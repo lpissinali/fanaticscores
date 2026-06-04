@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import CompetitionsPageClient from '@/src/pages/competitions/CompetitionsPage';
+import CompetitionsPageClient from '@/src/views/competitions/CompetitionsPage';
 
 export const metadata: Metadata = {
   title: 'Football Competitions & Leagues',

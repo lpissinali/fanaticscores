@@ -80,3 +80,4 @@ export default function ScheduleModal({ locale, onClose }: ScheduleModalProps) {
       </div>
     </div>
   );
+}

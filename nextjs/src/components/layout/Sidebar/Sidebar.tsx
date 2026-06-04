@@ -11,18 +11,13 @@ import { useAllFollowed } from '../../../lib/useFollowing';
 import type { SupportedLocale } from '../../../i18n';
 
 interface NavItem {
-  id: string;
-  label: string;
+  id: string; label: string;
   icon: Parameters<typeof Icon>[0]['name'];
-  path: string;
-  accent?: boolean;
+  path: string; accent?: boolean;
 }
-
 interface SidebarProps {
-  locale: SupportedLocale;
-  onScheduleClick?: () => void;
-  liveCount?: number;
-  activeFilter?: 'all' | 'live';
+  locale: SupportedLocale; onScheduleClick?: () => void;
+  liveCount?: number; activeFilter?: 'all' | 'live';
   onFilterChange?: (f: 'all' | 'live') => void;
 }
 
@@ -32,7 +27,6 @@ export default function Sidebar({ locale, onScheduleClick, liveCount, activeFilt
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-
   useEffect(() => { setMounted(true); }, []);
 
   const navItems: NavItem[] = [
@@ -54,7 +48,6 @@ export default function Sidebar({ locale, onScheduleClick, liveCount, activeFilt
         <Link href={`/${locale}/today`} className={styles.logoLink}>
           <FSLogo size={36} showWordmark />
         </Link>
-
         <nav className={styles.nav} aria-label="Main navigation">
           {navItems.map((item) => (
             <div key={item.id}>
@@ -75,14 +68,10 @@ export default function Sidebar({ locale, onScheduleClick, liveCount, activeFilt
                   {item.label}
                 </Link>
               )}
-
               {item.id === 'today' && (
                 <button
                   className={[styles.navItem, styles.navButton, activeFilter === 'live' ? styles.active : ''].filter(Boolean).join(' ')}
-                  onClick={() => {
-                    if (onFilterChange) onFilterChange(activeFilter === 'live' ? 'all' : 'live');
-                    else router.push(`/${locale}/today`);
-                  }}
+                  onClick={() => { if (onFilterChange) onFilterChange(activeFilter === 'live' ? 'all' : 'live'); else router.push(`/${locale}/today`); }}
                   aria-pressed={activeFilter === 'live'}
                 >
                   <Icon name="zap" size={16} />
@@ -93,7 +82,6 @@ export default function Sidebar({ locale, onScheduleClick, liveCount, activeFilt
             </div>
           ))}
         </nav>
-
         {mounted && followedTeams.length > 0 && (
           <div className={styles.following}>
             <span className={styles.followLabel}>Following</span>
@@ -102,10 +90,7 @@ export default function Sidebar({ locale, onScheduleClick, liveCount, activeFilt
                 <Link
                   key={team.name}
                   href={`/${locale}/team/${team.id}`}
-                  className={[
-                    styles.followRow,
-                    pathname.startsWith(`/${locale}/team/${team.id}`) ? styles.followRowActive : '',
-                  ].filter(Boolean).join(' ')}
+                  className={[styles.followRow, pathname.startsWith(`/${locale}/team/${team.id}`) ? styles.followRowActive : ''].filter(Boolean).join(' ')}
                 >
                   <Crest team={team} size="md" />
                   <span className={styles.followName}>{team.name}</span>
@@ -120,10 +105,7 @@ export default function Sidebar({ locale, onScheduleClick, liveCount, activeFilt
           </div>
         )}
       </aside>
-
-      {showSchedule && (
-        <ScheduleModal locale={locale} onClose={() => setShowSchedule(false)} />
-      )}
+      {showSchedule && <ScheduleModal locale={locale} onClose={() => setShowSchedule(false)} />}
     </>
   );
 }

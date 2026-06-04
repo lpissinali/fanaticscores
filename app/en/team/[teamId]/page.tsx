@@ -15,7 +15,7 @@ import RailPromo from '@/src/components/shared/RailPromo/RailPromo';
 import Icon from '@/src/components/shared/Icon/Icon';
 import MobileBottomNav from '@/src/components/shared/MobileBottomNav/MobileBottomNav';
 import FollowButton from '@/src/components/shared/FollowButton/FollowButton';
-import styles from '@/src/pages/team/TeamPage.module.css';
+import styles from '@/src/views/team/TeamPage.module.css';
 
 interface Props { params: Promise<{ teamId: string }> }
 
@@ -156,4 +156,130 @@ function MainContent({ data, teamId }: { data: TeamDetailData; teamId: string })
   const { info, recentMatches, upcomingMatches } = data;
   return (
     <>
-      <Hero info={info} teamId={teamId
+      <Hero info={info} teamId={teamId} />
+
+      {(info.coach || info.website) && (
+        <div className={styles.infoGrid}>
+          {info.coach && (
+            <div className={styles.infoCard}>
+              <div className={styles.infoLabel}>Head Coach</div>
+              <div className={styles.infoValue}>{info.coach.name}</div>
+              {info.coach.nationality && <div className={styles.infoSub}>{info.coach.nationality}</div>}
+            </div>
+          )}
+          {info.website && (
+            <div className={styles.infoCard}>
+              <div className={styles.infoLabel}>Website</div>
+              <a href={info.website} target="_blank" rel="noopener noreferrer" className={styles.websiteLink}>
+                {info.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+              </a>
+            </div>
+          )}
+        </div>
+      )}
+
+      {upcomingMatches.length > 0 && (
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Upcoming Fixtures</h2>
+          <div className={styles.matchList}>
+            {upcomingMatches.map(m => <MatchRowItem key={m.id} m={m} teamId={teamId} />)}
+          </div>
+        </div>
+      )}
+
+      {recentMatches.length > 0 && (
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Recent Results</h2>
+          <div className={styles.matchList}>
+            {recentMatches.map(m => <MatchRowItem key={m.id} m={m} teamId={teamId} />)}
+          </div>
+        </div>
+      )}
+
+      <SquadSection squad={info.squad} />
+    </>
+  );
+}
+
+function Rail({ data, teamId }: { data: TeamDetailData; teamId: string }) {
+  const recent = data.recentMatches;
+  const wins   = recent.filter(m => { const isHome = m.homeTeam.id === teamId; const ts = isHome ? m.homeTeam.score : m.awayTeam.score; const os = isHome ? m.awayTeam.score : m.homeTeam.score; return ts !== null && os !== null && ts > os; }).length;
+  const draws  = recent.filter(m => { const isHome = m.homeTeam.id === teamId; const ts = isHome ? m.homeTeam.score : m.awayTeam.score; const os = isHome ? m.awayTeam.score : m.homeTeam.score; return ts !== null && os !== null && ts === os; }).length;
+  const losses = recent.length - wins - draws;
+
+  return (
+    <aside className={styles.rail}>
+      <RailPromo locale="en" />
+      {recent.length > 0 && (
+        <div className={styles.railCard}>
+          <div className={styles.railCardTitle}>Recent Form</div>
+          <div className={styles.formDots}>
+            {recent.map(m => {
+              const isHome = m.homeTeam.id === teamId;
+              const ts = isHome ? m.homeTeam.score : m.awayTeam.score;
+              const os = isHome ? m.awayTeam.score  : m.homeTeam.score;
+              const r  = ts === null || os === null ? 'D' : ts > os ? 'W' : ts < os ? 'L' : 'D';
+              return (
+                <span key={m.id}
+                  className={[styles.formDot, r === 'W' ? styles.formW : r === 'L' ? styles.formL : styles.formD].join(' ')}
+                  title={r === 'W' ? 'Win' : r === 'L' ? 'Loss' : 'Draw'}
+                >{r}</span>
+              );
+            })}
+          </div>
+          <div className={styles.recordGrid} style={{ marginTop: 12 }}>
+            <div className={styles.recordCell}><span className={styles.recordNum} style={{ color: '#4ade80' }}>{wins}</span><span className={styles.recordLabel}>Won</span></div>
+            <div className={styles.recordCell}><span className={styles.recordNum}>{draws}</span><span className={styles.recordLabel}>Drawn</span></div>
+            <div className={styles.recordCell}><span className={styles.recordNum} style={{ color: '#f87171' }}>{losses}</span><span className={styles.recordLabel}>Lost</span></div>
+          </div>
+        </div>
+      )}
+    </aside>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
+export default async function TeamPage({ params }: Props) {
+  const { teamId } = await params;
+  const data = await fetchTeamDetail(teamId);
+  if (!data) notFound();
+  const d = data as TeamDetailData;
+
+  return (
+    <>
+      {/* ── DESKTOP ─────────────────────────────────────── */}
+      <div className={styles.desktopOnly}>
+        <div className={styles.desktop}>
+          <Sidebar locale="en" />
+          <main className={styles.main}>
+            <Link href="/en/today" className={styles.backBtn} style={{ textDecoration: 'none' }}>
+              <Icon name="chevron-left" size={14} /> Back
+            </Link>
+            <MainContent data={d} teamId={teamId} />
+            <Footer />
+          </main>
+          <Rail data={d} teamId={teamId} />
+        </div>
+      </div>
+
+      {/* ── MOBILE ──────────────────────────────────────── */}
+      <div className={styles.mobileOnly}>
+        <div className="screen">
+          <div className={styles.mobTopBar}>
+            <Link href="/en/today" className={styles.mobBackBtn} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+              <Icon name="chevron-left" size={20} />
+            </Link>
+            <span className={styles.mobTitle}>{d.info.shortName || d.info.name}</span>
+            <div />
+          </div>
+          <div className="scroll" style={{ paddingBottom: 40 }}>
+            <MainContent data={d} teamId={teamId} />
+            <div style={{ padding: '0 16px' }}><Footer /></div>
+          </div>
+          <MobileBottomNav locale="en" />
+        </div>
+      </div>
+    </>
+  );
+}

@@ -11,7 +11,7 @@ import type { CompetitionDetailData, CompInfo, CompStandingGroup, CompScorer, Co
 import Sidebar from '@/src/components/layout/Sidebar/Sidebar';
 import Footer from '@/src/components/layout/Footer/Footer';
 import RailPromo from '@/src/components/shared/RailPromo/RailPromo';
-import styles from '@/src/pages/competition/CompetitionPage.module.css';
+import styles from '@/src/views/competition/CompetitionPage.module.css';
 import Link from 'next/link';
 
 interface Props { params: Promise<{ compCode: string }> }
@@ -253,4 +253,31 @@ function FixtureSection({ title, fixtures }: { title: string; fixtures: CompFixt
   );
 }
 
-// ── Page ─────────�
+// ── Page ─────────
+export default async function CompetitionPage({ params }: Props) {
+  const { compCode } = await params;
+  const data = await fetchCompetitionDetail(compCode);
+  if (!data) notFound();
+  const d = data as CompetitionDetailData;
+
+  return (
+    <div className={styles.desktop}>
+      <Sidebar locale="en" />
+      <main className={styles.main}>
+        <Link href="/en/competitions" className={styles.backBtn} style={{ textDecoration: 'none' }}>
+          ← Back
+        </Link>
+        <HeroCard info={d.info} />
+        <FixtureSection title="Upcoming Fixtures" fixtures={d.upcomingFixtures} />
+        <FixtureSection title="Recent Results"   fixtures={d.recentResults} />
+        <StandingsTable groups={d.standingGroups} />
+        <ScorersSection scorers={d.scorers} />
+        <Footer />
+      </main>
+      <aside className={styles.rail}>
+        <RailPromo locale="en" />
+        <ScorersSection scorers={d.scorers} compact />
+      </aside>
+    </div>
+  );
+}

@@ -253,8 +253,7 @@ function FixtureSection({ title, fixtures }: { title: string; fixtures: CompFixt
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
-
+// ── Page ─────────
 export default async function CompetitionPage({ params }: Props) {
   const { compCode } = await params;
   const data = await fetchCompetitionDetail(compCode);

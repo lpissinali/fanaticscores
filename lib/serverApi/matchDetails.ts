@@ -305,4 +305,3 @@ export async function fetchMatchDetail(matchId: string): Promise<MatchDetailData
     events, stats, h2h, standings,
   };
 }
-                                      

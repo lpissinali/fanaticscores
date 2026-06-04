@@ -165,4 +165,24 @@ export default function SearchModal({ onClose, locale }: SearchModalProps) {
                     {team.country && <div className={styles.rowSub}>{team.country}</div>}
                   </div>
                   <Icon name="chevron-right" size={13} style={{ color: 'var(--text-faint)' }} />
-       
+
+                </button>
+              ))}
+            </div>
+          )}
+
+          {q.length > 1 && isEmpty && (
+            <div className={styles.empty}>
+              <Icon name="search" size={24} style={{ color: 'var(--text-faint)', marginBottom: 8 }} />
+              <div>No results for <strong>"{q}"</strong></div>
+              <div className={styles.emptySub}>Try a team or competition name</div>
+            </div>
+          )}
+          {q.length === 0 && (
+            <div className={styles.hint}>Start typing to search teams or competitions</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

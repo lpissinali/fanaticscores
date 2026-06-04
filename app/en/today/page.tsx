@@ -5,7 +5,7 @@
  */
 
 import type { Metadata } from 'next';
-import HomePageClient from '@/src/pages/home/HomePage';
+import HomePageClient from '@/src/views/home/HomePage';
 
 export const metadata: Metadata = {
   title: "Today's Football Scores & Live Results",

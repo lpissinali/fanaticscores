@@ -6,7 +6,7 @@
  */
 import { useEffect, useState } from 'react';
 import { getCachedMatch, cacheMatch } from '../../../lib/matchCache';
-import StudioPage from '../../../pages/studio/StudioPage';
+import StudioPage from '../../../views/studio/StudioPage';
 import type { SupportedLocale } from '../../../i18n';
 
 interface Props {
