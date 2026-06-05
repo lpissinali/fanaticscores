@@ -33,9 +33,18 @@ function save(map: Map<string, FollowedTeam>) {
   } catch {}
 }
 
-// Module-level singleton so all components share the same state.
-let store = load();
+// Module-level singleton — initialised lazily on first client interaction
+// to avoid reading localStorage during SSR (which causes hydration mismatches).
+let store: Map<string, FollowedTeam> = new Map();
+let storeLoaded = false;
 const listeners = new Set<() => void>();
+
+function ensureLoaded() {
+  if (!storeLoaded) {
+    store = load();
+    storeLoaded = true;
+  }
+}
 
 function notify() {
   listeners.forEach(fn => fn());
@@ -44,38 +53,49 @@ function notify() {
 // ── Plain (non-hook) helpers — safe to call from API layer ──────────────────
 
 export function getFollowedNames(): Set<string> {
+  ensureLoaded();
   return new Set(store.keys());
 }
 
 // ── React hooks ────────────────────────────────────────────────────────────
 
-/** Returns the full list of followed teams; re-renders on changes. */
+/** Returns the full list of followed teams; re-renders on changes.
+ *  Starts empty (matching SSR), loads from localStorage after hydration. */
 export function useAllFollowed(): FollowedTeam[] {
-  const [, rerender] = useState(0);
+  const [teams, setTeams] = useState<FollowedTeam[]>([]);
+
   useEffect(() => {
-    const h = () => rerender(n => n + 1);
+    // Load from localStorage after hydration to avoid SSR mismatch
+    ensureLoaded();
+    setTeams([...store.values()]);
+
+    const h = () => setTeams([...store.values()]);
     listeners.add(h);
     return () => { listeners.delete(h); };
   }, []);
-  return [...store.values()];
+
+  return teams;
 }
 
 /** Returns [isFollowed, toggleFn] for a specific team. */
 export function useFollowing(
   team: FollowedTeam,
 ): [boolean, (e?: React.MouseEvent) => void] {
-  const [, rerender] = useState(0);
+  const [followed, setFollowed] = useState(false);
+
   useEffect(() => {
-    const h = () => rerender(n => n + 1);
+    ensureLoaded();
+    setFollowed(store.has(team.name));
+
+    const h = () => setFollowed(store.has(team.name));
     listeners.add(h);
     return () => { listeners.delete(h); };
-  }, []);
-
-  const followed = store.has(team.name);
+  }, [team.name]);
 
   const toggle = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     e?.preventDefault();
+    ensureLoaded();
     if (store.has(team.name)) {
       store.delete(team.name);
     } else {
