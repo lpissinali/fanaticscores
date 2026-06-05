@@ -246,8 +246,20 @@ export default async function TeamPage({ params }: Props) {
   if (!data) notFound();
   const d = data as TeamDetailData;
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsTeam',
+    name: d.info.name,
+    sport: 'Football',
+    url: `https://www.fanaticscores.com/en/team/${teamId}`,
+    ...(d.info.founded && { foundingDate: String(d.info.founded) }),
+    ...(d.info.venue && { location: { '@type': 'Place', name: d.info.venue } }),
+    ...(d.info.crest && { logo: d.info.crest }),
+  };
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {/* ── DESKTOP ─────────────────────────────────────── */}
       <div className={styles.desktopOnly}>
         <div className={styles.desktop}>

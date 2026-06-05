@@ -289,7 +289,7 @@ export async function fetchMatchDetail(matchId: string): Promise<MatchDetailData
     compType,
     matchday:    parseMatchday(round),
     stage:       parseStage(round),
-    venue:       f.fixture.venue ? `${f.fixture.venue.name}, ${f.fixture.venue.city}` : null,
+    venue:       f.fixture.venue?.name ? [f.fixture.venue.name, f.fixture.venue.city].filter(Boolean).join(', ') : null,
     referee:     f.fixture.referee ?? null,
     halfTime:    { home: f.score.halftime.home, away: f.score.halftime.away },
     home: {

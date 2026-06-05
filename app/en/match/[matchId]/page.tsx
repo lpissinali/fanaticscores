@@ -15,8 +15,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { matchId } = await params;
   const data = await fetchMatchDetail(matchId);
   if (!data) return { title: 'Match' };
-  const score = data.home.score !== null && data.away.score !== null ? `${data.home.score}\u2013${data.away.score}` : 'vs';
-  const title = `${data.home.name} ${score} ${data.away.name} \u2014 ${data.competition}`;
+  const score = data.home.score !== null && data.away.score !== null ? `${data.home.score}–${data.away.score}` : 'vs';
+  const title = `${data.home.name} ${score} ${data.away.name} — ${data.competition}`;
   const description = `Match details for ${data.home.name} vs ${data.away.name} in ${data.competition}${data.venue ? ` at ${data.venue}` : ''}.`;
   const url = `/en/match/${matchId}`;
   return { title, description, alternates: { canonical: url }, openGraph: { title, description, url }, twitter: { title, description } };
@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 function ScoreHeader({ d, matchId }: { d: MatchDetailData; matchId: string }) {
   const statusChip =
-    d.status === 'LIVE' ? <span className="chip live">Live{d.minute ? ` \u00b7 ${d.minute}\u2032` : ''}</span> :
+    d.status === 'LIVE' ? <span className="chip live">Live{d.minute ? ` · ${d.minute}′` : ''}</span> :
     d.status === 'HT'   ? <span className="chip ht">Half Time</span> :
     d.status === 'FT'   ? <span className="chip ft">Full Time</span> :
                           <span className="chip">{d.kickoff ? new Date(d.kickoff).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Upcoming'}</span>;
@@ -35,7 +35,7 @@ function ScoreHeader({ d, matchId }: { d: MatchDetailData; matchId: string }) {
         <div className={styles.featuredMeta}>
           {statusChip}
           <Link href={d.compCode ? `/en/competition/${d.compCode}` : '/en/competitions'} style={{ textDecoration: 'none' }}>
-            <span className={styles.compLabel}>{d.compCountry ? `${d.compCountry} \u00b7 ` : ''}{d.competition}</span>
+            <span className={styles.compLabel}>{d.compCountry ? `${d.compCountry} · ` : ''}{d.competition}</span>
           </Link>
           {d.matchday && <span className={styles.matchday}>MD {d.matchday}</span>}
         </div>
@@ -49,9 +49,9 @@ function ScoreHeader({ d, matchId }: { d: MatchDetailData; matchId: string }) {
           <div><div className={styles.teamRole}>Home</div><div className={styles.teamName}>{d.home.name}</div></div>
         </Link>
         <div className={styles.scoreBlock}>
-          <span className={styles.score}>{d.home.score ?? '\u2013'}</span>
-          <span className={styles.scoreDash}>\u2013</span>
-          <span className={styles.score}>{d.away.score ?? '\u2013'}</span>
+          <span className={styles.score}>{d.home.score ?? '–'}</span>
+          <span className={styles.scoreDash}>–</span>
+          <span className={styles.score}>{d.away.score ?? '–'}</span>
         </div>
         <Link href={`/en/team/${d.away.id}`} className={styles.teamRight} style={{ textDecoration: 'none' }}>
           <div style={{ textAlign: 'right' }}><div className={styles.teamRole}>Away</div><div className={styles.teamName}>{d.away.name}</div></div>
@@ -61,7 +61,7 @@ function ScoreHeader({ d, matchId }: { d: MatchDetailData; matchId: string }) {
       {d.halfTime.home !== null && (
         <div className={styles.htRow}>
           <span className={styles.htLabel}>Half-time</span>
-          <span className={styles.htScore}>{d.halfTime.home} \u2013 {d.halfTime.away ?? 0}</span>
+          <span className={styles.htScore}>{d.halfTime.home} – {d.halfTime.away ?? 0}</span>
         </div>
       )}
     </div>
@@ -71,7 +71,7 @@ function ScoreHeader({ d, matchId }: { d: MatchDetailData; matchId: string }) {
 function EventIcon({ type, detail }: { type: string; detail?: string }) {
   if (type === 'goal') {
     const cls = detail === 'own goal' ? styles.iconGoalOwn : detail === 'pen' ? styles.iconGoalPen : styles.iconGoal;
-    return <span className={cls}>\u26bd</span>;
+    return <span className={cls}>⚽</span>;
   }
   if (type === 'yellow') return <div className={styles.iconYellow} />;
   if (type === 'red')    return <div className={styles.iconRed} />;
@@ -96,7 +96,7 @@ function EventsSection({ events }: { events: MatchEvent[] }) {
       </div>
     );
     const iconEl = <div className={styles.eventIconWrap}><EventIcon type={e.type} detail={e.detail} /></div>;
-    const minCol = <div className={styles.eventMinCol}><span className={styles.eventMinBadge}>{e.min}\u2032</span></div>;
+    const minCol = <div className={styles.eventMinCol}><span className={styles.eventMinBadge}>{e.min}′</span></div>;
     return (
       <div className={styles.eventRow}>
         {e.team === 'home' ? (
@@ -127,7 +127,7 @@ function StandingsSection({ rows, homeId, awayId, compName }: { rows: StandingRo
   if (rows.length === 0) return null;
   return (
     <div className={styles.section}>
-      <h2 className={styles.sectionTitle}>{compName} \u2014 Standings</h2>
+      <h2 className={styles.sectionTitle}>{compName} — Standings</h2>
       <div className={styles.table}>
         <div className={styles.tableHead}>
           <span className={styles.colPos}>#</span><span className={styles.colTeam}>Club</span>
@@ -178,7 +178,7 @@ function H2HSection({ d }: { d: MatchDetailData }) {
           <div key={m.id} className={styles.h2hRow}>
             <span className={styles.h2hDate}>{m.date}</span>
             <span className={styles.h2hName} style={{ textAlign: 'right' }}>{m.homeTeam}</span>
-            <span className={styles.h2hResult}>{m.homeScore ?? '\u2013'} \u2013 {m.awayScore ?? '\u2013'}</span>
+            <span className={styles.h2hResult}>{m.homeScore ?? '–'} – {m.awayScore ?? '–'}</span>
             <span className={styles.h2hName}>{m.awayTeam}</span>
           </div>
         ))}
@@ -189,7 +189,7 @@ function H2HSection({ d }: { d: MatchDetailData }) {
 
 function MobMatchCard({ d, matchId }: { d: MatchDetailData; matchId: string }) {
   const statusChip =
-    d.status === 'LIVE' ? <span className="chip live">Live{d.minute ? ` \u00b7 ${d.minute}\u2032` : ''}</span> :
+    d.status === 'LIVE' ? <span className="chip live">Live{d.minute ? ` · ${d.minute}′` : ''}</span> :
     d.status === 'HT'   ? <span className="chip ht">Half Time</span> :
     d.status === 'FT'   ? <span className="chip ft">Full Time</span> :
                           <span className="chip">{d.kickoff ? new Date(d.kickoff).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Upcoming'}</span>;
@@ -199,7 +199,7 @@ function MobMatchCard({ d, matchId }: { d: MatchDetailData; matchId: string }) {
       <div className={styles.mobFeaturedTop}>
         <div className={styles.mobFeaturedMeta}>
           {statusChip}
-          <span className={styles.compLabel}>{d.compCountry ? `${d.compCountry} \u00b7 ` : ''}{d.competition}</span>
+          <span className={styles.compLabel}>{d.compCountry ? `${d.compCountry} · ` : ''}{d.competition}</span>
         </div>
         <Link href={`/en/studio/${matchId}`} className="fs-btn ghost" style={{ height: 28, padding: '0 10px', fontSize: 12, textDecoration: 'none' }}>
           <Icon name="share" size={13} /> Share Studio
@@ -211,9 +211,9 @@ function MobMatchCard({ d, matchId }: { d: MatchDetailData; matchId: string }) {
           <div className={styles.mobTeamName}>{d.home.short || d.home.name}</div>
         </Link>
         <div className={styles.mobScoreBlock}>
-          <span className={styles.mobScore}>{d.home.score ?? '\u2013'}</span>
-          <span className={styles.mobScoreDash}>\u2013</span>
-          <span className={styles.mobScore}>{d.away.score ?? '\u2013'}</span>
+          <span className={styles.mobScore}>{d.home.score ?? '–'}</span>
+          <span className={styles.mobScoreDash}>–</span>
+          <span className={styles.mobScore}>{d.away.score ?? '–'}</span>
         </div>
         <Link href={`/en/team/${d.away.id}`} className={styles.mobTeamRight} style={{ textDecoration: 'none' }}>
           {d.away.crest && <img src={d.away.crest} alt={d.away.name} width={48} height={48} style={{ objectFit: 'contain' }} />}
@@ -223,7 +223,7 @@ function MobMatchCard({ d, matchId }: { d: MatchDetailData; matchId: string }) {
       {(d.status === 'FT' || d.status === 'HT') && d.halfTime.home !== null && (
         <div className={styles.mobHtRow}>
           <span className={styles.htLabel}>Half-time</span>
-          <span className={styles.htScore}>{d.halfTime.home} \u2013 {d.halfTime.away ?? 0}</span>
+          <span className={styles.htScore}>{d.halfTime.home} – {d.halfTime.away ?? 0}</span>
         </div>
       )}
     </div>
@@ -248,13 +248,28 @@ export default async function MatchPage({ params }: Props) {
   if (!data) notFound();
   const d = data as MatchDetailData;
   const matchTitle = `${d.home.short || d.home.name} vs ${d.away.short || d.away.name}`;
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsEvent',
+    name: `${d.home.name} vs ${d.away.name}`,
+    sport: 'Football',
+    startDate: d.kickoff ?? undefined,
+    location: d.venue ? { '@type': 'Place', name: d.venue } : undefined,
+    homeTeam: { '@type': 'SportsTeam', name: d.home.name },
+    awayTeam: { '@type': 'SportsTeam', name: d.away.name },
+    superEvent: { '@type': 'SportsOrganization', name: d.competition },
+    url: `https://www.fanaticscores.com/en/match/${matchId}`,
+  };
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className={styles.desktopOnly}>
         <div className={styles.desktop}>
           <Sidebar locale="en" />
           <main className={styles.main}>
-            <Link href="/en/today" className={styles.backBtn} style={{ textDecoration: 'none' }}>\u2190 Back</Link>
+            <Link href="/en/today" className={styles.backBtn} style={{ textDecoration: 'none' }}>← Back</Link>
             <ScoreHeader d={d} matchId={matchId} />
             <EventsSection events={d.events} />
             <H2HSection d={d} />

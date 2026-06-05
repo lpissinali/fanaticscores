@@ -11,6 +11,8 @@ import type { CompetitionDetailData, CompInfo, CompStandingGroup, CompScorer, Co
 import Sidebar from '@/src/components/layout/Sidebar/Sidebar';
 import Footer from '@/src/components/layout/Footer/Footer';
 import RailPromo from '@/src/components/shared/RailPromo/RailPromo';
+import MobileBottomNav from '@/src/components/shared/MobileBottomNav/MobileBottomNav';
+import Icon from '@/src/components/shared/Icon/Icon';
 import styles from '@/src/views/competition/CompetitionPage.module.css';
 import Link from 'next/link';
 
@@ -34,19 +36,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-// ── Static params (pre-render the 25 known competitions at build time) ────────
-
-const KNOWN_CODES = [
-  'WC','CWC','EURO','CA','AFCN','UNL',
-  'CL','EL','UECL','LIBT','CSUD',
-  'PL','PD','SA','BL1','FL1',
-  'DED','PPL','SPL','JPL','TSL',
-  'BSA','ARG','MX','MLS',
-];
-
-export function generateStaticParams() {
-  return KNOWN_CODES.map(compCode => ({ compCode }));
-}
+// Competition pages render on-demand; fetch responses are cached for 1 hour
+// via revalidate: 3600 in fetchAF. Removed generateStaticParams to avoid
+// bursting the api-football per-minute rate limit at build time.
 
 // ── Sub-components (pure JSX — server-renderable) ─────────────────────────────
 
@@ -254,30 +246,102 @@ function FixtureSection({ title, fixtures }: { title: string; fixtures: CompFixt
 }
 
 // ── Page ─────────
+// ── Static league descriptions (indexed by Google regardless of JS rendering) ─
+
+const LEAGUE_BLURBS: Record<string, string> = {
+  PL:   'The Premier League is England\'s top football division, featuring 20 clubs competing from August to May. Home to some of the world\'s biggest clubs — Manchester City, Arsenal, Liverpool, Chelsea and Manchester United — it is widely regarded as the most-watched football league on the planet.',
+  PD:   'La Liga is Spain\'s premier football division, renowned for producing some of football\'s greatest talent. Barcelona and Real Madrid have historically dominated the competition, but clubs like Atlético de Madrid, Sevilla and Athletic Club regularly compete for European places.',
+  SA:   'Serie A is Italy\'s top professional football league. Juventus, Inter Milan and AC Milan are the most decorated clubs, while Napoli, Roma, Lazio and Fiorentina provide fierce competition each season. The league is known for its tactical depth and defensive excellence.',
+  BL1:  'The Bundesliga is Germany\'s premier football competition. Bayern Munich have dominated modern German football, but Borussia Dortmund, Bayer Leverkusen and RB Leipzig consistently challenge for the title and European spots.',
+  FL1:  'Ligue 1 is the top tier of French football. Paris Saint-Germain have been the dominant force in recent seasons, while Lyon, Monaco, Marseille and Lille compete for European qualification each year.',
+  CL:   'The UEFA Champions League is Europe\'s most prestigious club competition, contested annually by the top clubs from each UEFA member association. The knockout tournament culminates in a final that regularly draws hundreds of millions of viewers worldwide.',
+  EL:   'The UEFA Europa League is the second tier of European club football, providing a route to European silverware for clubs that finish below the Champions League places in their domestic leagues.',
+  UECL: 'The UEFA Europa Conference League is the third tier of European club competition, giving more clubs across the continent the chance to compete in European knockout football.',
+  WC:   'The FIFA World Cup is the most prestigious international football tournament, held every four years and featuring national teams from across the globe competing for the ultimate prize in football.',
+  EURO: 'The UEFA European Championship, held every four years, is the premier international tournament for European national teams. Past winners include Germany, Spain, France and Italy.',
+  CWC:  'The FIFA Club World Cup brings together the champion clubs from each of the six continental confederations to determine the best club team in the world.',
+  CA:   'The CONMEBOL Copa América is the oldest international football tournament in the world, contested by South American national teams. Brazil and Argentina are the most successful nations in the competition\'s history.',
+  LIBT: 'The CONMEBOL Libertadores is South America\'s most prestigious club competition, equivalent to the UEFA Champions League. Brazilian and Argentine clubs have historically dominated the tournament.',
+  BSA:  'The Campeonato Brasileiro Série A is Brazil\'s top professional football league, featuring 20 clubs. Flamengo, Palmeiras, Santos and Corinthians are among the most storied clubs in Brazilian football history.',
+  MLS:  'Major League Soccer is the top professional football league in the United States and Canada, featuring clubs from across North America competing in Eastern and Western Conferences.',
+  ARG:  'The Liga Profesional de Fútbol is Argentina\'s premier football division. River Plate and Boca Juniors are the country\'s most iconic clubs, while Independiente, Racing Club and San Lorenzo also boast rich histories.',
+};
+
 export default async function CompetitionPage({ params }: Props) {
   const { compCode } = await params;
   const data = await fetchCompetitionDetail(compCode);
   if (!data) notFound();
   const d = data as CompetitionDetailData;
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsOrganization',
+    name: d.info.name,
+    sport: 'Football',
+    url: `https://www.fanaticscores.com/en/competition/${compCode}`,
+    ...(d.info.emblem && { logo: d.info.emblem }),
+    ...(d.info.area?.name && { location: { '@type': 'Place', name: d.info.area.name } }),
+  };
+
+  const blurb = LEAGUE_BLURBS[compCode] ?? null;
+
   return (
-    <div className={styles.desktop}>
-      <Sidebar locale="en" />
-      <main className={styles.main}>
-        <Link href="/en/competitions" className={styles.backBtn} style={{ textDecoration: 'none' }}>
-          ← Back
-        </Link>
-        <HeroCard info={d.info} />
-        <FixtureSection title="Upcoming Fixtures" fixtures={d.upcomingFixtures} />
-        <FixtureSection title="Recent Results"   fixtures={d.recentResults} />
-        <StandingsTable groups={d.standingGroups} />
-        <ScorersSection scorers={d.scorers} />
-        <Footer />
-      </main>
-      <aside className={styles.rail}>
-        <RailPromo locale="en" />
-        <ScorersSection scorers={d.scorers} compact />
-      </aside>
-    </div>
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+
+      {/* ── DESKTOP ─────────────────────────────────────── */}
+      <div className={styles.desktopOnly}>
+        <div className={styles.desktop}>
+          <Sidebar locale="en" />
+          <main className={styles.main}>
+            <Link href="/en/competitions" className={styles.backBtn} style={{ textDecoration: 'none' }}>
+              <Icon name="chevron-left" size={14} /> Back
+            </Link>
+            <HeroCard info={d.info} />
+            <FixtureSection title="Upcoming Fixtures" fixtures={d.upcomingFixtures} />
+            <FixtureSection title="Recent Results"   fixtures={d.recentResults} />
+            <StandingsTable groups={d.standingGroups} />
+            <ScorersSection scorers={d.scorers} />
+            {blurb && (
+              <p style={{ padding: '24px 0', color: 'var(--text-dim)', fontSize: 14, lineHeight: 1.7, maxWidth: 680 }}>
+                {blurb}
+              </p>
+            )}
+            <Footer />
+          </main>
+          <aside className={styles.rail}>
+            <RailPromo locale="en" />
+            <ScorersSection scorers={d.scorers} compact />
+          </aside>
+        </div>
+      </div>
+
+      {/* ── MOBILE ──────────────────────────────────────── */}
+      <div className={styles.mobileOnly}>
+        <div className={styles.mobScreen}>
+          <div className={styles.mobTopBar}>
+            <Link href="/en/competitions" className={styles.mobBackBtn} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+              <Icon name="chevron-left" size={20} />
+            </Link>
+            <span className={styles.mobTopTitle}>{d.info.name}</span>
+            <div />
+          </div>
+          <div className={styles.mobContent}>
+            <HeroCard info={d.info} />
+            <FixtureSection title="Upcoming Fixtures" fixtures={d.upcomingFixtures} />
+            <FixtureSection title="Recent Results"   fixtures={d.recentResults} />
+            <StandingsTable groups={d.standingGroups} />
+            <ScorersSection scorers={d.scorers} />
+            {blurb && (
+              <p style={{ padding: '24px 0', color: 'var(--text-dim)', fontSize: 14, lineHeight: 1.7, maxWidth: 680 }}>
+                {blurb}
+              </p>
+            )}
+            <Footer />
+          </div>
+          <MobileBottomNav locale="en" />
+        </div>
+      </div>
+    </>
   );
 }
