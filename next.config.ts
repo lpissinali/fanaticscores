@@ -14,34 +14,31 @@ const nextConfig: NextConfig = {
       { hostname: 'media-4.api-sports.io' },
     ],
   },
-  // In dev, proxy /api/af and /api/fd to the deployed Firebase Functions
-  // so you can run `next dev` without a local Functions emulator.
-  // In production, Firebase Hosting rewrites handle this transparently.
+  // Proxy client-side API calls to Firebase Functions.
+  // Applies in all environments — Firebase App Hosting does not inherit
+  // the classic firebase.json hosting rewrites.
   async rewrites() {
-    if (process.env.NODE_ENV === 'development') {
-      const project = process.env.FIREBASE_PROJECT_ID ?? 'fanaticscores-b6af4';
-      const region  = 'us-central1';
-      const base    = `https://${region}-${project}.cloudfunctions.net`;
-      return [
-        {
-          source:      '/api/af/:path*',
-          destination: `${base}/afProxy/api/af/:path*`,
-        },
-        {
-          source:      '/api/fd/:path*',
-          destination: `${base}/fdProxy/api/fd/:path*`,
-        },
-        {
-          source:      '/api/fetchMatchday',
-          destination: `${base}/fetchMatchdayHttp`,
-        },
-        {
-          source:      '/api/captionRewrite',
-          destination: `${base}/captionRewrite`,
-        },
-      ];
-    }
-    return [];
+    const project = process.env.FIREBASE_PROJECT_ID ?? 'fanaticscores-b6af4';
+    const region  = 'us-central1';
+    const base    = `https://${region}-${project}.cloudfunctions.net`;
+    return [
+      {
+        source:      '/api/af/:path*',
+        destination: `${base}/afProxy/api/af/:path*`,
+      },
+      {
+        source:      '/api/fd/:path*',
+        destination: `${base}/fdProxy/api/fd/:path*`,
+      },
+      {
+        source:      '/api/fetchMatchday',
+        destination: `${base}/fetchMatchdayHttp`,
+      },
+      {
+        source:      '/api/captionRewrite',
+        destination: `${base}/captionRewrite`,
+      },
+    ];
   },
 };
 
