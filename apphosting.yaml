@@ -18,3 +18,35 @@ env:
     availability:
       - BUILD
       - RUNTIME
+
+  # Firebase client SDK — must be available at BUILD time so Next.js
+  # can bake NEXT_PUBLIC_* vars into the client bundle.
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyDYyzkXVi8OVxwknOgSdzg3J_pxVqJSzz8
+    availability:
+      - BUILD
+
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: fanaticscores-b6af4.firebaseapp.com
+    availability:
+      - BUILD
+
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: fanaticscores-b6af4
+    availability:
+      - BUILD
+
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: fanaticscores-b6af4.firebasestorage.app
+    availability:
+      - BUILD
+
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: 681028789746
+    availability:
+      - BUILD
+
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: 1:681028789746:web:9c67cacb1b9c9514cbb76b
+    availability:
+      - BUILD
