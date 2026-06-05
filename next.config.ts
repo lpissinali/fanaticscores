@@ -14,32 +14,6 @@ const nextConfig: NextConfig = {
       { hostname: 'media-4.api-sports.io' },
     ],
   },
-  // Proxy client-side API calls to Firebase Functions.
-  // Applies in all environments — Firebase App Hosting does not inherit
-  // the classic firebase.json hosting rewrites.
-  async rewrites() {
-    const project = process.env.FIREBASE_PROJECT_ID ?? 'fanaticscores-b6af4';
-    const region  = 'us-central1';
-    const base    = `https://${region}-${project}.cloudfunctions.net`;
-    return [
-      {
-        source:      '/api/af/:path*',
-        destination: `${base}/afProxy/api/af/:path*`,
-      },
-      {
-        source:      '/api/fd/:path*',
-        destination: `${base}/fdProxy/api/fd/:path*`,
-      },
-      {
-        source:      '/api/fetchMatchday',
-        destination: `${base}/fetchMatchdayHttp`,
-      },
-      {
-        source:      '/api/captionRewrite',
-        destination: `${base}/captionRewrite`,
-      },
-    ];
-  },
 };
 
 export default nextConfig;
