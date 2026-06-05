@@ -14,7 +14,7 @@ function Content() {
     <div className={styles.doc}>
       <p className={styles.docEyebrow}>Legal</p>
       <h1 className={styles.docTitle}>Terms &amp; Conditions</h1>
-      <p className={styles.docDate}>Last updated: 21 May 2026</p>
+      <p className={styles.docDate}>Last updated: 5 June 2026</p>
 
       <h2>1. Acceptance of terms</h2>
       <p>
@@ -26,7 +26,9 @@ function Content() {
       <p>
         Fanatic Scores is a free web application that provides live football scores, match results,
         league standings, head-to-head statistics and competition information. No account or
-        registration is required to use the Service.
+        registration is required to use the Service. Pages are server-side rendered — match data,
+        standings and competition information are fetched on our servers and delivered as fully
+        formed HTML before reaching your browser.
       </p>
 
       <h2>3. Data accuracy and disclaimers</h2>
@@ -68,11 +70,13 @@ function Content() {
 
       <h2>6. Third-party services</h2>
       <p>
-        The Service relies on third-party APIs and infrastructure — including API-Football
-        (api-sports.io) for match data, Google Firebase for hosting and database, Google Analytics
-        4 for anonymised usage analytics (consent-based), and Anthropic's Claude API for
-        AI-generated match summaries — to deliver its features. We are not responsible for the
-        availability, accuracy or terms of those services.
+        The Service relies on third-party APIs and infrastructure to deliver its features,
+        including: API-Football (api-sports.io) for match data fetched server-side; Google
+        Firebase App Hosting for server-side rendering and deployment; Google Analytics 4 for
+        anonymised usage analytics (consent-based); and Anthropic's Claude API for AI-generated
+        match summaries. All third-party API calls that involve credentials are made exclusively
+        from our servers — no API keys are exposed to your browser. We are not responsible for
+        the availability, accuracy or terms of those services.
       </p>
 
       <h2>7. Limitation of liability</h2>

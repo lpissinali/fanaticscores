@@ -262,9 +262,20 @@ export default async function MatchPage({ params }: Props) {
     url: `https://www.fanaticscores.com/en/match/${matchId}`,
   };
 
+  const breadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home',        item: 'https://www.fanaticscores.com/en/today' },
+      { '@type': 'ListItem', position: 2, name: d.competition,  item: d.compCode ? `https://www.fanaticscores.com/en/competition/${d.compCode}` : 'https://www.fanaticscores.com/en/competitions' },
+      { '@type': 'ListItem', position: 3, name: `${d.home.name} vs ${d.away.name}`, item: `https://www.fanaticscores.com/en/match/${matchId}` },
+    ],
+  };
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }} />
       <div className={styles.desktopOnly}>
         <div className={styles.desktop}>
           <Sidebar locale="en" />

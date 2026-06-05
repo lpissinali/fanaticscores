@@ -14,7 +14,7 @@ function Content() {
     <div className={styles.doc}>
       <p className={styles.docEyebrow}>Legal</p>
       <h1 className={styles.docTitle}>Privacy Policy</h1>
-      <p className={styles.docDate}>Last updated: 21 May 2026</p>
+      <p className={styles.docDate}>Last updated: 5 June 2026</p>
 
       <h2>1. Overview</h2>
       <p>
@@ -29,10 +29,13 @@ function Content() {
         provide an email address, or submit any personal information to use the Service.
       </p>
       <p>
-        <strong>Data collected automatically.</strong> When you visit Fanatic Scores, our hosting
-        provider (Google Firebase) may collect standard server logs, including your IP address,
-        browser type, operating system, referring URLs and pages visited. This data is used for
-        security monitoring only.
+        <strong>Data collected automatically.</strong> Fanatic Scores uses server-side rendering
+        (SSR): when you request a page, our servers (Google Firebase App Hosting) fetch match
+        data, standings and competition information from third-party APIs on your behalf and
+        return fully rendered HTML. During this process, Firebase App Hosting may log standard
+        request metadata — including your IP address, browser type, operating system, referring
+        URL and pages visited — for security monitoring. No API credentials are exposed to your
+        browser.
       </p>
       <p>
         <strong>Analytics (consent-based).</strong> If you choose "Accept all" on the cookie
@@ -41,10 +44,10 @@ function Content() {
         information is sent to Google.
       </p>
       <p>
-        <strong>Local storage.</strong> We store certain data in your browser's local storage and
-        session storage (for example, cached match scores, your "Following" preferences, and your
-        analytics consent choice). This data never leaves your device and is not transmitted to
-        our servers.
+        <strong>Local storage.</strong> A small amount of data is stored in your browser's local
+        storage: your "Following" preferences (teams you have chosen to follow) and your analytics
+        consent choice. Match data is no longer cached in local storage — it is fetched and cached
+        server-side. Data stored locally never leaves your device.
       </p>
 
       <h2>3. How we use your information</h2>
@@ -65,8 +68,10 @@ function Content() {
           statistics. See <a href="https://www.api-football.com/privacy" target="_blank" rel="noreferrer">their privacy policy</a>.
         </li>
         <li>
-          <strong>Google Firebase</strong> — provides hosting and our Firestore database.
-          See <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noreferrer">Firebase's privacy policy</a>.
+          <strong>Google Firebase App Hosting</strong> — provides server-side rendering,
+          deployment and our Firestore database. All server-side API calls (including to
+          API-Football and Anthropic) originate from Firebase App Hosting servers, not your
+          browser. See <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noreferrer">Firebase's privacy policy</a>.
         </li>
         <li>
           <strong>Google Analytics 4</strong> — collects anonymised usage analytics when you

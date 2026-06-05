@@ -257,9 +257,19 @@ export default async function TeamPage({ params }: Props) {
     ...(d.info.crest && { logo: d.info.crest }),
   };
 
+  const breadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home',      item: 'https://www.fanaticscores.com/en/today' },
+      { '@type': 'ListItem', position: 2, name: d.info.name, item: `https://www.fanaticscores.com/en/team/${teamId}` },
+    ],
+  };
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }} />
       {/* ── DESKTOP ─────────────────────────────────────── */}
       <div className={styles.desktopOnly}>
         <div className={styles.desktop}>

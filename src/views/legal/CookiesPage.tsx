@@ -14,7 +14,7 @@ function Content() {
     <div className={styles.doc}>
       <p className={styles.docEyebrow}>Legal</p>
       <h1 className={styles.docTitle}>Cookies Policy</h1>
-      <p className={styles.docDate}>Last updated: 21 May 2026</p>
+      <p className={styles.docDate}>Last updated: 5 June 2026</p>
 
       <h2>1. What are cookies?</h2>
       <p>
@@ -31,8 +31,8 @@ function Content() {
       <ul>
         <li>
           <strong>Essential only</strong> — only strictly necessary browser storage is used
-          (match data caching, your Following preferences, and your consent choice itself).
-          No analytics data is collected.
+          (your Following preferences and your consent choice itself). Match data is fetched
+          and cached server-side. No analytics data is collected.
         </li>
         <li>
           <strong>Accept all</strong> — in addition to essential storage, Google Analytics 4
@@ -48,18 +48,20 @@ function Content() {
 
       <h2>3. Essential browser storage (always active)</h2>
 
+      <h3>Server-side caching</h3>
+      <p>
+        Fanatic Scores uses server-side rendering (SSR). Match data, standings, team and
+        competition information are fetched from third-party APIs on our servers (Google Firebase
+        App Hosting) and cached there for up to one hour before being sent to your browser as
+        rendered HTML. This caching happens entirely on the server — nothing related to match
+        data is stored in your browser.
+      </p>
+
       <h3>Local storage</h3>
       <p>
-        We use <code>localStorage</code> to cache match data, standings and other API responses on
-        your device. This reduces API requests and makes the app load faster on repeat visits.
-        Cached entries expire automatically (typically within 1–12 hours).
+        We use <code>localStorage</code> only for preferences that are specific to your device
+        and session. No football data is cached in your browser.
       </p>
-      <ul>
-        <li><strong>Purpose:</strong> Performance caching of football data.</li>
-        <li><strong>Data stored:</strong> Match scores, standings, head-to-head records.</li>
-        <li><strong>Personal data:</strong> None.</li>
-        <li><strong>Expiry:</strong> 1 hour (live data) to 24 hours (historical data).</li>
-      </ul>
 
       <h3>Consent preference</h3>
       <ul>
