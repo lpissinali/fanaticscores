@@ -259,6 +259,59 @@ async function fetchStandings(compCode: string): Promise<StandingRow[]> {
   return [];
 }
 
+// ── Related fixtures (for "More in [Competition]" rail) ───────────────────────
+
+export interface RelatedFixture {
+  id: string;
+  utcDate: string;
+  status: string;
+  homeTeam: { id: string; name: string; short: string; crest: string; score: number | null };
+  awayTeam: { id: string; name: string; short: string; crest: string; score: number | null };
+}
+
+type AFFixtureRow = {
+  fixture: { id: number; date: string; status: { short: string } };
+  teams:   { home: { id: number; name: string; logo: string }; away: { id: number; name: string; logo: string } };
+  goals:   { home: number | null; away: number | null };
+};
+
+function mapFixtureRows(rows: AFFixtureRow[], excludeMatchId: string, limit: number): RelatedFixture[] {
+  return rows
+    .filter(f => String(f.fixture.id) !== excludeMatchId)
+    .slice(0, limit)
+    .map(f => ({
+      id:       String(f.fixture.id),
+      utcDate:  f.fixture.date,
+      status:   mapStatus(f.fixture.status.short),
+      homeTeam: { id: String(f.teams.home.id), name: f.teams.home.name, short: toShort(f.teams.home.name), crest: f.teams.home.logo, score: f.goals.home },
+      awayTeam: { id: String(f.teams.away.id), name: f.teams.away.name, short: toShort(f.teams.away.name), crest: f.teams.away.logo, score: f.goals.away },
+    }));
+}
+
+export async function fetchRelatedFixtures(
+  compCode: string,
+  excludeMatchId: string,
+  limit = 4,
+): Promise<RelatedFixture[]> {
+  const leagueId = COMP_CODE_TO_LEAGUE_ID[compCode];
+  if (!leagueId) return [];
+  try {
+    const season = currentSeason();
+    // Try upcoming first; fall back to recent results if season is over
+    const [nextRes, lastRes] = await Promise.all([
+      fetchAF(`/fixtures?league=${leagueId}&season=${season}&next=10`),
+      fetchAF(`/fixtures?league=${leagueId}&season=${season}&last=10`),
+    ]);
+
+    const nextJson = nextRes.ok ? await nextRes.json() as { response: AFFixtureRow[] } : { response: [] };
+    const upcoming = mapFixtureRows(nextJson.response ?? [], excludeMatchId, limit);
+    if (upcoming.length > 0) return upcoming;
+
+    const lastJson = lastRes.ok ? await lastRes.json() as { response: AFFixtureRow[] } : { response: [] };
+    return mapFixtureRows((lastJson.response ?? []).reverse(), excludeMatchId, limit);
+  } catch { return []; }
+}
+
 // ── Public entry point ────────────────────────────────────────────────────────
 
 export async function fetchMatchDetail(matchId: string): Promise<MatchDetailData | null> {

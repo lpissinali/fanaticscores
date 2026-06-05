@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { fetchMatchDetail } from '@/lib/serverApi/matchDetails';
-import type { MatchDetailData, MatchEvent, StandingRow } from '@/lib/serverApi/matchDetails';
+import { fetchMatchDetail, fetchRelatedFixtures } from '@/lib/serverApi/matchDetails';
+import type { MatchDetailData, MatchEvent, StandingRow, RelatedFixture } from '@/lib/serverApi/matchDetails';
 import Sidebar from '@/src/components/layout/Sidebar/Sidebar';
 import Footer from '@/src/components/layout/Footer/Footer';
 import RailPromo from '@/src/components/shared/RailPromo/RailPromo';
@@ -230,6 +230,47 @@ function MobMatchCard({ d, matchId }: { d: MatchDetailData; matchId: string }) {
   );
 }
 
+function RelatedFixturesRail({ fixtures, compCode, compName }: { fixtures: RelatedFixture[]; compCode: string; compName: string }) {
+  if (fixtures.length === 0) return null;
+  return (
+    <div className={styles.infoCard} style={{ marginTop: 16 }}>
+      <div className={styles.infoTitle}>
+        <Link href={`/en/competition/${compCode}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+          More in {compName}
+        </Link>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+        {fixtures.map(f => {
+          const date = new Date(f.utcDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          const time = new Date(f.utcDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+          const score = f.homeTeam.score !== null && f.awayTeam.score !== null
+            ? `${f.homeTeam.score}–${f.awayTeam.score}`
+            : time;
+          return (
+            <Link key={f.id} href={`/en/match/${f.id}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '1px solid var(--border)', color: 'inherit' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 30 }}>
+                {f.homeTeam.crest && <img src={f.homeTeam.crest} alt={f.homeTeam.name} width={18} height={18} style={{ objectFit: 'contain' }} />}
+                {f.awayTeam.crest && <img src={f.awayTeam.crest} alt={f.awayTeam.name} width={18} height={18} style={{ objectFit: 'contain', marginTop: 2 }} />}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.homeTeam.short}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-dim)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.awayTeam.short}</div>
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-faint)', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                <div>{score}</div>
+                <div style={{ fontWeight: 400, fontSize: 11 }}>{date}</div>
+              </div>
+            </Link>
+          );
+        })}
+        <Link href={`/en/competition/${compCode}`} style={{ textDecoration: 'none', fontSize: 12, color: 'var(--orange)', fontWeight: 600, paddingTop: 4 }}>
+          View all →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 function InfoCard({ d }: { d: MatchDetailData }) {
   if (!d.venue && !d.referee && !d.stage) return null;
   return (
@@ -248,6 +289,10 @@ export default async function MatchPage({ params }: Props) {
   if (!data) notFound();
   const d = data as MatchDetailData;
   const matchTitle = `${d.home.short || d.home.name} vs ${d.away.short || d.away.name}`;
+
+  const relatedFixtures = d.compCode
+    ? await fetchRelatedFixtures(d.compCode, matchId)
+    : [];
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -290,6 +335,7 @@ export default async function MatchPage({ params }: Props) {
           <aside className={styles.rail}>
             <RailPromo locale="en" />
             <InfoCard d={d} />
+            <RelatedFixturesRail fixtures={relatedFixtures} compCode={d.compCode} compName={d.competition} />
           </aside>
         </div>
       </div>
