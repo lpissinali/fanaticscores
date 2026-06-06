@@ -165,7 +165,6 @@ async function fetchStandingsForSeason(leagueId: number, season: number): Promis
 
 async function fetchStandings(code: string, leagueId: number): Promise<StandingsFetch> {
   const empty: StandingsFetch = { groups: [], currentMatchday: null, winner: null };
-  if (CUP_CODES.has(code)) return empty;
 
   const calendarYear = new Date().getFullYear();
   const baseSeason   = currentSeason();
@@ -180,8 +179,7 @@ async function fetchStandings(code: string, leagueId: number): Promise<Standings
   return empty;
 }
 
-async function fetchScorers(leagueId: number): Promise<CompScorer[]> {
-  const season = currentSeason();
+async function fetchScorers(leagueId: number, season: number): Promise<CompScorer[]> {
   try {
     const res  = await fetchAF(`/players/topscorers?league=${leagueId}&season=${season}`);
     if (!res.ok) return [];
@@ -200,12 +198,12 @@ async function fetchScorers(leagueId: number): Promise<CompScorer[]> {
   } catch { return []; }
 }
 
-async function fetchFixtures(leagueId: number): Promise<{ upcoming: CompFixture[]; recent: CompFixture[] }> {
-  const season = currentSeason();
+async function fetchFixtures(leagueId: number, season: number, isCup = false): Promise<{ upcoming: CompFixture[]; recent: CompFixture[] }> {
+  const limit = isCup ? 10 : 5;
   try {
     const [upRes, reRes] = await Promise.all([
-      fetchAF(`/fixtures?league=${leagueId}&season=${season}&next=5`),
-      fetchAF(`/fixtures?league=${leagueId}&season=${season}&last=5`),
+      fetchAF(`/fixtures?league=${leagueId}&season=${season}&next=${limit}`),
+      fetchAF(`/fixtures?league=${leagueId}&season=${season}&last=${limit}`),
     ]);
     const upJson = upRes.ok ? await upRes.json() as { response: AFFixtureRaw[] } : { response: [] };
     const reJson = reRes.ok ? await reRes.json() as { response: AFFixtureRaw[] } : { response: [] };
@@ -222,14 +220,25 @@ export async function fetchCompetitionDetail(code: string): Promise<CompetitionD
   const leagueId = COMP_CODE_TO_LEAGUE_ID[code];
   if (!leagueId) return null;
 
-  const [info, standingsFetch, scorers, fixtures] = await Promise.all([
+  // Run info + standings in parallel; standings already tries multiple season years.
+  // Then use the season year that api-football marks as current for scorers/fixtures.
+  const [info, standingsFetch] = await Promise.all([
     fetchCompInfo(code, leagueId),
     fetchStandings(code, leagueId),
-    fetchScorers(leagueId),
-    fetchFixtures(leagueId),
   ]);
 
   if (!info) return null;
+
+  // Derive season year from api-football's own current-season marker so each
+  // competition gets the right year automatically (WC→2026, CL→2025, EURO→2024…).
+  const seasonYear = info.season?.startDate
+    ? parseInt(info.season.startDate.slice(0, 4), 10)
+    : currentSeason();
+
+  const [scorers, fixtures] = await Promise.all([
+    fetchScorers(leagueId, seasonYear),
+    fetchFixtures(leagueId, seasonYear, CUP_CODES.has(code)),
+  ]);
 
   if (info.season) {
     info.season.currentMatchday = standingsFetch.currentMatchday;

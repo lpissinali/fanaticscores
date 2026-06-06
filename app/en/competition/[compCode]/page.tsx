@@ -146,6 +146,69 @@ function StandingRows({ rows }: { rows: CompStandingGroup['rows'] }) {
   );
 }
 
+function SeasonInfoCard({ info }: { info: CompInfo }) {
+  if (!info.season) return null;
+  const { startDate, endDate, currentMatchday, winner } = info.season;
+  const fmt = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  return (
+    <div className={styles.railScorerCard}>
+      <div className={styles.railCardTitle}>Season</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+          <span style={{ color: 'var(--text-faint)' }}>Period</span>
+          <span style={{ color: 'var(--text)', fontWeight: 600 }}>{fmt(startDate)} – {fmt(endDate)}</span>
+        </div>
+        {currentMatchday != null && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+            <span style={{ color: 'var(--text-faint)' }}>Matchday</span>
+            <span style={{ color: 'var(--text)', fontWeight: 600 }}>MD {currentMatchday}</span>
+          </div>
+        )}
+        {winner && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, marginTop: 4, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+            <span style={{ color: 'var(--text-faint)' }}>Champion</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--orange)', fontWeight: 700 }}>
+              {winner.crest && <img src={winner.crest} alt={winner.name} width={16} height={16} style={{ objectFit: 'contain' }} />}
+              {winner.name}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TableLeadersCard({ groups }: { groups: CompStandingGroup[] }) {
+  if (groups.length === 0) return null;
+  const isGrouped = groups.length > 1;
+  const title = isGrouped ? 'Group Leaders' : 'Top 3';
+
+  const entries = isGrouped
+    ? groups.map(g => ({ label: g.name, row: g.rows[0] })).filter(e => e.row)
+    : groups[0].rows.slice(0, 3).map((row, i) => ({ label: String(i + 1), row }));
+
+  return (
+    <div className={styles.railScorerCard}>
+      <div className={styles.railCardTitle}>{title}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {entries.map(({ label, row }) => (
+          <Link key={row.teamId} href={`/en/team/${row.teamId}`}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', padding: '4px 0', borderBottom: '1px solid var(--border)' }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-faint)', minWidth: 16, fontFamily: 'var(--font-jetbrains-mono), monospace' }}>
+              {isGrouped ? label.replace('Group ', '') : label}
+            </span>
+            <img src={row.teamCrest} alt={row.teamName} width={16} height={16} style={{ objectFit: 'contain', flexShrink: 0 }} />
+            <span style={{ flex: 1, fontSize: 12, color: 'var(--text)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {row.teamName}
+            </span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--orange)' }}>{row.points}pts</span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ScorersSection({ scorers, compact = false }: { scorers: CompScorer[]; compact?: boolean }) {
   if (scorers.length === 0) return null;
 
@@ -301,7 +364,6 @@ export default async function CompetitionPage({ params }: Props) {
             <FixtureSection title="Upcoming Fixtures" fixtures={d.upcomingFixtures} />
             <FixtureSection title="Recent Results"   fixtures={d.recentResults} />
             <StandingsTable groups={d.standingGroups} />
-            <ScorersSection scorers={d.scorers} />
             {blurb && (
               <p style={{ padding: '24px 0', color: 'var(--text-dim)', fontSize: 14, lineHeight: 1.7, maxWidth: 680 }}>
                 {blurb}
@@ -311,6 +373,8 @@ export default async function CompetitionPage({ params }: Props) {
           </main>
           <aside className={styles.rail}>
             <RailPromo locale="en" />
+            <SeasonInfoCard info={d.info} />
+            <TableLeadersCard groups={d.standingGroups} />
             <ScorersSection scorers={d.scorers} compact />
           </aside>
         </div>
