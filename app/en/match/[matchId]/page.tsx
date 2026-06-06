@@ -326,7 +326,6 @@ export default async function MatchPage({ params }: Props) {
         <div className={styles.desktop}>
           <Sidebar locale="en" />
           <main className={styles.main}>
-            <Link href="/en/today" className={styles.backBtn} style={{ textDecoration: 'none' }}>← Back</Link>
             <ScoreHeader d={d} matchId={matchId} />
             <EventsSection events={d.events} />
             <H2HSection d={d} />

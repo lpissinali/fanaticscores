@@ -152,16 +152,11 @@ export default function CompetitionsPage({ locale }: CompetitionsPageProps) {
       {/* ── MOBILE ──────────────────────────────────────────────────────── */}
       <div className={styles.mobileOnly}>
         <div className="screen">
-          <div className={styles.mobTopBar}>
-            <button className="fs-btn ghost" style={{ width: 36, height: 36, padding: 0, borderColor: 'transparent' }}
-              onClick={() => router.back()}>
-              <Icon name="chevron-left" size={20} />
-            </button>
-            <span className={styles.mobTitle}>Competitions</span>
-            <div style={{ width: 36 }} />
-          </div>
-
           <div className="scroll" style={{ padding: '12px 0 90px' }}>
+            <div style={{ padding: '8px 16px 16px' }}>
+              <h1 className={styles.title}>Competitions</h1>
+              <p className={styles.subtitle}>All leagues and tournaments tracked on Fanatic Scores</p>
+            </div>
             {COMPETITIONS.map(group => (
               <section key={group.region}>
                 <div className={styles.mobGroupLabel}>{group.region}</div>

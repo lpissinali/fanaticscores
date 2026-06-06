@@ -273,9 +273,6 @@ export default function TeamPage({ locale }: TeamPageProps) {
         <div className={styles.desktop}>
           <Sidebar locale={locale} />
           <main className={styles.main}>
-            <button className={styles.backBtn} onClick={() => router.back()}>
-              <Icon name="chevron-left" size={14} /> Back
-            </button>
             {content(false)}
             <Footer />
           </main>
@@ -320,13 +317,6 @@ export default function TeamPage({ locale }: TeamPageProps) {
       {/* ── MOBILE ──────────────────────────────────────────────────────────── */}
       <div className={styles.mobileOnly}>
         <div className="screen">
-          <div className={styles.mobTopBar}>
-            <button className={styles.mobBackBtn} onClick={() => router.back()}>
-              <Icon name="chevron-left" size={20} />
-            </button>
-            <span className={styles.mobTitle}>{data?.info.shortName ?? 'Team'}</span>
-            <div />
-          </div>
           <div className="scroll" style={{ paddingBottom: 40 }}>
             {content(true)}
             <div style={{ padding: '0 16px' }}><Footer /></div>

@@ -152,7 +152,7 @@ function SquadSection({ squad }: { squad: TeamPlayer[] }) {
   );
 }
 
-function MainContent({ data, teamId }: { data: TeamDetailData; teamId: string }) {
+function MainContent({ data, teamId, beforeRecent }: { data: TeamDetailData; teamId: string; beforeRecent?: React.ReactNode }) {
   const { info, recentMatches, upcomingMatches } = data;
   return (
     <>
@@ -186,6 +186,8 @@ function MainContent({ data, teamId }: { data: TeamDetailData; teamId: string })
           </div>
         </div>
       )}
+
+      {beforeRecent}
 
       {recentMatches.length > 0 && (
         <div className={styles.section}>
@@ -275,9 +277,6 @@ export default async function TeamPage({ params }: Props) {
         <div className={styles.desktop}>
           <Sidebar locale="en" />
           <main className={styles.main}>
-            <Link href="/en/today" className={styles.backBtn} style={{ textDecoration: 'none' }}>
-              <Icon name="chevron-left" size={14} /> Back
-            </Link>
             <MainContent data={d} teamId={teamId} />
             <Footer />
           </main>
@@ -288,15 +287,31 @@ export default async function TeamPage({ params }: Props) {
       {/* ── MOBILE ──────────────────────────────────────── */}
       <div className={styles.mobileOnly}>
         <div className="screen">
-          <div className={styles.mobTopBar}>
-            <Link href="/en/today" className={styles.mobBackBtn} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-              <Icon name="chevron-left" size={20} />
-            </Link>
-            <span className={styles.mobTitle}>{d.info.shortName || d.info.name}</span>
-            <div />
-          </div>
           <div className="scroll" style={{ paddingBottom: 40 }}>
-            <MainContent data={d} teamId={teamId} />
+            <MainContent data={d} teamId={teamId} beforeRecent={d.recentMatches.length > 0 ? (
+              <div className={styles.railCard} style={{ margin: '0 16px 20px' }}>
+                <div className={styles.railCardTitle}>Recent Form</div>
+                <div className={styles.formDots}>
+                  {d.recentMatches.map(m => {
+                    const isHome = m.homeTeam.id === teamId;
+                    const ts = isHome ? m.homeTeam.score : m.awayTeam.score;
+                    const os = isHome ? m.awayTeam.score  : m.homeTeam.score;
+                    const r  = ts === null || os === null ? 'D' : ts > os ? 'W' : ts < os ? 'L' : 'D';
+                    return (
+                      <span key={m.id}
+                        className={[styles.formDot, r === 'W' ? styles.formW : r === 'L' ? styles.formL : styles.formD].join(' ')}
+                        title={r === 'W' ? 'Win' : r === 'L' ? 'Loss' : 'Draw'}
+                      >{r}</span>
+                    );
+                  })}
+                </div>
+                <div className={styles.recordGrid} style={{ marginTop: 12 }}>
+                  <div className={styles.recordCell}><span className={styles.recordNum} style={{ color: '#4ade80' }}>{d.recentMatches.filter(m => { const isHome = m.homeTeam.id === teamId; const ts = isHome ? m.homeTeam.score : m.awayTeam.score; const os = isHome ? m.awayTeam.score : m.homeTeam.score; return ts !== null && os !== null && ts > os; }).length}</span><span className={styles.recordLabel}>Won</span></div>
+                  <div className={styles.recordCell}><span className={styles.recordNum}>{d.recentMatches.filter(m => { const isHome = m.homeTeam.id === teamId; const ts = isHome ? m.homeTeam.score : m.awayTeam.score; const os = isHome ? m.awayTeam.score : m.homeTeam.score; return ts !== null && os !== null && ts === os; }).length}</span><span className={styles.recordLabel}>Drawn</span></div>
+                  <div className={styles.recordCell}><span className={styles.recordNum} style={{ color: '#f87171' }}>{d.recentMatches.filter(m => { const isHome = m.homeTeam.id === teamId; const ts = isHome ? m.homeTeam.score : m.awayTeam.score; const os = isHome ? m.awayTeam.score : m.homeTeam.score; return ts !== null && os !== null && ts < os; }).length}</span><span className={styles.recordLabel}>Lost</span></div>
+                </div>
+              </div>
+            ) : undefined} />
             <div style={{ padding: '0 16px' }}><Footer /></div>
           </div>
           <MobileBottomNav locale="en" />

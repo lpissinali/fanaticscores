@@ -299,15 +299,13 @@ function MobileLayout({ locale }: { locale: SupportedLocale }) {
   const router = useRouter();
   return (
     <div className="screen">
-      <div className={styles.mobTopBar}>
-        <button onClick={() => router.back()} className={styles.mobBackBtn}>
-          <Icon name="chevron-left" size={20} />
-        </button>
-        <span className={styles.mobTitle}>Following</span>
-        <div />
-      </div>
-      <div className="scroll" style={{ padding: '16px 16px 80px' }}>
+      <div className="scroll" style={{ padding: '16px 16px 40px' }}>
+        <div className={styles.pageHeader}>
+          <h1 className={styles.pageTitle}>Following</h1>
+          <div className={styles.pageSubtitle}>Upcoming fixtures &amp; recent results from your teams</div>
+        </div>
         <FollowingContent locale={locale} />
+        <Footer />
       </div>
       <MobileBottomNav locale={locale} activeTab="follow" />
     </div>
