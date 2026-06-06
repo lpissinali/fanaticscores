@@ -5,7 +5,7 @@
 
 @media (max-width: 1023px) {
   .desktopOnly { display: none; }
-  .mobileOnly  { display: block; height: 100vh; }
+  .mobileOnly  { display: block; height: 100vh; height: 100dvh; }
 }
 
 /* ── Desktop layout ─────────────────────────────────────────────────────────── */
