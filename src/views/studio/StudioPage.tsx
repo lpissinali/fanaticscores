@@ -873,11 +873,22 @@ export default function StudioPage({ locale }: StudioPageProps) {
 
           {/* Mobile tab bar */}
           <nav className={styles.mobTabBar}>
-            {(['customize', 'preview', 'share'] as const).map(t => (
-              <button key={t} className={[styles.mobTab, mobileTab === t ? styles.mobTabActive : ''].join(' ')} onClick={() => setMobileTab(t)}>
-                {t.charAt(0).toUpperCase() + t.slice(1)}
-              </button>
-            ))}
+            <button className={styles.mobTab} onClick={() => router.push(`/${locale}/today`)}>
+              <Icon name="home" size={20} />
+              <span>Home</span>
+            </button>
+            <button className={[styles.mobTab, mobileTab === 'customize' ? styles.mobTabActive : ''].join(' ')} onClick={() => setMobileTab('customize')}>
+              <Icon name="zap" size={20} />
+              <span>Customize</span>
+            </button>
+            <button className={[styles.mobTab, mobileTab === 'preview' ? styles.mobTabActive : ''].join(' ')} onClick={() => setMobileTab('preview')}>
+              <Icon name="sparkles" size={20} />
+              <span>Preview</span>
+            </button>
+            <button className={[styles.mobTab, mobileTab === 'share' ? styles.mobTabActive : ''].join(' ')} onClick={() => setMobileTab('share')}>
+              <Icon name="share" size={20} />
+              <span>Share</span>
+            </button>
           </nav>
 
           {/* Mobile popover */}

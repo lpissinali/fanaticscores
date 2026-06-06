@@ -4,7 +4,7 @@
 
 @media (max-width: 1023px) {
   .desktopOnly { display: none; }
-  .mobileOnly  { display: flex; flex-direction: column; }
+  .mobileOnly  { display: flex; flex-direction: column; height: 100vh; }
 }
 
 /* ================================================================
@@ -789,7 +789,7 @@
 .mobScreen {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100%;
   background: var(--bg);
   position: relative;
 }
@@ -861,21 +861,29 @@
 }
 
 .mobTabBar {
-  display: flex;
-  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 8px 8px 22px;
   background: var(--bg);
-  position: sticky;
-  bottom: 0;
+  border-top: 1px solid var(--border);
+  gap: 4px;
+  flex-shrink: 0;
 }
 .mobTab {
-  flex: 1;
-  padding: 12px 4px;
-  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 50px;
+  padding: 0;
+  font-size: 10px;
   font-weight: 600;
   color: var(--text-faint);
   background: none;
   border: none;
   cursor: pointer;
   transition: color 0.12s;
+  border-color: transparent;
 }
-.mobTabActive { color: var(--orange); }
+.mobTabActive { color: var(--text); }
