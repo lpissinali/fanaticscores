@@ -1,6 +1,6 @@
 /* ── Breakpoint guards ───────────────────────────────────────────────────── */
 .desktopOnly { display: none; }
-.mobileOnly  { display: block; min-height: 100vh; }
+.mobileOnly  { display: block; height: 100vh; }
 @media (min-width: 1024px) {
   .desktopOnly { display: block; }
   .mobileOnly  { display: none; }
@@ -234,10 +234,10 @@
 .colPts { text-align: center; font-weight: 700; font-family: var(--font-jetbrains-mono), monospace; font-size: 12px; color: var(--text); }
 
 /* ── Scorers ─────────────────────────────────────────────────────────────── */
-.scorersTable { width: 100%; min-width: 400px; }
+.scorersTable { width: 100%; min-width: 280px; }
 .scorersHead, .scorerRow {
   display: grid;
-  grid-template-columns: 28px 1fr 36px 36px 36px 44px;
+  grid-template-columns: 28px 1fr 36px 36px;
   align-items: center;
   gap: 4px;
   padding: 6px 8px;

@@ -10,6 +10,7 @@ import Footer from '../../components/layout/Footer/Footer';
 import RailPromo from '../../components/shared/RailPromo/RailPromo';
 import Icon from '../../components/shared/Icon/Icon';
 import styles from './CompetitionPage.module.css';
+import MobileBottomNav from '../../components/shared/MobileBottomNav/MobileBottomNav';
 
 interface CompetitionPageProps { locale: SupportedLocale; }
 
@@ -185,8 +186,6 @@ function ScorersTable({ scorers, compact = false }: { scorers: CompScorer[]; com
           <span className={styles.scorerPlayer}>Player</span>
           <span className={styles.scorerNum}>G</span>
           <span className={styles.scorerNum}>A</span>
-          <span className={styles.scorerNum}>P</span>
-          <span className={styles.scorerNum}>MP</span>
         </div>
         {scorers.map((s, i) => (
           <div key={i} className={styles.scorerRow}>
@@ -203,12 +202,10 @@ function ScorersTable({ scorers, compact = false }: { scorers: CompScorer[]; com
             </span>
             <span className={styles.scorerNum}>{s.goals}</span>
             <span className={styles.scorerNum}>{s.assists ?? '–'}</span>
-            <span className={styles.scorerNum}>{s.penalties ?? '–'}</span>
-            <span className={styles.scorerNum}>{s.playedMatches}</span>
           </div>
         ))}
       </div>
-      <div className={styles.scorersLegend}>G = Goals · A = Assists · P = Penalties · MP = Matches played</div>
+      <div className={styles.scorersLegend}>G = Goals · A = Assists</div>
     </div>
   );
 }
@@ -349,7 +346,7 @@ export default function CompetitionPage({ locale }: CompetitionPageProps) {
 
       {/* ── MOBILE ──────────────────────────────────────── */}
       <div className={styles.mobileOnly}>
-        <div className={styles.mobScreen}>
+        <div className="screen">
           <div className={styles.mobTopBar}>
             <button className={styles.mobBackBtn} onClick={() => router.back()}>
               <Icon name="chevron-left" size={20} />
@@ -358,7 +355,7 @@ export default function CompetitionPage({ locale }: CompetitionPageProps) {
             <div />
           </div>
 
-          <div className={styles.mobContent}>
+          <div className="scroll" style={{ paddingBottom: 40 }}>
             {loading && <div className={styles.placeholder}>Loading competition…</div>}
             {error   && <div className={styles.placeholder}>{error}</div>}
             {data && (
@@ -372,6 +369,7 @@ export default function CompetitionPage({ locale }: CompetitionPageProps) {
             )}
             <Footer />
           </div>
+          <MobileBottomNav locale={locale} />
         </div>
       </div>
     </>

@@ -7,6 +7,7 @@ import Footer from '@/src/components/layout/Footer/Footer';
 import RailPromo from '@/src/components/shared/RailPromo/RailPromo';
 import Icon from '@/src/components/shared/Icon/Icon';
 import styles from '@/src/views/match/MatchPage.module.css';
+import MobileBottomNav from '@/src/components/shared/MobileBottomNav/MobileBottomNav';
 import Link from 'next/link';
 
 interface Props { params: Promise<{ matchId: string }> }
@@ -340,7 +341,7 @@ export default async function MatchPage({ params }: Props) {
         </div>
       </div>
       <div className={styles.mobileOnly}>
-        <div className={styles.mobScreen}>
+        <div className="screen">
           <div className={styles.mobTopBar}>
             <Link href="/en/today" className={styles.mobBackBtn} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
               <Icon name="chevron-left" size={20} />
@@ -350,7 +351,7 @@ export default async function MatchPage({ params }: Props) {
               <Icon name="sparkles" size={16} /><span>Studio</span>
             </Link>
           </div>
-          <div className={styles.mobContent}>
+          <div className="scroll" style={{ padding: '16px 16px 40px' }}>
             <MobMatchCard d={d} matchId={matchId} />
             <EventsSection events={d.events} />
             <H2HSection d={d} />
@@ -358,6 +359,7 @@ export default async function MatchPage({ params }: Props) {
             <InfoCard d={d} />
             <Footer />
           </div>
+          <MobileBottomNav locale="en" />
         </div>
       </div>
     </>

@@ -13,6 +13,7 @@ import Crest from '../../components/shared/Crest/Crest';
 import LiveDot from '../../components/shared/LiveDot/LiveDot';
 import Icon from '../../components/shared/Icon/Icon';
 import styles from './MatchPage.module.css';
+import MobileBottomNav from '../../components/shared/MobileBottomNav/MobileBottomNav';
 
 interface MatchPageProps { locale: SupportedLocale; }
 
@@ -475,7 +476,7 @@ export default function MatchPage({ locale }: MatchPageProps) {
 
       {/* ── MOBILE ──────────────────────────────────────── */}
       <div className={styles.mobileOnly}>
-        <div className={styles.mobScreen}>
+        <div className="screen">
           <div className={styles.mobTopBar}>
             <button className={styles.mobBackBtn} onClick={() => router.back()}>
               <Icon name="chevron-left" size={20} />
@@ -491,7 +492,7 @@ export default function MatchPage({ locale }: MatchPageProps) {
             </Link>
           </div>
 
-          <div className={styles.mobContent}>
+          <div className="scroll" style={{ paddingBottom: 40 }}>
             {loading && <div className={styles.placeholder}>Loading match…</div>}
             {error && (
               <div className={styles.placeholder}>
@@ -518,6 +519,7 @@ export default function MatchPage({ locale }: MatchPageProps) {
             )}
             <Footer />
           </div>
+          <MobileBottomNav locale={locale} />
         </div>
       </div>
     </>

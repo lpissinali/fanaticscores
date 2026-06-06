@@ -382,7 +382,7 @@ export default async function CompetitionPage({ params }: Props) {
 
       {/* ── MOBILE ──────────────────────────────────────── */}
       <div className={styles.mobileOnly}>
-        <div className={styles.mobScreen}>
+        <div className="screen">
           <div className={styles.mobTopBar}>
             <Link href="/en/competitions" className={styles.mobBackBtn} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
               <Icon name="chevron-left" size={20} />
@@ -390,7 +390,7 @@ export default async function CompetitionPage({ params }: Props) {
             <span className={styles.mobTopTitle}>{d.info.name}</span>
             <div />
           </div>
-          <div className={styles.mobContent}>
+          <div className="scroll" style={{ padding: '16px 16px 40px' }}>
             <HeroCard info={d.info} />
             <FixtureSection title="Upcoming Fixtures" fixtures={d.upcomingFixtures} />
             <FixtureSection title="Recent Results"   fixtures={d.recentResults} />

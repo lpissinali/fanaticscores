@@ -1,6 +1,6 @@
 /* ── Breakpoint guards (mirrors HomePage) ────────────────────────────────── */
 .desktopOnly { display: none; }
-.mobileOnly  { display: block; min-height: 100vh; }
+.mobileOnly  { display: block; height: 100vh; }
 @media (min-width: 1024px) {
   .desktopOnly { display: block; }
   .mobileOnly  { display: none; }
@@ -548,6 +548,7 @@
   border-radius: 16px;
   padding: 16px;
   overflow: hidden;
+  margin-bottom: 16px;
 }
 .mobFeaturedTop {
   display: flex;
