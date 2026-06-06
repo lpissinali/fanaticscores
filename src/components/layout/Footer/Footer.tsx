@@ -43,6 +43,60 @@ export default function Footer() {
           </p>
         </div>
 
+        {/* Competition links — SEO internal linking */}
+        <div className={styles.compLinks}>
+          {[
+            {
+              heading: 'Top Leagues',
+              links: [
+                { label: 'Premier League',  href: '/en/competition/PL'  },
+                { label: 'La Liga',         href: '/en/competition/PD'  },
+                { label: 'Serie A',         href: '/en/competition/SA'  },
+                { label: 'Bundesliga',      href: '/en/competition/BL1' },
+                { label: 'Ligue 1',         href: '/en/competition/FL1' },
+                { label: 'Eredivisie',      href: '/en/competition/DED' },
+                { label: 'Primeira Liga',   href: '/en/competition/PPL' },
+              ],
+            },
+            {
+              heading: 'European Cups',
+              links: [
+                { label: 'Champions League',    href: '/en/competition/CL'   },
+                { label: 'Europa League',       href: '/en/competition/EL'   },
+                { label: 'Conference League',   href: '/en/competition/UECL' },
+                { label: 'Nations League',      href: '/en/competition/UNL'  },
+              ],
+            },
+            {
+              heading: 'International',
+              links: [
+                { label: 'FIFA World Cup',  href: '/en/competition/WC'   },
+                { label: 'UEFA Euro',       href: '/en/competition/EURO' },
+                { label: 'Copa América',    href: '/en/competition/CA'   },
+                { label: 'Club World Cup',  href: '/en/competition/CWC'  },
+                { label: 'AFCON',           href: '/en/competition/AFCN' },
+              ],
+            },
+            {
+              heading: 'Americas',
+              links: [
+                { label: 'Copa Libertadores', href: '/en/competition/LIBT' },
+                { label: 'Brasileirão',       href: '/en/competition/BSA'  },
+                { label: 'Liga Argentina',    href: '/en/competition/ARG'  },
+                { label: 'MLS',               href: '/en/competition/MLS'  },
+                { label: 'Liga MX',           href: '/en/competition/MX'   },
+              ],
+            },
+          ].map(({ heading, links }) => (
+            <div key={heading} className={styles.compGroup}>
+              <div className={styles.compGroupHeading}>{heading}</div>
+              {links.map(({ label, href }) => (
+                <Link key={href} href={href} className={styles.compLink}>{label}</Link>
+              ))}
+            </div>
+          ))}
+        </div>
+
         {/* Bottom bar */}
         <div className={styles.bottom}>
           <span className={styles.copy}>

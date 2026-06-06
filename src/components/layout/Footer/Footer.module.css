@@ -65,6 +65,47 @@
   color: var(--text-faint);
 }
 
+/* ── Competition links ── */
+.compLinks {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px 32px;
+  padding: 24px 0;
+  border-top: 1px solid var(--border);
+}
+
+@media (min-width: 700px) {
+  .compLinks {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.compGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.compGroupHeading {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  font-family: var(--font-jetbrains-mono), monospace;
+  margin-bottom: 4px;
+}
+
+.compLink {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 0.12s;
+  line-height: 1.4;
+}
+.compLink:hover { color: var(--orange); }
+
 /* ── Bottom bar ── */
 .bottom {
   grid-column: 1 / -1;
