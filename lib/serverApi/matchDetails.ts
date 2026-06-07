@@ -4,7 +4,7 @@
  * It fetches everything from api-football by fixture ID directly.
  */
 
-import { fetchAF, hasBodyErrors, currentSeason, COMP_CODE_TO_LEAGUE_ID, LEAGUE_ID_TO_CODE, CUP_CODES } from './config';
+import { fetchAF, hasBodyErrors, currentSeason, COMP_CODE_TO_LEAGUE_ID, LEAGUE_ID_TO_CODE, CUP_CODES, AF_LIVE_TTL_SECONDS } from './config';
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
@@ -101,6 +101,16 @@ function mapStatus(short: string): MatchStatus {
   }
 }
 
+/**
+ * True for any raw api-football status meaning the match is currently
+ * underway (including half-time) — i.e. data that's actively changing and
+ * worth refreshing on the short `AF_LIVE_TTL_SECONDS` cadence rather than
+ * the default hour-long window.
+ */
+function isLiveStatus(short: string): boolean {
+  return ['1H', '2H', 'ET', 'BT', 'P', 'HT'].includes(short);
+}
+
 function parseMatchday(round: string | null): number | null {
   if (!round) return null;
   const m = round.match(/(\d+)$/);
@@ -121,12 +131,31 @@ async function fetchFixture(matchId: string): Promise<{
   compType: string;
 } | null> {
   try {
-    const res  = await fetchAF(`/fixtures?id=${matchId}`);
+    const path = `/fixtures?id=${matchId}`;
+
+    // First check against the standard hour-long freshness window — this is
+    // the cheap, common-case path (cache hit for finished/scheduled matches,
+    // which make up the vast majority of views).
+    const res  = await fetchAF(path);
     if (!res.ok) return null;
     const json = await res.json() as { response: AFFixtureDetail[]; errors: unknown };
     if (hasBodyErrors(json.errors)) return null;
-    const f = json.response?.[0];
+    let f = json.response?.[0];
     if (!f) return null;
+
+    if (isLiveStatus(f.fixture.status.short)) {
+      // Match is in progress: an hour-old snapshot isn't good enough for
+      // live viewers. Re-check the SAME cache entry against the much shorter
+      // live TTL — this triggers a fresh upstream fetch only when the stored
+      // copy is more than AF_LIVE_TTL_SECONDS old, and naturally stops doing
+      // so once the match ends and its status settles into FT/AET/PEN.
+      const liveRes = await fetchAF(path, AF_LIVE_TTL_SECONDS);
+      if (liveRes.ok) {
+        const liveJson = await liveRes.json() as { response: AFFixtureDetail[]; errors: unknown };
+        const liveF = liveJson.response?.[0];
+        if (!hasBodyErrors(liveJson.errors) && liveF) f = liveF;
+      }
+    }
 
     const homeId = String(f.teams.home.id);
     const compCode = LEAGUE_ID_TO_CODE[f.league.id] ?? '';
@@ -159,9 +188,12 @@ async function fetchFixture(matchId: string): Promise<{
 
 // ── Fetch stats ───────────────────────────────────────────────────────────────
 
-async function fetchStats(matchId: string, homeId: string): Promise<MatchStats | null> {
+async function fetchStats(matchId: string, homeId: string, isLive: boolean): Promise<MatchStats | null> {
   try {
-    const res  = await fetchAF(`/fixtures/statistics?fixture=${matchId}`);
+    // Live matches: stats (possession, shots, etc.) change minute to minute,
+    // so use the short TTL once we already know the match is in progress
+    // (status comes from fetchFixture, which runs first in fetchMatchDetail).
+    const res  = await fetchAF(`/fixtures/statistics?fixture=${matchId}`, isLive ? AF_LIVE_TTL_SECONDS : undefined);
     if (!res.ok) return null;
     const json = await res.json() as { response: AFTeamStats[]; errors: unknown };
     if (hasBodyErrors(json.errors)) return null;
@@ -321,9 +353,10 @@ export async function fetchMatchDetail(matchId: string): Promise<MatchDetailData
   const { fixture: f, events, compCode, compType } = fixtureData;
   const homeId = String(f.teams.home.id);
   const awayId = String(f.teams.away.id);
+  const isLive = isLiveStatus(f.fixture.status.short);
 
   const [stats, h2h, standings] = await Promise.all([
-    fetchStats(matchId, homeId),
+    fetchStats(matchId, homeId, isLive),
     fetchH2H(homeId, awayId),
     compType === 'LEAGUE' ? fetchStandings(compCode) : Promise.resolve([] as StandingRow[]),
   ]);

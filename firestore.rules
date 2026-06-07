@@ -6,5 +6,13 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false;  // only Cloud Functions (admin SDK) may write
     }
+
+    // afCache/{key} — shared api-football response cache (see lib/serverApi/sharedCache.ts).
+    // Server-only in both directions; the Next.js backend reads/writes via the
+    // Admin SDK, which bypasses these rules entirely. No client access needed.
+    match /afCache/{key} {
+      allow read: if false;
+      allow write: if false;
+    }
   }
 }
