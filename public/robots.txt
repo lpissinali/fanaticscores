@@ -1,5 +1,19 @@
+# AI training crawlers — no SEO value, heavy load on api-football quota
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
 User-agent: *
 Allow: /
+Crawl-delay: 5
 
 # Internal API proxy — no public value
 Disallow: /api/
