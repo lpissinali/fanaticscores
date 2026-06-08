@@ -14,5 +14,13 @@ service cloud.firestore {
       allow read: if false;
       allow write: if false;
     }
+
+    // rateLimits/{key} — per-IP request counters (see lib/serverApi/rateLimit.ts).
+    // Server-only in both directions; the Next.js backend reads/writes via the
+    // Admin SDK, which bypasses these rules entirely. No client access needed.
+    match /rateLimits/{key} {
+      allow read: if false;
+      allow write: if false;
+    }
   }
 }

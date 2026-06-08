@@ -4,6 +4,7 @@
  */
 
 import { fetchAF, hasBodyErrors, currentSeason, LEAGUE_ID_TO_CODE, CUP_CODES } from './config';
+import { isRateLimited } from './rateLimit';
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
@@ -135,6 +136,10 @@ async function fetchFixtures(teamId: string): Promise<{ recent: TeamMatch[]; upc
 // ── Public entry point ────────────────────────────────────────────────────────
 
 export async function fetchTeamDetail(teamId: string): Promise<TeamDetailData | null> {
+  // Behavioral rate limit: deny enumeration scrapers before spending any
+  // api-football quota. Over-limit looks identical to "team not found" (→ 404).
+  if (await isRateLimited()) return null;
+
   const [teamData, squad, fixtures] = await Promise.all([
     fetchTeamInfo(teamId),
     fetchSquad(teamId),
