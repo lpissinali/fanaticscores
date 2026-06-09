@@ -14,7 +14,14 @@ const ALLOWED_HOSTNAMES = new Set([
 ]);
 
 export function middleware(req: NextRequest) {
-  const host = req.headers.get('host') ?? '';
+  // Behind App Hosting's CDN/proxy the originally requested domain arrives in
+  // `x-forwarded-host`; `host` may be normalised to an internal/canonical
+  // value. Prefer the forwarded host so apex requests are detected correctly.
+  const rawHost =
+    req.headers.get('x-forwarded-host') ??
+    req.headers.get('host') ??
+    '';
+  const host = rawHost.split(',')[0].trim();
   const hostname = host.split(':')[0];
 
   if (ALLOWED_HOSTNAMES.has(hostname) || hostname.endsWith('.local')) {
