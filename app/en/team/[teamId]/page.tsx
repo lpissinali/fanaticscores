@@ -248,15 +248,28 @@ export default async function TeamPage({ params }: Props) {
   if (!data) notFound();
   const d = data as TeamDetailData;
 
+  const teamUrl = `https://www.fanaticscores.com/en/team/${teamId}`;
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'SportsTeam',
     name: d.info.name,
-    sport: 'Football',
-    url: `https://www.fanaticscores.com/en/team/${teamId}`,
-    ...(d.info.founded && { foundingDate: String(d.info.founded) }),
-    ...(d.info.venue && { location: { '@type': 'Place', name: d.info.venue } }),
-    ...(d.info.crest && { logo: d.info.crest }),
+    sport: 'Soccer',
+    url: teamUrl,
+    description: `Fixtures, results and squad for ${d.info.name}${d.info.venue ? `, based at ${d.info.venue}` : ''}.`,
+    ...(d.info.founded ? { foundingDate: String(d.info.founded) } : {}),
+    ...(d.info.venue ? { location: { '@type': 'Place', name: d.info.venue } } : {}),
+    ...(d.info.crest ? { logo: d.info.crest } : {}),
+    ...(d.info.website ? { sameAs: [d.info.website] } : {}),
+    ...(d.info.runningCompetitions.length > 0
+      ? {
+          memberOf: d.info.runningCompetitions.map(c => ({
+            '@type': 'SportsOrganization',
+            name: c.name,
+            url: `https://www.fanaticscores.com/en/competition/${c.code}`,
+          })),
+        }
+      : {}),
   };
 
   const breadcrumb = {
@@ -264,14 +277,14 @@ export default async function TeamPage({ params }: Props) {
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home',      item: 'https://www.fanaticscores.com/en/today' },
-      { '@type': 'ListItem', position: 2, name: d.info.name, item: `https://www.fanaticscores.com/en/team/${teamId}` },
+      { '@type': 'ListItem', position: 2, name: d.info.name, item: teamUrl },
     ],
   };
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb).replace(/</g, '\\u003c') }} />
       {/* ── DESKTOP ─────────────────────────────────────── */}
       <div className={styles.desktopOnly}>
         <div className={styles.desktop}>

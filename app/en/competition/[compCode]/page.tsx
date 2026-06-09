@@ -336,21 +336,34 @@ export default async function CompetitionPage({ params }: Props) {
   if (!data) notFound();
   const d = data as CompetitionDetailData;
 
+  const blurb = LEAGUE_BLURBS[compCode] ?? null;
+  const compUrl = `https://www.fanaticscores.com/en/competition/${compCode}`;
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'SportsOrganization',
     name: d.info.name,
-    sport: 'Football',
-    url: `https://www.fanaticscores.com/en/competition/${compCode}`,
-    ...(d.info.emblem && { logo: d.info.emblem }),
-    ...(d.info.area?.name && { location: { '@type': 'Place', name: d.info.area.name } }),
+    sport: 'Soccer',
+    url: compUrl,
+    ...(blurb ? { description: blurb } : {}),
+    ...(d.info.emblem ? { logo: d.info.emblem } : {}),
+    ...(d.info.area?.name ? { location: { '@type': 'Place', name: d.info.area.name } } : {}),
   };
 
-  const blurb = LEAGUE_BLURBS[compCode] ?? null;
+  const breadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home',          item: 'https://www.fanaticscores.com/en/today' },
+      { '@type': 'ListItem', position: 2, name: 'Competitions',  item: 'https://www.fanaticscores.com/en/competitions' },
+      { '@type': 'ListItem', position: 3, name: d.info.name,     item: compUrl },
+    ],
+  };
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb).replace(/</g, '\\u003c') }} />
 
       {/* ── DESKTOP ─────────────────────────────────────── */}
       <div className={styles.desktopOnly}>

@@ -295,16 +295,33 @@ export default async function MatchPage({ params }: Props) {
     ? await fetchRelatedFixtures(d.compCode, matchId)
     : [];
 
+  const hasScore = d.home.score !== null && d.away.score !== null;
+  const scoreStr = hasScore ? `${d.home.score}–${d.away.score}` : null;
+  const eventStatus =
+    d.status === 'POSTPONED' ? 'https://schema.org/EventPostponed' :
+    d.status === 'CANCELLED' ? 'https://schema.org/EventCancelled' :
+                               'https://schema.org/EventScheduled';
+  const matchDescription = hasScore
+    ? `${d.home.name} ${scoreStr} ${d.away.name} — ${d.competition}${d.venue ? ` at ${d.venue}` : ''}.`
+    : `${d.home.name} vs ${d.away.name} in ${d.competition}${d.venue ? ` at ${d.venue}` : ''}.`;
+
+  const homeTeamLd = { '@type': 'SportsTeam', name: d.home.name, ...(d.home.crest ? { logo: d.home.crest } : {}) };
+  const awayTeamLd = { '@type': 'SportsTeam', name: d.away.name, ...(d.away.crest ? { logo: d.away.crest } : {}) };
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'SportsEvent',
     name: `${d.home.name} vs ${d.away.name}`,
-    sport: 'Football',
+    description: matchDescription,
+    sport: 'Soccer',
     startDate: d.kickoff ?? undefined,
+    eventStatus,
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
     location: d.venue ? { '@type': 'Place', name: d.venue } : undefined,
-    homeTeam: { '@type': 'SportsTeam', name: d.home.name },
-    awayTeam: { '@type': 'SportsTeam', name: d.away.name },
-    superEvent: { '@type': 'SportsOrganization', name: d.competition },
+    homeTeam: homeTeamLd,
+    awayTeam: awayTeamLd,
+    competitor: [homeTeamLd, awayTeamLd],
+    superEvent: { '@type': 'SportsEvent', name: d.competition },
     url: `https://www.fanaticscores.com/en/match/${matchId}`,
   };
 
@@ -320,8 +337,8 @@ export default async function MatchPage({ params }: Props) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb).replace(/</g, '\\u003c') }} />
       <div className={styles.desktopOnly}>
         <div className={styles.desktop}>
           <Sidebar locale="en" />

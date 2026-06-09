@@ -1,5 +1,4 @@
 import type { MetadataRoute } from 'next';
-import { getMatchdayDoc } from '@/lib/serverApi/matchdayDoc';
 
 const BASE = 'https://www.fanaticscores.com';
 const AF_BASE = 'https://v3.football.api-sports.io';
@@ -97,9 +96,24 @@ async function fetchTeamIds(): Promise<string[]> {
 
 // Collect match IDs from the last `days` matchday docs (the same curated
 // matches the site renders). Reads come from Firestore via the Admin SDK, so
-// no extra api-football quota is used. Returns [] at build time / in local dev
-// (no credentials) — populated on the daily production revalidation.
+// no extra api-football quota is used.
+//
+// IMPORTANT: firebase-admin is loaded with a *dynamic* import inside this
+// function, never at module top-level. The sitemap route is executed during
+// `next build`, and pulling the Admin SDK's native gRPC bindings into the build
+// worker crashes it on Windows (exit 0xC0000409). Bailing out before the import
+// at build time / when no credentials exist keeps the Admin SDK out of the
+// build entirely. Returns [] then — populated on the daily production
+// revalidation, where ADC is available.
 async function fetchRecentMatchIds(now: Date, days = 7): Promise<string[]> {
+  if (process.env.NEXT_PHASE === 'phase-production-build') return [];
+  const hasCreds =
+    process.env.NODE_ENV === 'production' ||
+    Boolean(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+  if (!hasCreds) return [];
+
+  const { getMatchdayDoc } = await import('@/lib/serverApi/matchdayDoc');
+
   const ids = new Set<string>();
   for (let i = 1; i <= days; i++) {
     const d = new Date(now);
