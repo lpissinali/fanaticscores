@@ -6,7 +6,7 @@ import { useParams, useRouter} from 'next/navigation';
 import Link from 'next/link';
 import type { SupportedLocale } from '../../i18n';
 import type { Competition, FeaturedMatch, Match, TrendingItem } from '../../lib/types';
-import { useMatches } from '../../lib/useMatches';
+import { useMatches, type MatchdayDoc } from '../../lib/useMatches';
 
 import Sidebar from '../../components/layout/Sidebar/Sidebar';
 import Footer from '../../components/layout/Footer/Footer';
@@ -23,6 +23,8 @@ import MobileBottomNav from '../../components/shared/MobileBottomNav/MobileBotto
 
 interface HomePageProps {
   locale: SupportedLocale;
+  /** Server-fetched matchday doc used to seed SSR/initial render (SEO). */
+  initialDoc?: MatchdayDoc | null;
 }
 
 // -----------------------------------------------------------------------
@@ -588,7 +590,7 @@ function MobileLayout({ featured, competitions, loading, error, aiBrief, locale,
 // PAGE
 // -----------------------------------------------------------------------
 
-export default function HomePage({ locale }: HomePageProps) {
+export default function HomePage({ locale, initialDoc }: HomePageProps) {
   const { date: dateParam } = useParams() as { date?: string };
   const today = new Date().toISOString().slice(0, 10);
   const resolvedDate = (!dateParam || dateParam === 'today') ? today : dateParam;
@@ -599,7 +601,7 @@ export default function HomePage({ locale }: HomePageProps) {
     canonical: `/${locale}/today`,
   });
 
-  const { featured, competitions, loading, error, hadErrors, refresh, aiBrief } = useMatches(resolvedDate);
+  const { featured, competitions, loading, error, hadErrors, refresh, aiBrief } = useMatches(resolvedDate, initialDoc);
   return (
     <>
       <div className={styles.desktopOnly}>

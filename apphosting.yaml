@@ -3,7 +3,10 @@ runConfig:
   concurrency: 40
   cpu: 1
   memoryMiB: 1024
-  minInstances: 0
+  # Keep one instance warm so Googlebot (and users) never hit a cold start.
+  # Cold starts caused multi-second TTFB / fetch timeouts, which throttles
+  # crawl rate and hurts indexing for a new domain.
+  minInstances: 1
   maxInstances: 100
 
 env:

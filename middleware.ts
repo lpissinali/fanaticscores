@@ -3,8 +3,11 @@ import type { NextRequest } from 'next/server';
 
 const CANONICAL_HOST = 'www.fanaticscores.com';
 
+// Hosts that are served as-is. The bare apex (fanaticscores.com) is
+// intentionally NOT here: it is 308-redirected to the canonical www host
+// below so there is a single indexable host (matches the canonical tag,
+// og:url and sitemap, all of which point to www).
 const ALLOWED_HOSTNAMES = new Set([
-  'fanaticscores.com',
   'www.fanaticscores.com',
   'localhost',
   '127.0.0.1',

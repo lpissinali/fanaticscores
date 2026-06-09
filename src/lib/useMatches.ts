@@ -35,7 +35,7 @@ export interface MatchesState extends TodayData {
 interface TeamData  { id: string; name: string; short: string; initial: string; color: string; crest?: string; score: number | null; }
 interface MatchData { id: string; status: string; minute: string | number | null; kickoff?: string; competition?: string; home: TeamData; away: TeamData; }
 interface CompData  { id: string; name: string; country: string; short: string; flag: string; stage?: string; matches: MatchData[]; }
-interface MatchdayDoc {
+export interface MatchdayDoc {
   competitions:       CompData[];
   featured:           MatchData | null;
   hadErrors:          boolean;
@@ -48,7 +48,7 @@ interface MatchdayDoc {
 
 // ── Map Firestore doc → TodayData ──────────────────────────────────────────
 
-function mapDoc(doc: MatchdayDoc): TodayData {
+export function mapDoc(doc: MatchdayDoc): TodayData {
   const competitions: Competition[] = doc.competitions.map(c => ({
     id:      c.id,
     name:    c.name,
@@ -132,16 +132,30 @@ function dateTTL(targetDate: string, hadErrors: boolean): number {
 
 // ── Hook ───────────────────────────────────────────────────────────────────
 
-export function useMatches(date?: string): MatchesState {
+export function useMatches(date?: string, initialDoc?: MatchdayDoc | null): MatchesState {
   const targetDate = date ?? new Date().toISOString().slice(0, 10);
   const today  = new Date().toISOString().slice(0, 10);
   const isToday = targetDate === today;
   const isPast  = targetDate < today;
 
-  const [state, setState] = useState<MatchesState>({
-    competitions: [], featured: null, hadErrors: false, aiBrief: null,
-    loading: true, error: null, lastUpdated: null,
-    refresh: () => {},
+  // Seed from a server-fetched matchday doc when available. This makes the
+  // server-rendered HTML contain real fixtures + AI brief (crawlable by Google)
+  // instead of an empty "Loading…" shell. The same initializer runs on the
+  // client's first render, so hydration matches exactly; live Firestore updates
+  // then take over in the effect below.
+  const [state, setState] = useState<MatchesState>(() => {
+    if (initialDoc) {
+      return {
+        ...mapDoc(initialDoc),
+        loading: false, error: null, lastUpdated: null,
+        refresh: () => {},
+      };
+    }
+    return {
+      competitions: [], featured: null, hadErrors: false, aiBrief: null,
+      loading: true, error: null, lastUpdated: null,
+      refresh: () => {},
+    };
   });
 
   // ── refs shared across both modes
@@ -150,6 +164,9 @@ export function useMatches(date?: string): MatchesState {
   const retryTimerRef  = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const retryCountRef  = useRef(0);
   const unsubRef       = useRef<Unsubscribe | null>(null);
+  // True only for the first effect run when we have SSR-seeded data, so we can
+  // keep that data on screen (no flash) instead of clearing it to "Loading…".
+  const seededRef      = useRef(Boolean(initialDoc));
   const cacheKey = `matches:${targetDate}`;
 
   // ── FIRESTORE MODE ─────────────────────────────────────────────────────
@@ -358,7 +375,14 @@ export function useMatches(date?: string): MatchesState {
     if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); retryTimerRef.current = undefined; }
     if (unsubRef.current)      { unsubRef.current(); unsubRef.current = null; }
 
-    setState(prev => ({ ...prev, competitions: [], featured: null, aiBrief: null, loading: true, error: null, refresh }));
+    if (seededRef.current) {
+      // First run with SSR-seeded data: keep it visible, just wire `refresh`.
+      // Live updates still attach below and overwrite with fresh data.
+      seededRef.current = false;
+      setState(prev => ({ ...prev, refresh }));
+    } else {
+      setState(prev => ({ ...prev, competitions: [], featured: null, aiBrief: null, loading: true, error: null, refresh }));
+    }
 
     if (isFirebaseReady()) {
       setupFirestore();
