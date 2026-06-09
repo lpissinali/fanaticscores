@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { getMatchdayDoc } from '@/lib/serverApi/matchdayDoc';
 
 const BASE = 'https://www.fanaticscores.com';
 const AF_BASE = 'https://v3.football.api-sports.io';
@@ -92,20 +93,61 @@ async function fetchTeamIds(): Promise<string[]> {
 
 // ── Sitemap ───────────────────────────────────────────────────────────────────
 
+// ── Recent match IDs ───────────────────────────────────────────────────────
+
+// Collect match IDs from the last `days` matchday docs (the same curated
+// matches the site renders). Reads come from Firestore via the Admin SDK, so
+// no extra api-football quota is used. Returns [] at build time / in local dev
+// (no credentials) — populated on the daily production revalidation.
+async function fetchRecentMatchIds(now: Date, days = 7): Promise<string[]> {
+  const ids = new Set<string>();
+  for (let i = 1; i <= days; i++) {
+    const d = new Date(now);
+    d.setUTCDate(d.getUTCDate() - i);
+    const ymd = d.toISOString().slice(0, 10);
+    const doc = await getMatchdayDoc(ymd);
+    if (!doc) continue;
+    for (const c of doc.competitions ?? []) {
+      for (const m of c.matches ?? []) {
+        if (m?.id) ids.add(String(m.id));
+      }
+    }
+  }
+  return Array.from(ids);
+}
+
 export const revalidate = 86400; // regenerate daily
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const teamIds = await fetchTeamIds();
   const now = new Date();
+  const matchIds = await fetchRecentMatchIds(now);
 
   const staticEntries: MetadataRoute.Sitemap = [
     { url: `${BASE}/en/today`,        lastModified: now, changeFrequency: 'daily',  priority: 1.0 },
     { url: `${BASE}/en/competitions`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
-    { url: `${BASE}/en/studio`,       lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
+    // NOTE: /en/studio is intentionally NOT listed — it is Disallowed in
+    // robots.txt, and submitting a blocked URL triggers "Submitted URL blocked
+    // by robots.txt" errors in Search Console.
     { url: `${BASE}/en/terms`,        lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${BASE}/en/privacy`,      lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${BASE}/en/cookies`,      lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
   ];
+
+  // Recent date pages (/en/YYYY-MM-DD). These are now server-rendered with that
+  // day's fixtures/results, so each is unique, indexable content. Start at
+  // yesterday and go back 14 days — today is already covered by /en/today
+  // (which carries its own canonical), so we skip it to avoid duplication.
+  const recentDateEntries: MetadataRoute.Sitemap = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date(now);
+    d.setUTCDate(d.getUTCDate() - (i + 1));
+    return {
+      url: `${BASE}/en/${d.toISOString().slice(0, 10)}`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.5,
+    };
+  });
 
   const competitionEntries: MetadataRoute.Sitemap = COMPETITIONS.map(({ code, priority }) => ({
     url: `${BASE}/en/competition/${code}`,
@@ -121,5 +163,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticEntries, ...competitionEntries, ...teamEntries];
+  // Recent match pages (/en/match/{id}) — server-rendered result pages that
+  // make good evergreen, long-tail content (e.g. "Team A vs Team B result").
+  const matchEntries: MetadataRoute.Sitemap = matchIds.map(id => ({
+    url: `${BASE}/en/match/${id}`,
+    lastModified: now,
+    changeFrequency: 'weekly',
+    priority: 0.5,
+  }));
+
+  return [...staticEntries, ...recentDateEntries, ...competitionEntries, ...teamEntries, ...matchEntries];
 }
