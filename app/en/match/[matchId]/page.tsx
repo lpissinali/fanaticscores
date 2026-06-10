@@ -348,7 +348,19 @@ export default async function MatchPage({ params }: Props) {
     awayTeam: awayTeamLd,
     competitor: [homeTeamLd, awayTeamLd],
     performer: [homeTeamLd, awayTeamLd],
-    superEvent: { '@type': 'SportsEvent', name: d.competition },
+    // NOTE: no `superEvent` here. A nested bare SportsEvent ({ name } only)
+    // is validated by Google as its own Event item and reported with critical
+    // "missing startDate / missing location" errors (it surfaced in Search
+    // Console as a broken "World Cup" event). We don't reliably know any
+    // competition's season dates, so the tournament is expressed through
+    // `organizer` instead — which Events rich results also ask for.
+    organizer: {
+      '@type': 'SportsOrganization',
+      name: d.competition,
+      url: d.compCode
+        ? `https://www.fanaticscores.com/en/competition/${d.compCode}`
+        : 'https://www.fanaticscores.com/en/competitions',
+    },
     url: `https://www.fanaticscores.com/en/match/${matchId}`,
   };
 
