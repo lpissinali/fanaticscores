@@ -16,6 +16,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchAF, hasBodyErrors } from '@/lib/serverApi/config';
 import { isRateLimited } from '@/lib/serverApi/rateLimit';
+import { isDailyBudgetExhausted } from '@/lib/serverApi/dailyBudget';
 
 export interface TeamResult {
   id: string;
@@ -34,6 +35,7 @@ export async function GET(req: NextRequest) {
   if (!key) return NextResponse.json([]);
 
   if (await isRateLimited()) return NextResponse.json([]);
+  if (await isDailyBudgetExhausted()) return NextResponse.json([]);
 
   try {
     const res = await fetchAF(`/teams?search=${encodeURIComponent(q)}`);

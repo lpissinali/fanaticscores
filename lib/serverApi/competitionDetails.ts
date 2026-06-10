@@ -6,6 +6,7 @@
 
 import { fetchAF, hasBodyErrors, currentSeason, COMP_CODE_TO_LEAGUE_ID, CUP_CODES } from './config';
 import { isRateLimited } from './rateLimit';
+import { isDailyBudgetExhausted } from './dailyBudget';
 
 // ── Public types (mirrors src/lib/api/competitionDetails.ts) ─────────────────
 
@@ -224,6 +225,8 @@ export async function fetchCompetitionDetail(code: string): Promise<CompetitionD
   // Behavioral rate limit: deny enumeration scrapers before spending any
   // api-football quota. Over-limit looks identical to "competition not found".
   if (await isRateLimited()) return null;
+  // Hard daily ceiling on the shared api-football quota.
+  if (await isDailyBudgetExhausted()) return null;
 
   // Run info + standings in parallel; standings already tries multiple season years.
   // Then use the season year that api-football marks as current for scorers/fixtures.

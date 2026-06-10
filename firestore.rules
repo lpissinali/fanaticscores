@@ -22,5 +22,12 @@ service cloud.firestore {
       allow read: if false;
       allow write: if false;
     }
+
+    // afDaily/{date} — fleet-wide daily upstream-call budget counters
+    // (see lib/serverApi/dailyBudget.ts). Server-only, same as the above.
+    match /afDaily/{date} {
+      allow read: if false;
+      allow write: if false;
+    }
   }
 }

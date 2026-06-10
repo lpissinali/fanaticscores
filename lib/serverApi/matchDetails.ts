@@ -4,8 +4,9 @@
  * It fetches everything from api-football by fixture ID directly.
  */
 
-import { fetchAF, hasBodyErrors, currentSeason, COMP_CODE_TO_LEAGUE_ID, LEAGUE_ID_TO_CODE, CUP_CODES, AF_LIVE_TTL_SECONDS } from './config';
+import { fetchAF, hasBodyErrors, currentSeason, COMP_CODE_TO_LEAGUE_ID, LEAGUE_ID_TO_CODE, CUP_CODES, AF_LIVE_TTL_SECONDS, AF_STABLE_TTL_SECONDS, AF_SLOW_TTL_SECONDS } from './config';
 import { isRateLimited } from './rateLimit';
+import { isDailyBudgetExhausted } from './dailyBudget';
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
@@ -112,6 +113,13 @@ function isLiveStatus(short: string): boolean {
   return ['1H', '2H', 'ET', 'BT', 'P', 'HT'].includes(short);
 }
 
+/**
+ * Statuses after which a fixture's data can never change again (full time,
+ * extra time, penalties, awarded, walkover). Deliberately excludes PST/CANC —
+ * postponed and cancelled matches can be rescheduled.
+ */
+const FINISHED_SHORTS = new Set(['FT', 'AET', 'PEN', 'AWD', 'WO']);
+
 function parseMatchday(round: string | null): number | null {
   if (!round) return null;
   const m = round.match(/(\d+)$/);
@@ -134,15 +142,28 @@ async function fetchFixture(matchId: string): Promise<{
   try {
     const path = `/fixtures?id=${matchId}`;
 
-    // First check against the standard hour-long freshness window — this is
-    // the cheap, common-case path (cache hit for finished/scheduled matches,
-    // which make up the vast majority of views).
-    const res  = await fetchAF(path);
+    // Three-tier freshness, cheapest first:
+    // 1. Read at the week-long window. If the cached copy says the match is
+    //    FINISHED, it can never change again — serve it. This is what makes
+    //    crawler re-visits of result pages (the bulk of traffic) ~free.
+    // 2. Otherwise (scheduled/postponed/live/stale-unknown), re-read at the
+    //    standard hour window — may trigger one upstream call per hour.
+    // 3. If that says the match is LIVE, re-read at the live TTL (2 min).
+    const res  = await fetchAF(path, AF_STABLE_TTL_SECONDS);
     if (!res.ok) return null;
     const json = await res.json() as { response: AFFixtureDetail[]; errors: unknown };
     if (hasBodyErrors(json.errors)) return null;
     let f = json.response?.[0];
     if (!f) return null;
+
+    if (!FINISHED_SHORTS.has(f.fixture.status.short)) {
+      const hourRes = await fetchAF(path);
+      if (hourRes.ok) {
+        const hourJson = await hourRes.json() as { response: AFFixtureDetail[]; errors: unknown };
+        const hourF = hourJson.response?.[0];
+        if (!hasBodyErrors(hourJson.errors) && hourF) f = hourF;
+      }
+    }
 
     if (isLiveStatus(f.fixture.status.short)) {
       // Match is in progress: an hour-old snapshot isn't good enough for
@@ -189,12 +210,14 @@ async function fetchFixture(matchId: string): Promise<{
 
 // ── Fetch stats ───────────────────────────────────────────────────────────────
 
-async function fetchStats(matchId: string, homeId: string, isLive: boolean): Promise<MatchStats | null> {
+async function fetchStats(matchId: string, homeId: string, isLive: boolean, isFinished = false): Promise<MatchStats | null> {
   try {
     // Live matches: stats (possession, shots, etc.) change minute to minute,
     // so use the short TTL once we already know the match is in progress
     // (status comes from fetchFixture, which runs first in fetchMatchDetail).
-    const res  = await fetchAF(`/fixtures/statistics?fixture=${matchId}`, isLive ? AF_LIVE_TTL_SECONDS : undefined);
+    // Finished matches: stats are immutable → week-long window.
+    const ttl = isLive ? AF_LIVE_TTL_SECONDS : isFinished ? AF_STABLE_TTL_SECONDS : undefined;
+    const res  = await fetchAF(`/fixtures/statistics?fixture=${matchId}`, ttl);
     if (!res.ok) return null;
     const json = await res.json() as { response: AFTeamStats[]; errors: unknown };
     if (hasBodyErrors(json.errors)) return null;
@@ -227,7 +250,8 @@ async function fetchStats(matchId: string, homeId: string, isLive: boolean): Pro
 
 async function fetchH2H(homeId: string, awayId: string): Promise<MatchDetailData['h2h']> {
   try {
-    const res  = await fetchAF(`/fixtures/headtohead?h2h=${homeId}-${awayId}`);
+    // H2H history gains at most one entry per meeting — daily is plenty.
+    const res  = await fetchAF(`/fixtures/headtohead?h2h=${homeId}-${awayId}`, AF_SLOW_TTL_SECONDS);
     if (!res.ok) return null;
     const data = await res.json() as { response: AFH2HMatch[]; errors: unknown };
     if (hasBodyErrors(data.errors)) return null;
@@ -351,6 +375,8 @@ export async function fetchMatchDetail(matchId: string): Promise<MatchDetailData
   // Behavioral rate limit: deny enumeration scrapers before spending any
   // api-football quota. Over-limit looks identical to "match not found" (→ 404).
   if (await isRateLimited()) return null;
+  // Hard daily ceiling on the shared api-football quota.
+  if (await isDailyBudgetExhausted()) return null;
 
   const fixtureData = await fetchFixture(matchId);
   if (!fixtureData) return null;
@@ -359,9 +385,10 @@ export async function fetchMatchDetail(matchId: string): Promise<MatchDetailData
   const homeId = String(f.teams.home.id);
   const awayId = String(f.teams.away.id);
   const isLive = isLiveStatus(f.fixture.status.short);
+  const isFinished = FINISHED_SHORTS.has(f.fixture.status.short);
 
   const [stats, h2h, standings] = await Promise.all([
-    fetchStats(matchId, homeId, isLive),
+    fetchStats(matchId, homeId, isLive, isFinished),
     fetchH2H(homeId, awayId),
     compType === 'LEAGUE' ? fetchStandings(compCode) : Promise.resolve([] as StandingRow[]),
   ]);

@@ -5,10 +5,23 @@
  */
 
 import { readCachedAF, writeCachedAF } from './sharedCache';
+import { recordUpstreamCall } from './dailyBudget';
 
 export const AF_BASE = 'https://v3.football.api-sports.io';
 
 const AF_CACHE_TTL_SECONDS = 3600;
+
+/**
+ * Long read-freshness windows for data that changes slowly or never. These
+ * matter because Googlebot legitimately re-crawls thousands of team/match
+ * pages a day: with the default hour-long window every re-crawl re-burns the
+ * full upstream fan-out, while with these windows a re-crawl is a Firestore
+ * read. (Writes always refresh the same shared cache entry, so different
+ * callers can read the same endpoint at different freshness needs.)
+ */
+export const AF_STABLE_TTL_SECONDS = 7 * 24 * 3600; // immutable-ish: team identity, finished matches
+export const AF_SLOW_TTL_SECONDS = 24 * 3600;       // slow-moving: squads, head-to-head history
+export const AF_TEAM_FIXTURES_TTL_SECONDS = 6 * 3600; // a team's recent/upcoming fixture lists
 
 /**
  * Short TTL for endpoints backing in-progress matches (fixture status, live
@@ -62,6 +75,10 @@ export async function fetchAF(
       headers: { 'content-type': 'application/json', 'x-af-cache': 'shared-hit' },
     });
   }
+
+  // Every real network attempt counts against api-football's daily quota
+  // (including retries and error responses), so record it as such.
+  recordUpstreamCall();
 
   const res = await fetch(`${AF_BASE}${path}`, {
     headers: afHeaders(),

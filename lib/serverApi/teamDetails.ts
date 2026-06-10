@@ -3,8 +3,12 @@
  * Calls api-football directly — no browser caches.
  */
 
-import { fetchAF, hasBodyErrors, currentSeason, LEAGUE_ID_TO_CODE, CUP_CODES } from './config';
+import {
+  fetchAF, hasBodyErrors, currentSeason, LEAGUE_ID_TO_CODE, CUP_CODES,
+  AF_STABLE_TTL_SECONDS, AF_SLOW_TTL_SECONDS, AF_TEAM_FIXTURES_TTL_SECONDS,
+} from './config';
 import { isRateLimited } from './rateLimit';
+import { isDailyBudgetExhausted } from './dailyBudget';
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
@@ -88,7 +92,9 @@ function mapFixture(f: AFFixture): TeamMatch {
 
 async function fetchTeamInfo(teamId: string): Promise<{ team: AFTeam; venue: AFVenue | null } | null> {
   try {
-    const res  = await fetchAF(`/teams?id=${teamId}`);
+    // Team identity (name, crest, venue) is effectively immutable → week-long
+    // read freshness. Crawler re-visits cost a Firestore read, not 1 upstream.
+    const res  = await fetchAF(`/teams?id=${teamId}`, AF_STABLE_TTL_SECONDS);
     if (!res.ok) return null;
     const json = await res.json() as { response: Array<{ team: AFTeam; venue: AFVenue }>; errors: unknown };
     if (hasBodyErrors(json.errors)) return null;
@@ -99,7 +105,8 @@ async function fetchTeamInfo(teamId: string): Promise<{ team: AFTeam; venue: AFV
 
 async function fetchSquad(teamId: string): Promise<TeamPlayer[]> {
   try {
-    const res  = await fetchAF(`/players/squads?team=${teamId}`);
+    // Squads change on transfers/injury-list updates — daily is plenty fresh.
+    const res  = await fetchAF(`/players/squads?team=${teamId}`, AF_SLOW_TTL_SECONDS);
     if (!res.ok) return [];
     const json = await res.json() as { response: Array<{ players: AFSquadPlayer[] }>; errors: unknown };
     if (hasBodyErrors(json.errors)) return [];
@@ -111,9 +118,11 @@ async function fetchSquad(teamId: string): Promise<TeamPlayer[]> {
 
 async function fetchFixtures(teamId: string): Promise<{ recent: TeamMatch[]; upcoming: TeamMatch[] }> {
   try {
+    // Fixture lists move only when a match finishes or gets (re)scheduled;
+    // 6h staleness on a team page is an acceptable trade for crawl cost.
     const [lastRes, nextRes] = await Promise.all([
-      fetchAF(`/fixtures?team=${teamId}&last=6`),
-      fetchAF(`/fixtures?team=${teamId}&next=5`),
+      fetchAF(`/fixtures?team=${teamId}&last=6`, AF_TEAM_FIXTURES_TTL_SECONDS),
+      fetchAF(`/fixtures?team=${teamId}&next=5`, AF_TEAM_FIXTURES_TTL_SECONDS),
     ]);
     const recent: TeamMatch[] = [];
     const upcoming: TeamMatch[] = [];
@@ -139,6 +148,9 @@ export async function fetchTeamDetail(teamId: string): Promise<TeamDetailData | 
   // Behavioral rate limit: deny enumeration scrapers before spending any
   // api-football quota. Over-limit looks identical to "team not found" (→ 404).
   if (await isRateLimited()) return null;
+  // Hard daily ceiling on the shared api-football quota (protects PitaCopa
+  // and the scheduler when crawl volume outruns the per-IP limiter).
+  if (await isDailyBudgetExhausted()) return null;
 
   const [teamData, squad, fixtures] = await Promise.all([
     fetchTeamInfo(teamId),

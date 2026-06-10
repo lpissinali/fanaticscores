@@ -24,6 +24,7 @@ import {
   CUP_CODES,
 } from '@/lib/serverApi/config';
 import { isRateLimited } from '@/lib/serverApi/rateLimit';
+import { isDailyBudgetExhausted } from '@/lib/serverApi/dailyBudget';
 
 function toShort(name: string) { return name.split(/\s+/)[0]; }
 function toInitial(name: string) { return name.split(/\s+/).map((w: string) => w[0]).join('').slice(0, 3).toUpperCase(); }
@@ -53,6 +54,7 @@ export async function GET(
   // detail pages give them (no signal that a limiter exists).
   if (!/^\d{1,10}$/.test(matchId)) return NextResponse.json(null, { status: 404 });
   if (await isRateLimited()) return NextResponse.json(null, { status: 404 });
+  if (await isDailyBudgetExhausted()) return NextResponse.json(null, { status: 404 });
 
   try {
     const path = `/fixtures?id=${matchId}`;
