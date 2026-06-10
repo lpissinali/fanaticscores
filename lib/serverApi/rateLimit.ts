@@ -119,7 +119,14 @@ async function incrementAndCheck(ip: string): Promise<boolean> {
       return next;
     });
 
-    return count <= LIMIT;
+    const allowed = count <= LIMIT;
+    if (!allowed) {
+      // Make denials visible in Cloud Run logs — without this, a limiter 404
+      // is indistinguishable from a genuine "no such team/match" 404 when
+      // auditing traffic (e.g. distinguishing scraper blocks from real misses).
+      console.warn(`[rateLimit] DENY ip=${ip} count=${count} window=${bucket}`);
+    }
+    return allowed;
   } catch {
     // Best-effort: never let a limiter failure block the request.
     return true;

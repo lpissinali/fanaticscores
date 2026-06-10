@@ -36,5 +36,9 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/).*)'],
+  // robots.txt is excluded so every host serves its own (host-aware) robots
+  // file — see app/robots.txt/route.ts. Redirecting a non-canonical host's
+  // robots.txt to the canonical one would make crawlers apply the permissive
+  // canonical rules to that host.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|robots.txt|api/).*)'],
 };
