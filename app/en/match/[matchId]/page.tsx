@@ -308,6 +308,22 @@ export default async function MatchPage({ params }: Props) {
   const homeTeamLd = { '@type': 'SportsTeam', name: d.home.name, ...(d.home.crest ? { logo: d.home.crest } : {}) };
   const awayTeamLd = { '@type': 'SportsTeam', name: d.away.name, ...(d.away.crest ? { logo: d.away.crest } : {}) };
 
+  // Search Console (Events rich results) wants endDate, image, performer and
+  // location.address on every Event — all non-critical, but easy to satisfy.
+
+  // Venue is stored as "Name, City" (joined in matchDetails.ts); split the
+  // city back out so location can carry an address.
+  const venueParts = d.venue ? d.venue.split(', ') : [];
+  const venueName = venueParts[0] || null;
+  const venueCity = venueParts.length > 1 ? venueParts[venueParts.length - 1] : null;
+
+  // Football has no published end time; kickoff + 2.5h covers half-time,
+  // stoppage and most extra time.
+  const kickoffTs = d.kickoff ? Date.parse(d.kickoff) : NaN;
+  const endDate = Number.isFinite(kickoffTs)
+    ? new Date(kickoffTs + 2.5 * 60 * 60 * 1000).toISOString()
+    : undefined;
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'SportsEvent',
@@ -315,12 +331,23 @@ export default async function MatchPage({ params }: Props) {
     description: matchDescription,
     sport: 'Soccer',
     startDate: d.kickoff ?? undefined,
+    endDate,
     eventStatus,
     eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-    location: d.venue ? { '@type': 'Place', name: d.venue } : undefined,
+    image: [d.home.crest, d.away.crest, 'https://www.fanaticscores.com/og-default.png'].filter(Boolean),
+    location: venueName
+      ? {
+          '@type': 'Place',
+          name: venueName,
+          address: venueCity
+            ? { '@type': 'PostalAddress', addressLocality: venueCity }
+            : venueName,
+        }
+      : undefined,
     homeTeam: homeTeamLd,
     awayTeam: awayTeamLd,
     competitor: [homeTeamLd, awayTeamLd],
+    performer: [homeTeamLd, awayTeamLd],
     superEvent: { '@type': 'SportsEvent', name: d.competition },
     url: `https://www.fanaticscores.com/en/match/${matchId}`,
   };
