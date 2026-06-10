@@ -1,7 +1,6 @@
 import type { MetadataRoute } from 'next';
 
 const BASE = 'https://www.fanaticscores.com';
-const AF_BASE = 'https://v3.football.api-sports.io';
 
 // ── Competition entries ───────────────────────────────────────────────────────
 
@@ -53,28 +52,42 @@ function currentSeason(): number {
 }
 
 async function fetchTeamIds(): Promise<string[]> {
+  // Skip at build time / without creds for two reasons (mirrors
+  // fetchRecentMatchIds below): (a) fetchAF pulls in the Firestore Admin SDK,
+  // which must stay out of the `next build` worker (native gRPC bindings crash
+  // it on Windows); (b) the previous raw-fetch version burned 8 *uncached*
+  // /standings calls per build AND per cold Cloud Run instance, since
+  // `next: { revalidate }` is per-instance only. Entries appear on the first
+  // production revalidation, where the fleet-wide Firestore cache (already
+  // kept warm by the competition pages) makes this ~zero extra quota.
+  if (process.env.NEXT_PHASE === 'phase-production-build') return [];
+  const hasCreds =
+    process.env.NODE_ENV === 'production' ||
+    Boolean(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+  if (!hasCreds) return [];
+
   const key = process.env.AF_API_KEY ?? '';
   if (!key) return [];
+
+  const { fetchAF, hasBodyErrors } = await import('@/lib/serverApi/config');
 
   const season = currentSeason();
   const ids = new Set<string>();
 
   for (const leagueId of TEAM_LEAGUE_IDS) {
     try {
-      const res = await fetch(
-        `${AF_BASE}/standings?league=${leagueId}&season=${season}`,
-        {
-          headers: { 'x-apisports-key': key },
-          next: { revalidate: 604800 }, // cache for 1 week
-        }
-      );
+      // Read freshness of 1 week: standings entries are refreshed hourly by
+      // competition-page traffic anyway; the sitemap only needs team IDs.
+      const res = await fetchAF(`/standings?league=${leagueId}&season=${season}`, 604800);
       if (!res.ok) continue;
 
       const json = await res.json() as {
+        errors?: unknown;
         response: Array<{
           league: { standings: Array<Array<{ team: { id: number } }>> };
         }>;
       };
+      if (hasBodyErrors(json.errors)) continue;
 
       const groups = json.response?.[0]?.league?.standings ?? [];
       for (const group of groups) {

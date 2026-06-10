@@ -52,10 +52,12 @@ export default function SearchModal({ onClose, locale }: SearchModalProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  // Search teams via API as the user types (debounced 300 ms)
+  // Search teams via API as the user types (debounced — each query that fires
+  // can cost an api-football call server-side, so wait for a real pause and
+  // require 3+ chars, matching the server's own minimum).
   useEffect(() => {
     const q = query.trim();
-    if (q.length < 2) { setTeams([]); return; }
+    if (q.length < 3) { setTeams([]); return; }
 
     const timer = setTimeout(async () => {
       setTeamsLoading(true);
@@ -68,7 +70,7 @@ export default function SearchModal({ onClose, locale }: SearchModalProps) {
       } finally {
         setTeamsLoading(false);
       }
-    }, 300);
+    }, 450);
 
     return () => clearTimeout(timer);
   }, [query]);
