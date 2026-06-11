@@ -25,6 +25,15 @@ export const AF_SLOW_TTL_SECONDS = 24 * 3600;       // slow-moving: squads, head
 export const AF_TEAM_FIXTURES_TTL_SECONDS = 6 * 3600; // a team's recent/upcoming fixture lists
 
 /**
+ * "Hot" window (PitaCopa-style adaptive freshness): used for standings and
+ * top scorers of a competition that currently has a match live / just
+ * finished / about to start. Those tables only actually change at full time,
+ * so 5 minutes is fresh enough while costing ~12 calls/hour per endpoint at
+ * worst — the fixtures rail itself uses AF_LIVE_TTL_SECONDS for live scores.
+ */
+export const AF_HOT_TTL_SECONDS = 300;
+
+/**
  * Short TTL for endpoints backing in-progress matches (fixture status, live
  * stats). Live viewers want near-real-time updates, so once matchDetails.ts
  * has confirmed a match is actually live, it re-checks these endpoints

@@ -4,7 +4,7 @@
  * Used by the /en/competition/[compCode] Server Component.
  */
 
-import { fetchAF, hasBodyErrors, currentSeason, COMP_CODE_TO_LEAGUE_ID, CUP_CODES } from './config';
+import { fetchAF, hasBodyErrors, currentSeason, COMP_CODE_TO_LEAGUE_ID, CUP_CODES, AF_LIVE_TTL_SECONDS, AF_HOT_TTL_SECONDS } from './config';
 import { isRateLimited } from './rateLimit';
 import { isDailyBudgetExhausted } from './dailyBudget';
 
@@ -91,6 +91,30 @@ function toShort(name: string) {
   return name.split(/\s+/).map(w => w[0]).join('').slice(0, 3).toUpperCase();
 }
 
+// ── Adaptive freshness (PitaCopa-style) ──────────────────────────────────────
+
+const LIVE_SHORTS = new Set(['1H', '2H', 'ET', 'BT', 'P', 'HT']);
+const RECENT_FINISH_MS = 4 * 3_600_000; // standings/scorers settle after FT
+const IMMINENT_MS = 30 * 60_000;        // pre-kickoff: catch lineups/state flips
+
+/**
+ * A competition is "hot" while one of its fixtures is live, kicked off within
+ * the last 4h (in play or just finished — standings still updating), or kicks
+ * off within 30 minutes. Hot competitions re-read their data at short TTLs
+ * instead of the idle hour-long window.
+ */
+function isCompHot(fixtures: { upcoming: CompFixture[]; recent: CompFixture[] }): boolean {
+  const now = Date.now();
+  for (const f of [...fixtures.upcoming, ...fixtures.recent]) {
+    if (LIVE_SHORTS.has(f.status)) return true;
+    const t = Date.parse(f.utcDate);
+    if (!Number.isFinite(t)) continue;
+    if (t <= now && now - t < RECENT_FINISH_MS) return true;
+    if (t > now && t - now < IMMINENT_MS) return true;
+  }
+  return false;
+}
+
 function mapFixture(f: AFFixtureRaw): CompFixture {
   return {
     id: f.fixture.id, utcDate: f.fixture.date,
@@ -127,9 +151,9 @@ interface StandingsFetch {
   winner: { name: string; crest: string | null } | null;
 }
 
-async function fetchStandingsForSeason(leagueId: number, season: number): Promise<StandingsFetch | 'plan_error' | null> {
+async function fetchStandingsForSeason(leagueId: number, season: number, ttlSeconds?: number): Promise<StandingsFetch | 'plan_error' | null> {
   try {
-    const res  = await fetchAF(`/standings?league=${leagueId}&season=${season}`);
+    const res  = await fetchAF(`/standings?league=${leagueId}&season=${season}`, ttlSeconds);
     if (!res.ok) return null;
     const data = await res.json() as {
       response: Array<{ league: { round: string | null; standings: AFStandingsEntry[][] } }>;
@@ -165,7 +189,7 @@ async function fetchStandingsForSeason(leagueId: number, season: number): Promis
   } catch { return null; }
 }
 
-async function fetchStandings(code: string, leagueId: number): Promise<StandingsFetch> {
+async function fetchStandings(code: string, leagueId: number, ttlSeconds?: number): Promise<StandingsFetch> {
   const empty: StandingsFetch = { groups: [], currentMatchday: null, winner: null };
 
   const calendarYear = new Date().getFullYear();
@@ -173,7 +197,7 @@ async function fetchStandings(code: string, leagueId: number): Promise<Standings
   const seasons = [...new Set([calendarYear, baseSeason, ...Array.from({ length: 5 }, (_, i) => baseSeason - i - 1)])];
 
   for (const season of seasons) {
-    const result = await fetchStandingsForSeason(leagueId, season);
+    const result = await fetchStandingsForSeason(leagueId, season, ttlSeconds);
     if (result === 'plan_error') continue;
     if (result === null) continue;
     return result;
@@ -181,9 +205,9 @@ async function fetchStandings(code: string, leagueId: number): Promise<Standings
   return empty;
 }
 
-async function fetchScorers(leagueId: number, season: number): Promise<CompScorer[]> {
+async function fetchScorers(leagueId: number, season: number, ttlSeconds?: number): Promise<CompScorer[]> {
   try {
-    const res  = await fetchAF(`/players/topscorers?league=${leagueId}&season=${season}`);
+    const res  = await fetchAF(`/players/topscorers?league=${leagueId}&season=${season}`, ttlSeconds);
     if (!res.ok) return [];
     const json = await res.json() as { response: AFScorer[]; errors: unknown };
     if (hasBodyErrors(json.errors)) return [];
@@ -200,12 +224,12 @@ async function fetchScorers(leagueId: number, season: number): Promise<CompScore
   } catch { return []; }
 }
 
-async function fetchFixtures(leagueId: number, season: number, isCup = false): Promise<{ upcoming: CompFixture[]; recent: CompFixture[] }> {
+async function fetchFixtures(leagueId: number, season: number, isCup = false, ttlSeconds?: number): Promise<{ upcoming: CompFixture[]; recent: CompFixture[] }> {
   const limit = isCup ? 10 : 5;
   try {
     const [upRes, reRes] = await Promise.all([
-      fetchAF(`/fixtures?league=${leagueId}&season=${season}&next=${limit}`),
-      fetchAF(`/fixtures?league=${leagueId}&season=${season}&last=${limit}`),
+      fetchAF(`/fixtures?league=${leagueId}&season=${season}&next=${limit}`, ttlSeconds),
+      fetchAF(`/fixtures?league=${leagueId}&season=${season}&last=${limit}`, ttlSeconds),
     ]);
     const upJson = upRes.ok ? await upRes.json() as { response: AFFixtureRaw[] } : { response: [] };
     const reJson = reRes.ok ? await reRes.json() as { response: AFFixtureRaw[] } : { response: [] };
@@ -230,7 +254,7 @@ export async function fetchCompetitionDetail(code: string): Promise<CompetitionD
 
   // Run info + standings in parallel; standings already tries multiple season years.
   // Then use the season year that api-football marks as current for scorers/fixtures.
-  const [info, standingsFetch] = await Promise.all([
+  const [info, standingsFirst] = await Promise.all([
     fetchCompInfo(code, leagueId),
     fetchStandings(code, leagueId),
   ]);
@@ -243,10 +267,25 @@ export async function fetchCompetitionDetail(code: string): Promise<CompetitionD
     ? parseInt(info.season.startDate.slice(0, 4), 10)
     : currentSeason();
 
-  const [scorers, fixtures] = await Promise.all([
+  const isCup = CUP_CODES.has(code);
+  let [fixtures, scorers] = await Promise.all([
+    fetchFixtures(leagueId, seasonYear, isCup),
     fetchScorers(leagueId, seasonYear),
-    fetchFixtures(leagueId, seasonYear, CUP_CODES.has(code)),
   ]);
+  let standingsFetch = standingsFirst;
+
+  // Adaptive freshness: the hour-fresh fixtures just read tell us whether
+  // this competition is in a match window right now. If so, re-read
+  // everything at short TTLs — live scores on the rail (2 min) and
+  // settling standings/scorers (5 min) — instead of serving hour-old data
+  // during the most-watched moments. Idle competitions never pay this cost.
+  if (isCompHot(fixtures)) {
+    [fixtures, standingsFetch, scorers] = await Promise.all([
+      fetchFixtures(leagueId, seasonYear, isCup, AF_LIVE_TTL_SECONDS),
+      fetchStandings(code, leagueId, AF_HOT_TTL_SECONDS),
+      fetchScorers(leagueId, seasonYear, AF_HOT_TTL_SECONDS),
+    ]);
+  }
 
   if (info.season) {
     info.season.currentMatchday = standingsFetch.currentMatchday;

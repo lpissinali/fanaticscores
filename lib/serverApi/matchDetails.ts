@@ -4,7 +4,7 @@
  * It fetches everything from api-football by fixture ID directly.
  */
 
-import { fetchAF, hasBodyErrors, currentSeason, COMP_CODE_TO_LEAGUE_ID, LEAGUE_ID_TO_CODE, CUP_CODES, AF_LIVE_TTL_SECONDS, AF_STABLE_TTL_SECONDS, AF_SLOW_TTL_SECONDS } from './config';
+import { fetchAF, hasBodyErrors, currentSeason, COMP_CODE_TO_LEAGUE_ID, LEAGUE_ID_TO_CODE, CUP_CODES, AF_LIVE_TTL_SECONDS, AF_STABLE_TTL_SECONDS, AF_SLOW_TTL_SECONDS, AF_HOT_TTL_SECONDS } from './config';
 import { isRateLimited } from './rateLimit';
 import { isDailyBudgetExhausted } from './dailyBudget';
 
@@ -285,14 +285,14 @@ async function fetchH2H(homeId: string, awayId: string): Promise<MatchDetailData
 
 // ── Fetch standings ───────────────────────────────────────────────────────────
 
-async function fetchStandings(compCode: string): Promise<StandingRow[]> {
+async function fetchStandings(compCode: string, ttlSeconds?: number): Promise<StandingRow[]> {
   if (CUP_CODES.has(compCode)) return [];
   const leagueId = COMP_CODE_TO_LEAGUE_ID[compCode];
   if (!leagueId) return [];
   for (let offset = 0; offset <= 2; offset++) {
     const season = currentSeason() - offset;
     try {
-      const res  = await fetchAF(`/standings?league=${leagueId}&season=${season}`);
+      const res  = await fetchAF(`/standings?league=${leagueId}&season=${season}`, ttlSeconds);
       if (!res.ok) continue;
       const data = await res.json() as {
         response: Array<{ league: { standings: AFStandingsEntry[][] } }>; errors: unknown;
@@ -387,10 +387,18 @@ export async function fetchMatchDetail(matchId: string): Promise<MatchDetailData
   const isLive = isLiveStatus(f.fixture.status.short);
   const isFinished = FINISHED_SHORTS.has(f.fixture.status.short);
 
+  // Match in/near its window → the league table is actively changing; read
+  // standings at the hot TTL instead of the idle hour (adaptive freshness).
+  const kickMs = Date.parse(f.fixture.date);
+  const inWindow = isLive ||
+    (Number.isFinite(kickMs) && Date.now() - kickMs > 0 && Date.now() - kickMs < 4 * 3_600_000);
+
   const [stats, h2h, standings] = await Promise.all([
     fetchStats(matchId, homeId, isLive, isFinished),
     fetchH2H(homeId, awayId),
-    compType === 'LEAGUE' ? fetchStandings(compCode) : Promise.resolve([] as StandingRow[]),
+    compType === 'LEAGUE'
+      ? fetchStandings(compCode, inWindow ? AF_HOT_TTL_SECONDS : undefined)
+      : Promise.resolve([] as StandingRow[]),
   ]);
 
   const status = mapStatus(f.fixture.status.short);
