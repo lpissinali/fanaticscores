@@ -13,6 +13,7 @@ import Footer from '@/src/components/layout/Footer/Footer';
 import RailPromo from '@/src/components/shared/RailPromo/RailPromo';
 import MobileBottomNav from '@/src/components/shared/MobileBottomNav/MobileBottomNav';
 import Icon from '@/src/components/shared/Icon/Icon';
+import LocalKickoff from '@/src/components/shared/LocalKickoff/LocalKickoff';
 import styles from '@/src/views/competition/CompetitionPage.module.css';
 import Link from 'next/link';
 
@@ -42,12 +43,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 // ── Sub-components (pure JSX — server-renderable) ─────────────────────────────
 
-function formatDate(utcDate: string) {
-  return new Date(utcDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-}
-function formatTime(utcDate: string) {
-  return new Date(utcDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-}
+// Fixture dates/times render via <LocalKickoff> (client component) so each
+// visitor sees their own timezone — formatting here in the Server Component
+// would bake in the server's UTC clock.
 
 function HeroCard({ info }: { info: CompInfo }) {
   const seasonLabel = info.season
@@ -284,8 +282,8 @@ function FixtureSection({ title, fixtures }: { title: string; fixtures: CompFixt
           return (
             <Link key={f.id} href={`/en/match/${f.id}`} className={styles.fixtureRow} style={{ textDecoration: 'none' }}>
               <div className={styles.dateCell}>
-                <span className={styles.dateText}>{formatDate(f.utcDate)}</span>
-                {isScheduled && <span className={styles.timeText}>{formatTime(f.utcDate)}</span>}
+                <span className={styles.dateText}><LocalKickoff iso={f.utcDate} mode="date" /></span>
+                {isScheduled && <span className={styles.timeText}><LocalKickoff iso={f.utcDate} /></span>}
               </div>
               <span className={[styles.teamName, styles.teamNameRight].join(' ')}>{f.homeTeam.name}</span>
               <img src={f.homeTeam.crest} alt={f.homeTeam.name} className={styles.teamCrest} width={20} height={20} />

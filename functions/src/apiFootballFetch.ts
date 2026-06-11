@@ -110,7 +110,12 @@ export interface CompetitionData {
 
 export interface MatchData {
   id: string; status: string; minute: string | number | null;
+  /** Pre-formatted kickoff time — legacy: rendered in UTC because this code
+   *  runs on Cloud Functions. Kept for backward compatibility with cached
+   *  docs/clients; new clients should format kickoffIso locally instead. */
   kickoff?: string; competition?: string;
+  /** Raw ISO kickoff datetime — clients format this in the viewer's timezone. */
+  kickoffIso?: string;
   home: TeamData; away: TeamData;
 }
 
@@ -183,6 +188,10 @@ function mapFixtureToDoc(f: AFFixture, now: number): MatchData {
     status,
     minute,
     kickoff: status === 'SCHEDULED' ? formatKickoff(f.fixture.date) : undefined,
+    // Raw ISO so clients can show the kickoff in the *viewer's* timezone —
+    // formatKickoff above runs in the Cloud Function (UTC), which showed
+    // every visitor UTC times (2h off for CEST, 3h for Brasília, etc).
+    kickoffIso: status === 'SCHEDULED' ? f.fixture.date : undefined,
     home:    mapTeam(f.teams.home, f.goals.home),
     away:    mapTeam(f.teams.away, f.goals.away),
   };

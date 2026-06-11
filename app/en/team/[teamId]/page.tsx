@@ -15,6 +15,7 @@ import RailPromo from '@/src/components/shared/RailPromo/RailPromo';
 import Icon from '@/src/components/shared/Icon/Icon';
 import MobileBottomNav from '@/src/components/shared/MobileBottomNav/MobileBottomNav';
 import FollowButton from '@/src/components/shared/FollowButton/FollowButton';
+import LocalKickoff from '@/src/components/shared/LocalKickoff/LocalKickoff';
 import styles from '@/src/views/team/TeamPage.module.css';
 
 interface Props { params: Promise<{ teamId: string }> }
@@ -92,14 +93,11 @@ function MatchRowItem({ m, teamId }: { m: TeamMatch; teamId: string }) {
     resultTag = teamScore > oppScore ? 'W' : teamScore < oppScore ? 'L' : 'D';
   }
 
-  const date = new Date(m.utcDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-  const time = new Date(m.utcDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-
   return (
     <Link href={`/en/match/${m.id}`} className={styles.matchRow}>
       <div className={styles.matchDateCell}>
-        <span className={styles.matchDate}>{date}</span>
-        {isScheduled && <span className={styles.matchTime}>{time}</span>}
+        <span className={styles.matchDate}><LocalKickoff iso={m.utcDate} mode="date" /></span>
+        {isScheduled && <span className={styles.matchTime}><LocalKickoff iso={m.utcDate} /></span>}
       </div>
       <div className={styles.matchVenue}>{isHome ? 'H' : 'A'}</div>
       <img src={opponent.crest} alt={opponent.name} width={20} height={20} className={styles.matchCrest} style={{ objectFit: 'contain' }} />

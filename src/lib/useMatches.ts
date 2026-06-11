@@ -33,7 +33,7 @@ export interface MatchesState extends TodayData {
 // ── Firestore document shape (mirrors functions/src/footballDataFetch.ts) ──
 
 interface TeamData  { id: string; name: string; short: string; initial: string; color: string; crest?: string; score: number | null; }
-interface MatchData { id: string; status: string; minute: string | number | null; kickoff?: string; competition?: string; home: TeamData; away: TeamData; }
+interface MatchData { id: string; status: string; minute: string | number | null; kickoff?: string; kickoffIso?: string; competition?: string; home: TeamData; away: TeamData; }
 interface CompData  { id: string; name: string; country: string; short: string; flag: string; stage?: string; matches: MatchData[]; }
 export interface MatchdayDoc {
   competitions:       CompData[];
@@ -48,6 +48,22 @@ export interface MatchdayDoc {
 
 // ── Map Firestore doc → TodayData ──────────────────────────────────────────
 
+/**
+ * Format the raw ISO kickoff in the *viewer's* timezone. The doc's legacy
+ * `kickoff` string was pre-formatted inside the Cloud Function (UTC), which
+ * showed every visitor UTC times — 2h off in CEST, 3h off in Brasília.
+ * Falls back to the legacy string when kickoffIso is absent (older docs).
+ */
+function localKickoff(iso?: string, legacy?: string): string | undefined {
+  if (iso) {
+    const t = Date.parse(iso);
+    if (Number.isFinite(t)) {
+      return new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+  }
+  return legacy;
+}
+
 export function mapDoc(doc: MatchdayDoc): TodayData {
   const competitions: Competition[] = doc.competitions.map(c => ({
     id:      c.id,
@@ -60,7 +76,7 @@ export function mapDoc(doc: MatchdayDoc): TodayData {
       id:      m.id,
       status:  m.status as MatchStatus,
       minute:  m.minute ?? undefined,
-      kickoff: m.kickoff,
+      kickoff: localKickoff(m.kickoffIso, m.kickoff),
       home:    { ...m.home },
       away:    { ...m.away },
     } as Match)),
@@ -75,7 +91,7 @@ export function mapDoc(doc: MatchdayDoc): TodayData {
       id:             m.id,
       status:         m.status as MatchStatus,
       minute:         m.minute ?? undefined,
-      kickoff:        m.kickoff,
+      kickoff:        localKickoff(m.kickoffIso, m.kickoff),
       competition:    compName,
       compCountry,
       home:           { ...m.home },

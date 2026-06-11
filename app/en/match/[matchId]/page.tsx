@@ -8,6 +8,7 @@ import RailPromo from '@/src/components/shared/RailPromo/RailPromo';
 import Icon from '@/src/components/shared/Icon/Icon';
 import styles from '@/src/views/match/MatchPage.module.css';
 import MobileBottomNav from '@/src/components/shared/MobileBottomNav/MobileBottomNav';
+import LocalKickoff from '@/src/components/shared/LocalKickoff/LocalKickoff';
 import Link from 'next/link';
 
 interface Props { params: Promise<{ matchId: string }> }
@@ -28,7 +29,7 @@ function ScoreHeader({ d, matchId }: { d: MatchDetailData; matchId: string }) {
     d.status === 'LIVE' ? <span className="chip live">Live{d.minute ? ` · ${d.minute}′` : ''}</span> :
     d.status === 'HT'   ? <span className="chip ht">Half Time</span> :
     d.status === 'FT'   ? <span className="chip ft">Full Time</span> :
-                          <span className="chip">{d.kickoff ? new Date(d.kickoff).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Upcoming'}</span>;
+                          <span className="chip"><LocalKickoff iso={d.kickoff} /></span>;
   return (
     <div className={styles.featured}>
       <div className={styles.featuredGlow} aria-hidden="true" />
@@ -193,7 +194,7 @@ function MobMatchCard({ d, matchId }: { d: MatchDetailData; matchId: string }) {
     d.status === 'LIVE' ? <span className="chip live">Live{d.minute ? ` · ${d.minute}′` : ''}</span> :
     d.status === 'HT'   ? <span className="chip ht">Half Time</span> :
     d.status === 'FT'   ? <span className="chip ft">Full Time</span> :
-                          <span className="chip">{d.kickoff ? new Date(d.kickoff).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Upcoming'}</span>;
+                          <span className="chip"><LocalKickoff iso={d.kickoff} /></span>;
   return (
     <div className={styles.mobFeatured}>
       <div className={styles.featuredGlow} aria-hidden="true" />

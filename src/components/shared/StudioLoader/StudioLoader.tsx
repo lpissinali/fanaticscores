@@ -27,7 +27,17 @@ export default function StudioLoader({ locale, matchId }: Props) {
     fetch(`/api/match-cache/${matchId}`)
       .then(r => r.json())
       .then(data => {
-        if (data) cacheMatch(data);
+        if (data) {
+          // The API sends kickoff as raw ISO; format it here, in the
+          // browser, so the studio shows the viewer's local time.
+          if (data.match?.kickoff) {
+            const t = Date.parse(data.match.kickoff);
+            if (Number.isFinite(t)) {
+              data.match.kickoff = new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+          }
+          cacheMatch(data);
+        }
       })
       .catch(() => { /* ignore — studio will show picker */ })
       .finally(() => setReady(true));

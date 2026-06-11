@@ -102,9 +102,9 @@ export async function GET(
         id:      String(f.fixture.id),
         status,
         minute:  f.fixture.status.elapsed ?? undefined,
-        kickoff: status === 'SCHEDULED'
-          ? new Date(f.fixture.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-          : undefined,
+        // Raw ISO — StudioLoader formats it in the viewer's timezone before
+        // caching (formatting here would bake in this server's UTC clock).
+        kickoff: status === 'SCHEDULED' ? f.fixture.date : undefined,
         home: {
           id:      String(f.teams.home.id),
           name:    f.teams.home.name,
