@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import FSLogo from '../../shared/FSLogo/FSLogo';
+import { openCookieSettings } from '../../shared/CookieBanner/CookieBanner';
 import styles from './Footer.module.css';
 
 export default function Footer() {
@@ -106,6 +107,14 @@ export default function Footer() {
             <Link href="/en/terms"   className={styles.legalLink}>Terms</Link>
             <Link href="/en/privacy" className={styles.legalLink}>Privacy</Link>
             <Link href="/en/cookies" className={styles.legalLink}>Cookies</Link>
+            <button
+              type="button"
+              onClick={openCookieSettings}
+              className={styles.legalLink}
+              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit' }}
+            >
+              Cookie settings
+            </button>
           </div>
         </div>
 

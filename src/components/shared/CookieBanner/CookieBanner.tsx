@@ -8,16 +8,21 @@ import Link from 'next/link';
  * the user's choice in localStorage under the key `fs_consent`.
  *
  * Values:
- *   'all'       — user accepted all storage (same as essential-only in practice)
- *   'essential' — user chose essential only
+ *   'all'       — user accepted all storage (enables GA4 analytics_storage)
+ *   'essential' — user chose essential only (analytics stays denied)
  *
- * The banner is shown until a choice is made. Dismissing counts as 'essential'.
+ * The banner stays visible until the user explicitly clicks one of the two
+ * buttons — there is no passive dismiss, so no choice is ever assumed.
+ * A stored choice can be changed later via openCookieSettings() (wired to
+ * the footer "Cookie settings" link), as GDPR requires withdrawal to be as
+ * easy as consent.
  */
 import { useState, useEffect } from 'react';
 import { enableAnalytics, disableAnalytics } from '../../../lib/useAnalytics';
 ;
 
 const CONSENT_KEY = 'fs_consent';
+const REOPEN_EVENT = 'fs-open-cookie-settings';
 
 export type ConsentValue = 'all' | 'essential';
 
@@ -33,6 +38,15 @@ function setConsent(value: ConsentValue) {
   try { localStorage.setItem(CONSENT_KEY, value); } catch { /* private browsing */ }
 }
 
+/**
+ * Re-opens the consent banner so the user can change a previous choice
+ * (GDPR requires consent to be as easy to withdraw/change as to give).
+ * Call from anywhere client-side — e.g. the footer "Cookie settings" link.
+ */
+export function openCookieSettings(): void {
+  window.dispatchEvent(new Event(REOPEN_EVENT));
+}
+
 export default function CookieBanner() {
   const [visible, setVisible] = useState(false);
 
@@ -41,7 +55,11 @@ export default function CookieBanner() {
     const t = setTimeout(() => {
       if (getConsent() === null) setVisible(true);
     }, 600);
-    return () => clearTimeout(t);
+    // Allow "Cookie settings" links to re-open the banner after a choice
+    // was already stored.
+    const reopen = () => setVisible(true);
+    window.addEventListener(REOPEN_EVENT, reopen);
+    return () => { clearTimeout(t); window.removeEventListener(REOPEN_EVENT, reopen); };
   }, []);
 
   if (!visible) return null;

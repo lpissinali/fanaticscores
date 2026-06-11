@@ -21,12 +21,25 @@ declare global {
 
 export function enableAnalytics(): void {
   if (typeof window.gtag !== 'function') return;
-  window.gtag('consent', 'update', { analytics_storage: 'granted' });
+  // Consent Mode v2: declare all four signals on every update. We run
+  // analytics-only (no ads, no Google Signals), so the two ad signals stay
+  // denied even on "Accept all". If Google Signals is ever enabled in GA,
+  // flip ad_user_data + ad_personalization to 'granted' here AND update the
+  // privacy policy first (see GA4-consent-and-google-signals-summary.md).
+  window.gtag('consent', 'update', {
+    analytics_storage: 'granted',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+  });
 }
 
 export function disableAnalytics(): void {
   if (typeof window.gtag !== 'function') return;
-  window.gtag('consent', 'update', { analytics_storage: 'denied' });
+  window.gtag('consent', 'update', {
+    analytics_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+  });
 }
 
 function trackPageView(path: string) {
