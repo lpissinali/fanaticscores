@@ -4,6 +4,7 @@
  * The AF_API_KEY is never sent to the browser.
  */
 
+import { cache as reactCache } from 'react';
 import { readCachedAF, writeCachedAF } from './sharedCache';
 import { recordUpstreamCall } from './dailyBudget';
 
@@ -60,58 +61,82 @@ export function hasBodyErrors(errors: unknown): boolean {
  * response is still written back to the same cache entry with a fresh
  * timestamp, so short- and long-TTL callers transparently share one record.
  *
+ * IMPORTANT — the upstream fetch is `cache: 'no-store'`, NOT Next-cached.
+ * The previous version used `next: { revalidate: 3600 }` on the inner fetch,
+ * which broke freshness in two ways on warm instances:
+ *   1. When Firestore said "stale", the per-instance Next data cache could
+ *      return an hour-old body without ever hitting upstream — and that stale
+ *      body was then re-written to Firestore with a FRESH timestamp. Under
+ *      continuous traffic the same stale standings got re-stamped every hour,
+ *      so they never updated (visible on /en/competition/WC during the World
+ *      Cup opener).
+ *   2. The live 120s re-check hit the same URL whose per-instance entry was
+ *      created pre-match with the 1-hour window → live scores froze for up
+ *      to an hour on warm instances.
+ * Per-request deduplication (generateMetadata + page sharing one fetch) is
+ * provided by React cache() below instead — that was the only real value the
+ * per-instance data cache added.
+ *
  * Retries with exponential back-off on 429, same as before.
  */
+const fetchAFCore = reactCache(async (
+  path: string,
+  ttlSeconds: number,
+  retries: number,
+  delayMs: number,
+): Promise<{ status: number; body: string; source: 'shared-hit' | 'upstream' }> => {
+  const cached = await readCachedAF(path, ttlSeconds);
+  if (cached) return { status: cached.status, body: cached.body, source: 'shared-hit' };
+
+  for (;;) {
+    // Every real network attempt counts against api-football's daily quota
+    // (including retries and error responses), so record it as such.
+    recordUpstreamCall();
+
+    const res = await fetch(`${AF_BASE}${path}`, {
+      headers: afHeaders(),
+      cache: 'no-store',
+    });
+
+    if (res.status === 429 && retries > 0) {
+      retries -= 1;
+      await new Promise(r => setTimeout(r, delayMs));
+      delayMs *= 2;
+      continue;
+    }
+
+    const body = await res.text();
+    if (res.ok) {
+      let shouldCache = false;
+      try {
+        const parsed = JSON.parse(body) as { errors?: unknown };
+        // Don't cache error bodies (bad/expired key, daily quota exhausted,
+        // plan restrictions, etc.) — api-football returns these with HTTP 200,
+        // and freezing them into the shared cache for an hour would mean every
+        // instance keeps serving "quota exceeded" long after it actually clears.
+        shouldCache = !hasBodyErrors(parsed.errors);
+      } catch {
+        // Non-JSON body — don't cache it.
+      }
+      if (shouldCache) void writeCachedAF(path, res.status, body);
+    }
+    return { status: res.status, body, source: 'upstream' };
+  }
+});
+
 export async function fetchAF(
   path: string,
   ttlSeconds: number = AF_CACHE_TTL_SECONDS,
   retries = 2,
   delayMs = 3000,
 ): Promise<Response> {
-  const cached = await readCachedAF(path, ttlSeconds);
-  if (cached) {
-    return new Response(cached.body, {
-      status: cached.status,
-      headers: { 'content-type': 'application/json', 'x-af-cache': 'shared-hit' },
-    });
-  }
-
-  // Every real network attempt counts against api-football's daily quota
-  // (including retries and error responses), so record it as such.
-  recordUpstreamCall();
-
-  const res = await fetch(`${AF_BASE}${path}`, {
-    headers: afHeaders(),
-    // Keep Next's own per-instance fetch cache too, as a fast first line of
-    // defense between Firestore reads for the same instance/request tree.
-    // Always uses the long window — the per-instance cache is just a cheap
-    // pre-filter in front of the shared Firestore cache, which is what
-    // actually enforces `ttlSeconds` for freshness decisions.
-    next: { revalidate: AF_CACHE_TTL_SECONDS },
+  // Memoized core returns plain data (a Response body can only be consumed
+  // once, so the memo must not hand the same Response to two callers).
+  const r = await fetchAFCore(path, ttlSeconds, retries, delayMs);
+  return new Response(r.body, {
+    status: r.status,
+    headers: { 'content-type': 'application/json', 'x-af-cache': r.source },
   });
-
-  if (res.status === 429 && retries > 0) {
-    await new Promise(r => setTimeout(r, delayMs));
-    return fetchAF(path, ttlSeconds, retries - 1, delayMs * 2);
-  }
-
-  if (res.ok) {
-    const body = await res.clone().text();
-    let shouldCache = false;
-    try {
-      const parsed = JSON.parse(body) as { errors?: unknown };
-      // Don't cache error bodies (bad/expired key, daily quota exhausted,
-      // plan restrictions, etc.) — api-football returns these with HTTP 200,
-      // and freezing them into the shared cache for an hour would mean every
-      // instance keeps serving "quota exceeded" long after it actually clears.
-      shouldCache = !hasBodyErrors(parsed.errors);
-    } catch {
-      // Non-JSON body — don't cache it.
-    }
-    if (shouldCache) void writeCachedAF(path, res.status, body);
-  }
-
-  return res;
 }
 
 /** Derive api-football season year from current date (European calendar). */

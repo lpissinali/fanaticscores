@@ -130,6 +130,10 @@ function mapFixtureToDoc(f, now) {
         status,
         minute,
         kickoff: status === 'SCHEDULED' ? formatKickoff(f.fixture.date) : undefined,
+        // Raw ISO so clients can show the kickoff in the *viewer's* timezone —
+        // formatKickoff above runs in the Cloud Function (UTC), which showed
+        // every visitor UTC times (2h off for CEST, 3h for Brasília, etc).
+        kickoffIso: status === 'SCHEDULED' ? f.fixture.date : undefined,
         home: mapTeam(f.teams.home, f.goals.home),
         away: mapTeam(f.teams.away, f.goals.away),
     };
