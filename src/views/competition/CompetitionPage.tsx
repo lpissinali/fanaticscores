@@ -74,7 +74,7 @@ function StandingRows({ rows, locale }: { rows: CompStandingRow[]; locale: strin
     <>
       <div className={styles.tableHead}>
         <span className={styles.colPos}>#</span>
-        <span className={styles.colTeam}>Club</span>
+        <span className={styles.colTeam}>Team</span>
         <span className={styles.colNum}>P</span>
         <span className={styles.colNum}>W</span>
         <span className={styles.colNum}>D</span>

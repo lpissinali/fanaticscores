@@ -227,7 +227,9 @@
   text-decoration: none;
 }
 
-.colTeam:hover {
+/* Team name highlights on row hover — scoped to rows so the "Team" header
+   label (which shares .colTeam for grid alignment) stays uncolored. */
+.tableRow:hover .colTeam {
   color: var(--orange);
 }
 .colNum { text-align: center; font-family: var(--font-jetbrains-mono), monospace; font-size: 11px; }
