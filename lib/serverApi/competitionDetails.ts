@@ -30,7 +30,13 @@ export interface CompStandingRow {
   updatedAt?: string | null;
 }
 
-export interface CompStandingGroup { name: string; rows: CompStandingRow[]; }
+export interface CompStandingGroup {
+  name: string;
+  rows: CompStandingRow[];
+  /** True for the cross-group "Best 3rd Place" ranking — shown in the main
+   *  standings section but excluded from the Group Leaders rail. */
+  isAggregate?: boolean;
+}
 
 export interface CompScorer {
   playerName: string; nationality: string; teamName: string; teamShort: string;
@@ -189,13 +195,17 @@ async function fetchStandingsForSeason(leagueId: number, season: number, ttlSeco
 
     // Multi-group comps (WC, EURO…): api-football prefixes names with
     // "Group Stage - " AND appends an extra aggregate table named just
-    // "Group Stage" (overall/best-third ranking). Strip the prefix and drop
-    // the aggregate — it duplicated every team (breaking the overlay's
-    // one-row-per-team assumption) and showed a bogus extra row in the UI.
+    // "Group Stage" (the best-third-placed ranking, 12 rows for the WC).
+    // Strip the prefix and FLAG the aggregate — it stays visible in the
+    // standings section but is rebuilt from our recomputed groups (see
+    // buildThirdPlaceTable) and excluded from the Group Leaders rail.
     if (groups.length > 1) {
-      groups = groups
-        .map(g => ({ ...g, name: g.name.replace(/^Group Stage\s*[-–—:]\s*/i, '').trim() }))
-        .filter(g => g.name !== '' && !/^group stage$/i.test(g.name));
+      groups = groups.map(g => {
+        const name = g.name.replace(/^Group Stage\s*[-–—:]\s*/i, '').trim();
+        return name === '' || /^group stage$/i.test(name)
+          ? { ...g, name: 'Best 3rd Place', isAggregate: true }
+          : { ...g, name };
+      });
     }
 
     const champion = allTables[0].find(r => r.rank === 1) ?? null;
@@ -259,75 +269,103 @@ async function fetchFixtures(leagueId: number, season: number, isCup = false, tt
   } catch { return { upcoming: [], recent: [] }; }
 }
 
-// ── Standings overlay ─────────────────────────────────────────────────────────
+// ── Group-table recomputation ─────────────────────────────────────────────────
+//
+// Why recompute instead of trusting (or patching) api-football's tables:
+// their WC standings lag hours behind full time, AND their per-row `update`
+// stamps are unreliable — observed: a row updated with a 02:00 UTC result
+// while still stamped 00:00 UTC. That makes any stamp-based "apply missing
+// results" overlay either double-count or do nothing. So for multi-group
+// competitions we use AF standings only for group MEMBERSHIP, and rebuild
+// every row's stats from the season's fixture list — which is fresh (live
+// TTL while matches run) and can't double-count by construction.
 
 const FINISHED_SHORTS = new Set(['FT', 'AET', 'PEN', 'AWD', 'WO']);
 
-/**
- * api-football recomputes standings tables on a slow cadence (observed during
- * the 2026 World Cup: once a day at 00:00 UTC), so a match can be full-time
- * while the official table still predates it. Bridge that gap by folding the
- * finished fixtures we already fetched for the results rail into the table —
- * zero extra upstream calls.
- *
- * Double-count guard, PER ROW: api-football stamps each row with its own
- * `update` time and rows refresh at different moments (a row that already
- * includes a result carries a stamp after that match's kickoff). So each
- * side of a fixture is applied only to a row whose own stamp predates the
- * kickoff — api-football cannot have counted a match that started after it
- * recomputed that row. Rows without a usable stamp are left untouched
- * (skipping is always safe; doubling never is).
- */
-function overlayRecentResults(
-  groups: CompStandingGroup[],
-  recent: CompFixture[],
-  tableUpdatedAt: string | null,
-): CompStandingGroup[] {
-  const tableMs = tableUpdatedAt ? Date.parse(tableUpdatedAt) : NaN;
+interface SeasonResult {
+  round: string; utcDate: string; status: string;
+  homeId: string; awayId: string;
+  homeGoals: number | null; awayGoals: number | null;
+}
 
+/** One call for the whole season's fixtures (104 for the WC) — shared-cached. */
+async function fetchSeasonResults(leagueId: number, season: number, ttlSeconds?: number): Promise<SeasonResult[]> {
+  try {
+    const res = await fetchAF(`/fixtures?league=${leagueId}&season=${season}`, ttlSeconds);
+    if (!res.ok) return [];
+    const json = await res.json() as { response: AFFixtureRaw[]; errors: unknown };
+    if (hasBodyErrors(json.errors)) return [];
+    return (json.response ?? []).map(f => ({
+      round: f.league.round ?? '', utcDate: f.fixture.date, status: f.fixture.status.short,
+      homeId: String(f.teams.home.id), awayId: String(f.teams.away.id),
+      homeGoals: f.goals.home, awayGoals: f.goals.away,
+    }));
+  } catch { return []; }
+}
+
+const rankRows = (rows: CompStandingRow[]): void => {
+  rows.sort((x, y) =>
+    y.points - x.points || y.goalDifference - x.goalDifference ||
+    y.goalsFor - x.goalsFor || x.teamName.localeCompare(y.teamName));
+  rows.forEach((r, i) => { r.position = i + 1; });
+};
+
+/** Rebuild every non-aggregate group's stats from finished group-stage results. */
+function recomputeGroupTables(groups: CompStandingGroup[], results: SeasonResult[]): void {
   const rowByTeam = new Map<string, CompStandingRow>();
-  for (const g of groups) for (const r of g.rows) rowByTeam.set(r.teamId, r);
-
-  const baselineFor = (row: CompStandingRow): number => {
-    const m = row.updatedAt ? Date.parse(row.updatedAt) : NaN;
-    return Number.isFinite(m) ? m : tableMs;
-  };
-
-  const applySide = (row: CompStandingRow | undefined, kickMs: number, gf: number, ga: number): boolean => {
-    if (!row) return false;
-    const baseline = baselineFor(row);
-    if (!Number.isFinite(baseline) || kickMs < baseline) return false; // already counted (or unknowable)
-    row.played += 1;
-    row.goalsFor += gf;
-    row.goalsAgainst += ga;
-    row.goalDifference = row.goalsFor - row.goalsAgainst;
-    if (gf > ga)      { row.won += 1;  row.points += 3; }
-    else if (gf < ga) { row.lost += 1; }
-    else              { row.draw += 1; row.points += 1; }
-    return true;
-  };
-
-  let changed = false;
-  for (const f of recent) {
-    if (!FINISHED_SHORTS.has(f.status)) continue;
-    const h = f.homeTeam.score;
-    const a = f.awayTeam.score;
-    if (h === null || a === null) continue;
-    const kickMs = Date.parse(f.utcDate);
-    if (!Number.isFinite(kickMs)) continue;
-
-    const appliedHome = applySide(rowByTeam.get(String(f.homeTeam.id)), kickMs, h, a);
-    const appliedAway = applySide(rowByTeam.get(String(f.awayTeam.id)), kickMs, a, h);
-    changed = changed || appliedHome || appliedAway;
-  }
-  if (!changed) return groups;
-
-  // Re-rank with the standard tiebreakers (points, GD, goals for).
   for (const g of groups) {
-    g.rows.sort((x, y) => y.points - x.points || y.goalDifference - x.goalDifference || y.goalsFor - x.goalsFor);
-    g.rows.forEach((r, i) => { r.position = i + 1; });
+    if (g.isAggregate) continue;
+    for (const r of g.rows) {
+      r.played = 0; r.won = 0; r.draw = 0; r.lost = 0;
+      r.goalsFor = 0; r.goalsAgainst = 0; r.goalDifference = 0; r.points = 0;
+      rowByTeam.set(r.teamId, r);
+    }
   }
-  return groups;
+
+  const formByTeam = new Map<string, string[]>();
+  const finished = results
+    .filter(m => /group/i.test(m.round) && FINISHED_SHORTS.has(m.status) && m.homeGoals !== null && m.awayGoals !== null)
+    .sort((a, b) => a.utcDate.localeCompare(b.utcDate));
+
+  for (const m of finished) {
+    const home = rowByTeam.get(m.homeId);
+    const away = rowByTeam.get(m.awayId);
+    if (!home || !away) continue;
+    const h = m.homeGoals as number;
+    const a = m.awayGoals as number;
+
+    home.played += 1; away.played += 1;
+    home.goalsFor += h; home.goalsAgainst += a;
+    away.goalsFor += a; away.goalsAgainst += h;
+    home.goalDifference = home.goalsFor - home.goalsAgainst;
+    away.goalDifference = away.goalsFor - away.goalsAgainst;
+
+    let homeLetter = 'D', awayLetter = 'D';
+    if (h > a)      { home.won += 1;  away.lost += 1; home.points += 3; homeLetter = 'W'; awayLetter = 'L'; }
+    else if (h < a) { away.won += 1;  home.lost += 1; away.points += 3; homeLetter = 'L'; awayLetter = 'W'; }
+    else            { home.draw += 1; away.draw += 1; home.points += 1; away.points += 1; }
+
+    const fh = formByTeam.get(m.homeId) ?? []; fh.push(homeLetter); formByTeam.set(m.homeId, fh);
+    const fa = formByTeam.get(m.awayId) ?? []; fa.push(awayLetter); formByTeam.set(m.awayId, fa);
+  }
+
+  for (const [teamId, row] of rowByTeam) {
+    const letters = formByTeam.get(teamId);
+    row.form = letters && letters.length ? letters.slice(-5).join('') : null;
+  }
+
+  for (const g of groups) {
+    if (!g.isAggregate) rankRows(g.rows);
+  }
+}
+
+/** Cross-group "Best 3rd Place" ranking, built from the recomputed groups. */
+function buildThirdPlaceTable(groups: CompStandingGroup[]): CompStandingGroup | null {
+  const real = groups.filter(g => !g.isAggregate && g.rows.length >= 3);
+  if (real.length < 2) return null;
+  const thirds = real.map(g => ({ ...g.rows[2] }));
+  rankRows(thirds);
+  return { name: 'Best 3rd Place', rows: thirds, isAggregate: true };
 }
 
 // ── Public entry point ────────────────────────────────────────────────────────
@@ -369,7 +407,8 @@ export async function fetchCompetitionDetail(code: string): Promise<CompetitionD
   // everything at short TTLs — live scores on the rail (2 min) and
   // settling standings/scorers (5 min) — instead of serving hour-old data
   // during the most-watched moments. Idle competitions never pay this cost.
-  if (isCompHot(fixtures)) {
+  const hot = isCompHot(fixtures);
+  if (hot) {
     [fixtures, standingsFetch, scorers] = await Promise.all([
       fetchFixtures(leagueId, seasonYear, isCup, AF_LIVE_TTL_SECONDS),
       fetchStandings(code, leagueId, AF_HOT_TTL_SECONDS),
@@ -377,14 +416,23 @@ export async function fetchCompetitionDetail(code: string): Promise<CompetitionD
     ]);
   }
 
-  // Fold results that finished after api-football last recomputed the table
-  // (their standings can lag hours behind full time — observed daily 00:00
-  // UTC recomputes during the World Cup).
-  standingsFetch.groups = overlayRecentResults(
-    standingsFetch.groups,
-    fixtures.recent,
-    standingsFetch.updatedAt,
-  );
+  // Multi-group competitions: rebuild the tables from the season's results
+  // (AF's own group tables lag hours behind full time and their update
+  // stamps are unreliable — see recomputeGroupTables). The aggregate
+  // best-third table is rebuilt from the recomputed groups so it's live too.
+  const realGroups = standingsFetch.groups.filter(g => !g.isAggregate);
+  if (realGroups.length > 1) {
+    const seasonResults = await fetchSeasonResults(
+      leagueId, seasonYear, hot ? AF_LIVE_TTL_SECONDS : undefined);
+    if (seasonResults.length > 0) {
+      recomputeGroupTables(standingsFetch.groups, seasonResults);
+      const thirdPlace = buildThirdPlaceTable(standingsFetch.groups);
+      standingsFetch = {
+        ...standingsFetch,
+        groups: [...realGroups, ...(thirdPlace ? [thirdPlace] : [])],
+      };
+    }
+  }
 
   if (info.season) {
     info.season.currentMatchday = standingsFetch.currentMatchday;

@@ -176,7 +176,10 @@ function SeasonInfoCard({ info }: { info: CompInfo }) {
   );
 }
 
-function TableLeadersCard({ groups }: { groups: CompStandingGroup[] }) {
+function TableLeadersCard({ groups: allGroups }: { groups: CompStandingGroup[] }) {
+  // The aggregate "Best 3rd Place" table belongs in the standings section,
+  // not in the leaders rail (its "leader" is just the current best third).
+  const groups = allGroups.filter(g => !g.isAggregate);
   if (groups.length === 0) return null;
   const isGrouped = groups.length > 1;
   const title = isGrouped ? 'Group Leaders' : 'Top 3';
