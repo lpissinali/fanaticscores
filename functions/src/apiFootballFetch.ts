@@ -229,11 +229,15 @@ function parseRound(round: string): string | undefined {
 
 // ── Next-fetch timing (unchanged from old implementation) ────────────────────
 
-export function calcNextFetch(date: string, hasLive: boolean, hadErrors: boolean, now: number): number {
+export function calcNextFetch(date: string, hasLive: boolean, hadErrors: boolean, now: number, nearKickoff = false): number {
   const today = new Date().toISOString().slice(0, 10);
   if (date < today) return hadErrors ? now + 30 * 60_000 : now + 24 * 3_600_000;
   if (date > today) return now + (hadErrors ? 30 * 60_000 : 2 * 3_600_000);
-  if (hasLive)   return now + 5  * 60_000;   // live: every 5 min
+  // nearKickoff: a fixture kicks off within ~30 min, or kicked off recently
+  // but api-football hasn't flipped its status to live yet. Without it, the
+  // "no live → 30 min" branch could leave the today page showing a match as
+  // scheduled for up to half an hour after the real kickoff.
+  if (hasLive || nearKickoff) return now + 5 * 60_000;
   if (hadErrors) return now + 30 * 60_000;
   return now + 30 * 60_000;                  // no live: every 30 min
 }
@@ -308,6 +312,16 @@ export async function fetchMatchday(date: string, apiKey: string): Promise<Match
 
   const hasLive = liveFx.length > 0;
 
+  // A fixture about to kick off (≤30 min) or recently kicked off but still
+  // marked NS/TBD (api-football flips the status a few minutes late) means
+  // we must poll at the live cadence — see calcNextFetch.
+  const nearKickoff = fixtures.some(f => {
+    const s = f.fixture.status.short;
+    if (s !== 'NS' && s !== 'TBD') return false;
+    const t = new Date(f.fixture.date).getTime();
+    return Number.isFinite(t) && t < now + 30 * 60_000 && t > now - 4 * 3_600_000;
+  });
+
   // Pick the highest-priority featured match.
   let featured: MatchData | null = null;
   const tryGroups = [liveFx, schedFx, finFx];
@@ -330,7 +344,7 @@ export async function fetchMatchday(date: string, apiKey: string): Promise<Match
     hadErrors,
     hasLive,
     fetchedAt:          now,
-    nextFetchAfter:     calcNextFetch(date, hasLive, hadErrors, now),
+    nextFetchAfter:     calcNextFetch(date, hasLive, hadErrors, now, nearKickoff),
     aiBrief:            null,
     aiBriefGeneratedAt: 0,
   };

@@ -165,12 +165,23 @@ async function fetchFixture(matchId: string): Promise<{
       }
     }
 
-    if (isLiveStatus(f.fixture.status.short)) {
-      // Match is in progress: an hour-old snapshot isn't good enough for
-      // live viewers. Re-check the SAME cache entry against the much shorter
-      // live TTL — this triggers a fresh upstream fetch only when the stored
-      // copy is more than AF_LIVE_TTL_SECONDS old, and naturally stops doing
-      // so once the match ends and its status settles into FT/AET/PEN.
+    // Treat as live: status says in-progress, OR the match is inside its
+    // kickoff window (from 30 min before kickoff to ~4h after) while the
+    // cached copy still says scheduled — api-football flips NS→1H a few
+    // minutes late, and an "NS" snapshot cached just before kickoff would
+    // otherwise be served as fresh for up to an hour into the match.
+    const kickoffMs = Date.parse(f.fixture.date);
+    const inKickoffWindow = Number.isFinite(kickoffMs) &&
+      Date.now() > kickoffMs - 30 * 60_000 &&
+      Date.now() < kickoffMs + 4 * 3_600_000;
+
+    if (isLiveStatus(f.fixture.status.short) ||
+        (inKickoffWindow && !FINISHED_SHORTS.has(f.fixture.status.short))) {
+      // Match is (or should be) in progress: an hour-old snapshot isn't good
+      // enough for live viewers. Re-check the SAME cache entry against the
+      // much shorter live TTL — this triggers a fresh upstream fetch only
+      // when the stored copy is more than AF_LIVE_TTL_SECONDS old, and
+      // naturally stops once the match ends and settles into FT/AET/PEN.
       const liveRes = await fetchAF(path, AF_LIVE_TTL_SECONDS);
       if (liveRes.ok) {
         const liveJson = await liveRes.json() as { response: AFFixtureDetail[]; errors: unknown };

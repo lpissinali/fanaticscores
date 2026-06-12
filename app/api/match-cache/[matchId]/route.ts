@@ -78,11 +78,18 @@ export async function GET(
     let f = json.response?.[0];
     if (!f) return NextResponse.json(null, { status: 404 });
 
-    // The hour-old cached copy says the match is in progress → re-read at the
-    // live TTL (120 s) so the studio doesn't seed a stale score. Costs at most
-    // one upstream call per 2 minutes fleet-wide, and only while live.
+    // The cached copy says the match is in progress — or it SHOULD be (inside
+    // its kickoff window but still marked scheduled, since api-football flips
+    // NS→1H a few minutes late) → re-read at the live TTL (120 s) so the
+    // studio doesn't seed a stale score/status.
     const LIVE_SHORTS = new Set(['1H', '2H', 'ET', 'BT', 'P', 'HT']);
-    if (LIVE_SHORTS.has(f.fixture.status.short)) {
+    const FINISHED = new Set(['FT', 'AET', 'PEN', 'AWD', 'WO']);
+    const kickoffMs = Date.parse(f.fixture.date);
+    const inKickoffWindow = Number.isFinite(kickoffMs) &&
+      Date.now() > kickoffMs - 30 * 60_000 &&
+      Date.now() < kickoffMs + 4 * 3_600_000;
+    if (LIVE_SHORTS.has(f.fixture.status.short) ||
+        (inKickoffWindow && !FINISHED.has(f.fixture.status.short))) {
       res = await fetchAF(path, AF_LIVE_TTL_SECONDS);
       if (res.ok) {
         const fresh = await res.json() as typeof json;
