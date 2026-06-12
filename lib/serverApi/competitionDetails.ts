@@ -61,6 +61,7 @@ interface AFStandingsEntry {
   rank: number; group: string | null;
   team: { id: number; name: string; logo: string };
   points: number; goalsDiff: number; form: string | null;
+  update?: string; // when api-football last recomputed this table
   all: { played: number; win: number; draw: number; lose: number; goals: { for: number; against: number } };
 }
 interface AFScorer {
@@ -149,6 +150,8 @@ interface StandingsFetch {
   groups: CompStandingGroup[];
   currentMatchday: number | null;
   winner: { name: string; crest: string | null } | null;
+  /** api-football's own "last recomputed" stamp for this table (see overlay). */
+  updatedAt: string | null;
 }
 
 async function fetchStandingsForSeason(leagueId: number, season: number, ttlSeconds?: number): Promise<StandingsFetch | 'plan_error' | null> {
@@ -185,12 +188,13 @@ async function fetchStandingsForSeason(leagueId: number, season: number, ttlSeco
       groups,
       currentMatchday: parseMatchday(league.round),
       winner: champion ? { name: champion.team.name, crest: champion.team.logo } : null,
+      updatedAt: allTables[0]?.[0]?.update ?? null,
     };
   } catch { return null; }
 }
 
 async function fetchStandings(code: string, leagueId: number, ttlSeconds?: number): Promise<StandingsFetch> {
-  const empty: StandingsFetch = { groups: [], currentMatchday: null, winner: null };
+  const empty: StandingsFetch = { groups: [], currentMatchday: null, winner: null, updatedAt: null };
 
   const calendarYear = new Date().getFullYear();
   const baseSeason   = currentSeason();
@@ -240,6 +244,66 @@ async function fetchFixtures(leagueId: number, season: number, isCup = false, tt
   } catch { return { upcoming: [], recent: [] }; }
 }
 
+// ── Standings overlay ─────────────────────────────────────────────────────────
+
+const FINISHED_SHORTS = new Set(['FT', 'AET', 'PEN', 'AWD', 'WO']);
+
+/**
+ * api-football recomputes standings tables on a slow cadence (observed during
+ * the 2026 World Cup: once a day at 00:00 UTC), so a match can be full-time
+ * while the official table still predates it. Bridge that gap by folding the
+ * finished fixtures we already fetched for the results rail into the table —
+ * zero extra upstream calls.
+ *
+ * Double-count guard: only fixtures that KICKED OFF at/after the table's own
+ * `update` stamp are applied. api-football cannot have counted a match that
+ * started after it computed the table, so applying those is always safe; a
+ * match already reflected in the table always kicked off before the stamp.
+ */
+function overlayRecentResults(
+  groups: CompStandingGroup[],
+  recent: CompFixture[],
+  updatedAt: string | null,
+): CompStandingGroup[] {
+  const updateMs = updatedAt ? Date.parse(updatedAt) : NaN;
+  if (!Number.isFinite(updateMs)) return groups;
+
+  const rowByTeam = new Map<string, CompStandingRow>();
+  for (const g of groups) for (const r of g.rows) rowByTeam.set(r.teamId, r);
+
+  let changed = false;
+  for (const f of recent) {
+    if (!FINISHED_SHORTS.has(f.status)) continue;
+    const h = f.homeTeam.score;
+    const a = f.awayTeam.score;
+    if (h === null || a === null) continue;
+    const kickMs = Date.parse(f.utcDate);
+    if (!Number.isFinite(kickMs) || kickMs < updateMs) continue;
+
+    const home = rowByTeam.get(String(f.homeTeam.id));
+    const away = rowByTeam.get(String(f.awayTeam.id));
+    if (!home || !away) continue;
+
+    home.played += 1; away.played += 1;
+    home.goalsFor += h; home.goalsAgainst += a;
+    away.goalsFor += a; away.goalsAgainst += h;
+    home.goalDifference = home.goalsFor - home.goalsAgainst;
+    away.goalDifference = away.goalsFor - away.goalsAgainst;
+    if (h > a)      { home.won += 1;  away.lost += 1; home.points += 3; }
+    else if (h < a) { away.won += 1;  home.lost += 1; away.points += 3; }
+    else            { home.draw += 1; away.draw += 1; home.points += 1; away.points += 1; }
+    changed = true;
+  }
+  if (!changed) return groups;
+
+  // Re-rank with the standard tiebreakers (points, GD, goals for).
+  for (const g of groups) {
+    g.rows.sort((x, y) => y.points - x.points || y.goalDifference - x.goalDifference || y.goalsFor - x.goalsFor);
+    g.rows.forEach((r, i) => { r.position = i + 1; });
+  }
+  return groups;
+}
+
 // ── Public entry point ────────────────────────────────────────────────────────
 
 export async function fetchCompetitionDetail(code: string): Promise<CompetitionDetailData | null> {
@@ -286,6 +350,15 @@ export async function fetchCompetitionDetail(code: string): Promise<CompetitionD
       fetchScorers(leagueId, seasonYear, AF_HOT_TTL_SECONDS),
     ]);
   }
+
+  // Fold results that finished after api-football last recomputed the table
+  // (their standings can lag hours behind full time — observed daily 00:00
+  // UTC recomputes during the World Cup).
+  standingsFetch.groups = overlayRecentResults(
+    standingsFetch.groups,
+    fixtures.recent,
+    standingsFetch.updatedAt,
+  );
 
   if (info.season) {
     info.season.currentMatchday = standingsFetch.currentMatchday;
