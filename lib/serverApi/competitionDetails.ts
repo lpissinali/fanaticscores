@@ -25,6 +25,9 @@ export interface CompStandingRow {
   played: number; won: number; draw: number; lost: number;
   goalsFor: number; goalsAgainst: number; goalDifference: number;
   points: number; form: string | null;
+  /** api-football's per-ROW "last recomputed" stamp — rows update at
+   *  different times, so the overlay guard must check each row's own stamp. */
+  updatedAt?: string | null;
 }
 
 export interface CompStandingGroup { name: string; rows: CompStandingRow[]; }
@@ -172,7 +175,7 @@ async function fetchStandingsForSeason(leagueId: number, season: number, ttlSeco
     const allTables = league.standings ?? [];
     if (allTables.length === 0 || allTables[0].length === 0) return null;
 
-    const groups: CompStandingGroup[] = allTables.map(table => ({
+    let groups: CompStandingGroup[] = allTables.map(table => ({
       name: table[0]?.group ?? '',
       rows: table.map((r): CompStandingRow => ({
         position: r.rank, teamId: String(r.team.id), teamName: r.team.name,
@@ -180,8 +183,20 @@ async function fetchStandingsForSeason(leagueId: number, season: number, ttlSeco
         played: r.all.played, won: r.all.win, draw: r.all.draw, lost: r.all.lose,
         goalsFor: r.all.goals.for, goalsAgainst: r.all.goals.against,
         goalDifference: r.goalsDiff, points: r.points, form: r.form ?? null,
+        updatedAt: r.update ?? null,
       })),
     }));
+
+    // Multi-group comps (WC, EURO…): api-football prefixes names with
+    // "Group Stage - " AND appends an extra aggregate table named just
+    // "Group Stage" (overall/best-third ranking). Strip the prefix and drop
+    // the aggregate — it duplicated every team (breaking the overlay's
+    // one-row-per-team assumption) and showed a bogus extra row in the UI.
+    if (groups.length > 1) {
+      groups = groups
+        .map(g => ({ ...g, name: g.name.replace(/^Group Stage\s*[-–—:]\s*/i, '').trim() }))
+        .filter(g => g.name !== '' && !/^group stage$/i.test(g.name));
+    }
 
     const champion = allTables[0].find(r => r.rank === 1) ?? null;
     return {
@@ -255,21 +270,42 @@ const FINISHED_SHORTS = new Set(['FT', 'AET', 'PEN', 'AWD', 'WO']);
  * finished fixtures we already fetched for the results rail into the table —
  * zero extra upstream calls.
  *
- * Double-count guard: only fixtures that KICKED OFF at/after the table's own
- * `update` stamp are applied. api-football cannot have counted a match that
- * started after it computed the table, so applying those is always safe; a
- * match already reflected in the table always kicked off before the stamp.
+ * Double-count guard, PER ROW: api-football stamps each row with its own
+ * `update` time and rows refresh at different moments (a row that already
+ * includes a result carries a stamp after that match's kickoff). So each
+ * side of a fixture is applied only to a row whose own stamp predates the
+ * kickoff — api-football cannot have counted a match that started after it
+ * recomputed that row. Rows without a usable stamp are left untouched
+ * (skipping is always safe; doubling never is).
  */
 function overlayRecentResults(
   groups: CompStandingGroup[],
   recent: CompFixture[],
-  updatedAt: string | null,
+  tableUpdatedAt: string | null,
 ): CompStandingGroup[] {
-  const updateMs = updatedAt ? Date.parse(updatedAt) : NaN;
-  if (!Number.isFinite(updateMs)) return groups;
+  const tableMs = tableUpdatedAt ? Date.parse(tableUpdatedAt) : NaN;
 
   const rowByTeam = new Map<string, CompStandingRow>();
   for (const g of groups) for (const r of g.rows) rowByTeam.set(r.teamId, r);
+
+  const baselineFor = (row: CompStandingRow): number => {
+    const m = row.updatedAt ? Date.parse(row.updatedAt) : NaN;
+    return Number.isFinite(m) ? m : tableMs;
+  };
+
+  const applySide = (row: CompStandingRow | undefined, kickMs: number, gf: number, ga: number): boolean => {
+    if (!row) return false;
+    const baseline = baselineFor(row);
+    if (!Number.isFinite(baseline) || kickMs < baseline) return false; // already counted (or unknowable)
+    row.played += 1;
+    row.goalsFor += gf;
+    row.goalsAgainst += ga;
+    row.goalDifference = row.goalsFor - row.goalsAgainst;
+    if (gf > ga)      { row.won += 1;  row.points += 3; }
+    else if (gf < ga) { row.lost += 1; }
+    else              { row.draw += 1; row.points += 1; }
+    return true;
+  };
 
   let changed = false;
   for (const f of recent) {
@@ -278,21 +314,11 @@ function overlayRecentResults(
     const a = f.awayTeam.score;
     if (h === null || a === null) continue;
     const kickMs = Date.parse(f.utcDate);
-    if (!Number.isFinite(kickMs) || kickMs < updateMs) continue;
+    if (!Number.isFinite(kickMs)) continue;
 
-    const home = rowByTeam.get(String(f.homeTeam.id));
-    const away = rowByTeam.get(String(f.awayTeam.id));
-    if (!home || !away) continue;
-
-    home.played += 1; away.played += 1;
-    home.goalsFor += h; home.goalsAgainst += a;
-    away.goalsFor += a; away.goalsAgainst += h;
-    home.goalDifference = home.goalsFor - home.goalsAgainst;
-    away.goalDifference = away.goalsFor - away.goalsAgainst;
-    if (h > a)      { home.won += 1;  away.lost += 1; home.points += 3; }
-    else if (h < a) { away.won += 1;  home.lost += 1; away.points += 3; }
-    else            { home.draw += 1; away.draw += 1; home.points += 1; away.points += 1; }
-    changed = true;
+    const appliedHome = applySide(rowByTeam.get(String(f.homeTeam.id)), kickMs, h, a);
+    const appliedAway = applySide(rowByTeam.get(String(f.awayTeam.id)), kickMs, a, h);
+    changed = changed || appliedHome || appliedAway;
   }
   if (!changed) return groups;
 
