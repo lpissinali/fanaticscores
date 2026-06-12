@@ -9,6 +9,7 @@ import Icon from '@/src/components/shared/Icon/Icon';
 import styles from '@/src/views/match/MatchPage.module.css';
 import MobileBottomNav from '@/src/components/shared/MobileBottomNav/MobileBottomNav';
 import LocalKickoff from '@/src/components/shared/LocalKickoff/LocalKickoff';
+import LiveRefresh from '@/src/components/shared/LiveRefresh/LiveRefresh';
 import Link from 'next/link';
 
 interface Props { params: Promise<{ matchId: string }> }
@@ -379,6 +380,18 @@ export default async function MatchPage({ params }: Props) {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb).replace(/</g, '\\u003c') }} />
+      {/* Auto-update score/minute/events while the match is (or should be) in
+          progress — refresh re-runs the server render; upstream stays capped
+          by the 2-min live TTL regardless of viewer count. */}
+      <LiveRefresh
+        active={
+          d.status === 'LIVE' || d.status === 'HT' ||
+          (Number.isFinite(kickoffTs) &&
+            Date.now() > kickoffTs - 30 * 60_000 &&
+            Date.now() < kickoffTs + 4 * 3_600_000 &&
+            !['FT', 'AET', 'PEN', 'POSTPONED', 'CANCELLED'].includes(d.status))
+        }
+      />
       <div className={styles.desktopOnly}>
         <div className={styles.desktop}>
           <Sidebar locale="en" />

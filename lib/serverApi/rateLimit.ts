@@ -36,8 +36,12 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
 // ── Tunables ────────────────────────────────────────────────────────────────
 
-/** Max distinct detail-page requests permitted per client IP per window. */
-const LIMIT = 100;
+/** Max distinct detail-page requests permitted per client IP per window.
+ *  Sized so a real fan never trips it: LiveRefresh re-renders a live match
+ *  page every 60s (≈60 req/h) on top of normal browsing. Enumeration
+ *  scrapers walk novel IDs far faster than this, and the daily budget
+ *  breaker (dailyBudget.ts) remains the hard quota backstop. */
+const LIMIT = 300;
 
 /** Length of the fixed counting window, in seconds (1 hour). */
 const WINDOW_SECONDS = 3600;

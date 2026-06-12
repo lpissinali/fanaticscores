@@ -14,6 +14,7 @@ import RailPromo from '@/src/components/shared/RailPromo/RailPromo';
 import MobileBottomNav from '@/src/components/shared/MobileBottomNav/MobileBottomNav';
 import Icon from '@/src/components/shared/Icon/Icon';
 import LocalKickoff from '@/src/components/shared/LocalKickoff/LocalKickoff';
+import LiveRefresh from '@/src/components/shared/LiveRefresh/LiveRefresh';
 import styles from '@/src/views/competition/CompetitionPage.module.css';
 import Link from 'next/link';
 
@@ -274,6 +275,9 @@ function ScorersSection({ scorers, compact = false }: { scorers: CompScorer[]; c
   );
 }
 
+const FINISHED_UI = new Set(['FT', 'AET', 'PEN', 'AWD', 'WO']);
+const LIVE_UI = new Set(['1H', '2H', 'ET', 'BT', 'P', 'HT']);
+
 function FixtureSection({ title, fixtures }: { title: string; fixtures: CompFixture[] }) {
   if (!fixtures || fixtures.length === 0) return null;
   return (
@@ -281,12 +285,24 @@ function FixtureSection({ title, fixtures }: { title: string; fixtures: CompFixt
       <h2 className={styles.sectionTitle}>{title}</h2>
       <div className={styles.matchList}>
         {fixtures.map(f => {
-          const isScheduled = f.homeTeam.score === null || f.awayTeam.score === null;
+          const isFinished = FINISHED_UI.has(f.status);
+          const isLive = LIVE_UI.has(f.status);
+          const isScheduled = !isFinished && !isLive;
+          // Finished → "FT" (or AET/PEN); live → "LIVE"; else date + time.
+          const finishedLabel = f.status === 'AET' || f.status === 'PEN' ? f.status : 'FT';
           return (
             <Link key={f.id} href={`/en/match/${f.id}`} className={styles.fixtureRow} style={{ textDecoration: 'none' }}>
               <div className={styles.dateCell}>
-                <span className={styles.dateText}><LocalKickoff iso={f.utcDate} mode="date" /></span>
-                {isScheduled && <span className={styles.timeText}><LocalKickoff iso={f.utcDate} /></span>}
+                {isFinished ? (
+                  <span className={styles.dateText}>{finishedLabel}</span>
+                ) : isLive ? (
+                  <span className={styles.dateText} style={{ color: 'var(--orange)', fontWeight: 700 }}>LIVE</span>
+                ) : (
+                  <>
+                    <span className={styles.dateText}><LocalKickoff iso={f.utcDate} mode="date" /></span>
+                    <span className={styles.timeText}><LocalKickoff iso={f.utcDate} /></span>
+                  </>
+                )}
               </div>
               <span className={[styles.teamName, styles.teamNameRight].join(' ')}>{f.homeTeam.name}</span>
               <img src={f.homeTeam.crest} alt={f.homeTeam.name} className={styles.teamCrest} width={20} height={20} />
@@ -361,10 +377,16 @@ export default async function CompetitionPage({ params }: Props) {
     ],
   };
 
+  const hasLiveFixture = [...d.upcomingFixtures, ...d.recentResults]
+    .some(f => LIVE_UI.has(f.status));
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb).replace(/</g, '\\u003c') }} />
+      {/* Keep LIVE rows / scores / standings moving while matches run —
+          server re-render; upstream capped by the hot/live TTLs. */}
+      <LiveRefresh active={hasLiveFixture} intervalMs={90_000} />
 
       {/* ── DESKTOP ─────────────────────────────────────── */}
       <div className={styles.desktopOnly}>
