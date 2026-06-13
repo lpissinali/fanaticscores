@@ -4,7 +4,7 @@
  * Used by the /en/competition/[compCode] Server Component.
  */
 
-import { fetchAF, hasBodyErrors, currentSeason, COMP_CODE_TO_LEAGUE_ID, CUP_CODES, AF_LIVE_TTL_SECONDS, AF_HOT_TTL_SECONDS, AF_SCORERS_TTL_SECONDS } from './config';
+import { fetchAF, hasBodyErrors, currentSeason, COMP_CODE_TO_LEAGUE_ID, CUP_CODES, AF_LIVE_TTL_SECONDS, AF_HOT_TTL_SECONDS, AF_SCORERS_TTL_SECONDS, AF_STABLE_TTL_SECONDS } from './config';
 import { isRateLimited } from './rateLimit';
 import { isDailyBudgetExhausted } from './dailyBudget';
 
@@ -283,9 +283,18 @@ async function fetchFixtures(leagueId: number, season: number, isCup = false, tt
 const FINISHED_SHORTS = new Set(['FT', 'AET', 'PEN', 'AWD', 'WO']);
 
 interface SeasonResult {
+  fixtureId: number;
   round: string; utcDate: string; status: string;
   homeId: string; awayId: string;
   homeGoals: number | null; awayGoals: number | null;
+}
+
+interface AFEventRaw {
+  team: { id: number; name: string; logo: string };
+  player: { id: number; name: string };
+  assist: { id: number | null; name: string | null };
+  type: string;   // "Goal" | "Card" | "subst" | ...
+  detail: string; // "Normal Goal" | "Own Goal" | "Penalty" | ...
 }
 
 /** One call for the whole season's fixtures (104 for the WC) — shared-cached. */
@@ -296,6 +305,7 @@ async function fetchSeasonResults(leagueId: number, season: number, ttlSeconds?:
     const json = await res.json() as { response: AFFixtureRaw[]; errors: unknown };
     if (hasBodyErrors(json.errors)) return [];
     return (json.response ?? []).map(f => ({
+      fixtureId: f.fixture.id,
       round: f.league.round ?? '', utcDate: f.fixture.date, status: f.fixture.status.short,
       homeId: String(f.teams.home.id), awayId: String(f.teams.away.id),
       homeGoals: f.goals.home, awayGoals: f.goals.away,
@@ -368,10 +378,218 @@ function buildThirdPlaceTable(groups: CompStandingGroup[]): CompStandingGroup | 
   return { name: 'Best 3rd Place', rows: thirds, isAggregate: true };
 }
 
+// ── Events-based scorer computation ──────────────────────────────────────────
+//
+// AF's /players/topscorers endpoint lags match events by 1–3 hours after FT —
+// the same problem as their standings tables, which we already fix by
+// recomputing from season results. For multi-group competitions (WC, EURO…)
+// we do the same for scorers: fetch each finished match's events at a stable
+// TTL (events never change once a match ends), aggregate goals + assists per
+// player, and sort. This gives accurate, real-time scorer stats that update
+// the moment AF writes the fixture events (usually within minutes of FT).
+
+async function fetchMatchEvents(fixtureId: number, ttlSeconds: number): Promise<AFEventRaw[]> {
+  try {
+    const res = await fetchAF(`/fixtures/events?fixture=${fixtureId}`, ttlSeconds);
+    if (!res.ok) return [];
+    const json = await res.json() as { response: AFEventRaw[]; errors: unknown };
+    if (hasBodyErrors(json.errors)) return [];
+    return json.response ?? [];
+  } catch { return []; }
+}
+
+interface ScorerAccum {
+  playerName: string; teamName: string; teamCrest: string;
+  goals: number; assists: number; penalties: number;
+}
+
+function buildScorersFromEvents(
+  results: SeasonResult[],
+  eventsByFixture: Map<number, AFEventRaw[]>,
+): CompScorer[] {
+  // Only count goals from active (live or finished) matches
+  const ACTIVE = new Set([...FINISHED_SHORTS, ...LIVE_SHORTS]);
+
+  const map = new Map<number, ScorerAccum>(); // keyed by AF player ID
+
+  for (const result of results) {
+    if (!ACTIVE.has(result.status)) continue;
+    const events = eventsByFixture.get(result.fixtureId) ?? [];
+
+    for (const e of events) {
+      if (e.type !== 'Goal' || e.detail === 'Own Goal') continue;
+
+      // Goal scorer
+      const pid = e.player.id;
+      if (!map.has(pid)) {
+        map.set(pid, {
+          playerName: e.player.name, teamName: e.team.name, teamCrest: e.team.logo,
+          goals: 0, assists: 0, penalties: 0,
+        });
+      }
+      const s = map.get(pid)!;
+      s.goals += 1;
+      if (e.detail === 'Penalty') s.penalties += 1;
+
+      // Assist (may be null)
+      if (e.assist.id != null) {
+        const aid = e.assist.id;
+        if (!map.has(aid)) {
+          map.set(aid, {
+            playerName: e.assist.name ?? 'Unknown', teamName: e.team.name, teamCrest: e.team.logo,
+            goals: 0, assists: 0, penalties: 0,
+          });
+        }
+        map.get(aid)!.assists += 1;
+      }
+    }
+  }
+
+  return [...map.values()]
+    .sort((a, b) => b.goals - a.goals || b.assists - a.assists || a.playerName.localeCompare(b.playerName))
+    .map(s => ({
+      playerName: s.playerName,
+      nationality: '',            // not available from events; not shown in the UI
+      teamName: s.teamName,
+      teamShort: toShort(s.teamName),
+      teamCrest: s.teamCrest,
+      goals: s.goals,
+      assists: s.assists > 0 ? s.assists : null,
+      penalties: s.penalties > 0 ? s.penalties : null,
+      playedMatches: 0,           // not derivable from events without extra calls
+    }));
+}
+
 // ── Public entry point ────────────────────────────────────────────────────────
 
 export async function fetchCompetitionDetail(code: string): Promise<CompetitionDetailData | null> {
   const leagueId = COMP_CODE_TO_LEAGUE_ID[code];
+  if (!leagueId) return null;
+
+  if (await isRateLimited()) return null;
+  if (await isDailyBudgetExhausted()) return null;
+
+  const [info, standingsFirst] = await Promise.all([
+    fetchCompInfo(code, leagueId),
+    fetchStandings(code, leagueId),
+  ]);
+
+  if (!info) return null;
+
+  const seasonYear = info.season?.startDate
+    ? parseInt(info.season.startDate.slice(0, 4), 10)
+    : currentSeason();
+
+  const isCup = CUP_CODES.has(code);
+
+  // Step 1: fetch fixtures at the default TTL to determine hotness.
+  const fixtures0 = await fetchFixtures(leagueId, seasonYear, isCup);
+  const hot = isCompHot(fixtures0);
+
+  // For multi-group competitions (WC, EURO…) skip /players/topscorers —
+  // we recompute scorers from match events below instead.
+  const isMultiGroup = standingsFirst.groups.filter(g => !g.isAggregate).length > 1;
+
+  let [fixtures, standingsFetch, scorers] = await Promise.all([
+    hot
+      ? fetchFixtures(leagueId, seasonYear, isCup, AF_LIVE_TTL_SECONDS)
+      : Promise.resolve(fixtures0),
+    hot
+      ? fetchStandings(code, leagueId, AF_HOT_TTL_SECONDS)
+      : Promise.resolve(standingsFirst),
+    isMultiGroup
+      ? Promise.resolve([] as CompScorer[])
+      : fetchScorers(leagueId, seasonYear, hot ? AF_HOT_TTL_SECONDS : AF_SCORERS_TTL_SECONDS),
+  ]);
+
+  // Multi-group competitions: rebuild standings AND scorers from season data.
+  const realGroups = standingsFetch.groups.filter(g => !g.isAggregate);
+  if (realGroups.length > 1) {
+    const seasonResults = await fetchSeasonResults(
+      leagueId, seasonYear, hot ? AF_LIVE_TTL_SECONDS : undefined);
+
+    if (seasonResults.length > 0) {
+      recomputeGroupTables(standingsFetch.groups, seasonResults);
+      const thirdPlace = buildThirdPlaceTable(standingsFetch.groups);
+      standingsFetch = {
+        ...standingsFetch,
+        groups: [...realGroups, ...(thirdPlace ? [thirdPlace] : [])],
+      };
+
+      // Compute scorers from per-match events instead of /players/topscorers.
+      // Finished-match events are immutable → cached at 7-day TTL (one
+      // upstream call per match, ever). Live events use 2-min TTL.
+      const activeFixtures = seasonResults.filter(
+        r => FINISHED_SHORTS.has(r.status) || LIVE_SHORTS.has(r.status),
+      );
+      if (activeFixtures.length > 0) {
+        const eventPairs = await Promise.all(
+          activeFixtures.map(async r => {
+            const ttl = LIVE_SHORTS.has(r.status) ? AF_LIVE_TTL_SECONDS : AF_STABLE_TTL_SECONDS;
+            const events = await fetchMatchEvents(r.fixtureId, ttl);
+            return [r.fixtureId, events] as const;
+          }),
+        );
+        const eventsByFixture = new Map(eventPairs);
+        const eventsScorers = buildScorersFromEvents(seasonResults, eventsByFixture);
+        if (eventsScorers.length > 0) scorers = eventsScorers;
+      }
+    }
+  }
+
+  if (info.season) {
+    info.season.currentMatchday = standingsFetch.currentMatchday;
+    const topRow    = standingsFetch.groups[0]?.rows[0];
+    const seasonOver = topRow && topRow.played >= 34;
+    if (seasonOver) info.season.winner = standingsFetch.winner;
+  }
+
+  return {
+    info, standingGroups: standingsFetch.groups,
+    scorers, upcomingFixtures: fixtures.upcoming, recentResults: fixtures.recent,
+  };
+}
+      recomputeGroupTables(standingsFetch.groups, seasonResults);
+      const thirdPlace = buildThirdPlaceTable(standingsFetch.groups);
+      standingsFetch = {
+        ...standingsFetch,
+        groups: [...realGroups, ...(thirdPlace ? [thirdPlace] : [])],
+      };
+
+      // Scorer recompute from events
+      const activeFixtures = seasonResults.filter(
+        r => FINISHED_SHORTS.has(r.status) || LIVE_SHORTS.has(r.status),
+      );
+      if (activeFixtures.length > 0) {
+        const eventPairs = await Promise.all(
+          activeFixtures.map(async r => {
+            // Finished-match events never change → stable 7-day TTL.
+            // Live-match events update as goals come in → live 2-min TTL.
+            const ttl = LIVE_SHORTS.has(r.status) ? AF_LIVE_TTL_SECONDS : AF_STABLE_TTL_SECONDS;
+            const events = await fetchMatchEvents(r.fixtureId, ttl);
+            return [r.fixtureId, events] as const;
+          }),
+        );
+        const eventsByFixture = new Map(eventPairs);
+        const eventsScorers = buildScorersFromEvents(seasonResults, eventsByFixture);
+        if (eventsScorers.length > 0) scorers = eventsScorers;
+      }
+    }
+  }
+
+  if (info.season) {
+    info.season.currentMatchday = standingsFetch.currentMatchday;
+    const topRow    = standingsFetch.groups[0]?.rows[0];
+    const seasonOver = topRow && topRow.played >= 34;
+    if (seasonOver) info.season.winner = standingsFetch.winner;
+  }
+
+  return {
+    info, standingGroups: standingsFetch.groups,
+    scorers, upcomingFixtures: fixtures.upcoming, recentResults: fixtures.recent,
+  };
+}
+COMP_CODE_TO_LEAGUE_ID[code];
   if (!leagueId) return null;
 
   // Behavioral rate limit: deny enumeration scrapers before spending any
@@ -404,37 +622,66 @@ export async function fetchCompetitionDetail(code: string): Promise<CompetitionD
   const fixtures0 = await fetchFixtures(leagueId, seasonYear, isCup);
   const hot = isCompHot(fixtures0);
 
+  // Determine ahead of time whether this is a multi-group competition
+  // (WC, EURO…) so we can skip the AF topscorers endpoint — for those
+  // competitions we recompute scorers from match events instead (same
+  // rationale as the standings recompute: AF's aggregate endpoints lag
+  // 1–3 hours after FT, but fixture events are available within minutes).
+  const isMultiGroup = standingsFirst.groups.filter(g => !g.isAggregate).length > 1;
+
   // Step 2: fetch everything else at the right TTL in one parallel batch.
-  // Scorers are fetched ONCE, at the correct TTL, avoiding the previous
-  // two-phase pattern where a cold-path write could make the hot re-read
-  // return stale data (the hot TTL check sees a freshly-written entry and
-  // skips the upstream call, so the scorers stay as stale as AF returned
-  // them during the cold path — a false "cache hit" at 5 min TTL).
-  const [fixtures, standingsFetch, scorers] = await Promise.all([
+  // For multi-group competitions, skip /players/topscorers — we'll build
+  // from events below. For single-group (PL, CL…) the AF endpoint is fine.
+  let [fixtures, standingsFetch, scorers] = await Promise.all([
     hot
       ? fetchFixtures(leagueId, seasonYear, isCup, AF_LIVE_TTL_SECONDS)
       : Promise.resolve(fixtures0),
     hot
       ? fetchStandings(code, leagueId, AF_HOT_TTL_SECONDS)
       : Promise.resolve(standingsFirst),
-    fetchScorers(leagueId, seasonYear, hot ? AF_HOT_TTL_SECONDS : AF_SCORERS_TTL_SECONDS),
+    isMultiGroup
+      ? Promise.resolve([] as CompScorer[])
+      : fetchScorers(leagueId, seasonYear, hot ? AF_HOT_TTL_SECONDS : AF_SCORERS_TTL_SECONDS),
   ]);
 
-  // Multi-group competitions: rebuild the tables from the season's results
-  // (AF's own group tables lag hours behind full time and their update
-  // stamps are unreliable — see recomputeGroupTables). The aggregate
-  // best-third table is rebuilt from the recomputed groups so it's live too.
+  // Multi-group competitions: rebuild standings AND scorers from season data.
+  // • Standings: recomputed from fixture results (AF standings lag by hours).
+  // • Scorers: computed from per-match events — accurate within minutes of FT.
+  //   Finished-match events are immutable → cached at stable 7-day TTL (essentially
+  //   one upstream call per match, ever). Live-match events use 2-min TTL for
+  //   in-progress goal updates.
   const realGroups = standingsFetch.groups.filter(g => !g.isAggregate);
   if (realGroups.length > 1) {
     const seasonResults = await fetchSeasonResults(
       leagueId, seasonYear, hot ? AF_LIVE_TTL_SECONDS : undefined);
+
     if (seasonResults.length > 0) {
+      // Standings recompute
       recomputeGroupTables(standingsFetch.groups, seasonResults);
       const thirdPlace = buildThirdPlaceTable(standingsFetch.groups);
       standingsFetch = {
         ...standingsFetch,
         groups: [...realGroups, ...(thirdPlace ? [thirdPlace] : [])],
       };
+
+      // Scorer recompute from events
+      const activeFixtures = seasonResults.filter(
+        r => FINISHED_SHORTS.has(r.status) || LIVE_SHORTS.has(r.status),
+      );
+      if (activeFixtures.length > 0) {
+        const eventPairs = await Promise.all(
+          activeFixtures.map(async r => {
+            // Finished-match events never change → stable 7-day TTL.
+            // Live-match events update as goals come in → live 2-min TTL.
+            const ttl = LIVE_SHORTS.has(r.status) ? AF_LIVE_TTL_SECONDS : AF_STABLE_TTL_SECONDS;
+            const events = await fetchMatchEvents(r.fixtureId, ttl);
+            return [r.fixtureId, events] as const;
+          }),
+        );
+        const eventsByFixture = new Map(eventPairs);
+        const eventsScorers = buildScorersFromEvents(seasonResults, eventsByFixture);
+        if (eventsScorers.length > 0) scorers = eventsScorers;
+      }
     }
   }
 
