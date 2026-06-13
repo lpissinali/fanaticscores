@@ -34,6 +34,14 @@ export const AF_TEAM_FIXTURES_TTL_SECONDS = 6 * 3600; // a team's recent/upcomin
 export const AF_HOT_TTL_SECONDS = 300;
 
 /**
+ * Default TTL for top-scorers endpoints between match days. Goals scored
+ * change after every match, but api-football updates the table with a delay,
+ * so polling more than every 30 minutes between rounds isn't useful. During
+ * an active match window the hot path overrides this with AF_HOT_TTL_SECONDS.
+ */
+export const AF_SCORERS_TTL_SECONDS = 1800;
+
+/**
  * Short TTL for endpoints backing in-progress matches (fixture status, live
  * stats). Live viewers want near-real-time updates, so once matchDetails.ts
  * has confirmed a match is actually live, it re-checks these endpoints

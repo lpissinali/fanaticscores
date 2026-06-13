@@ -4,7 +4,7 @@
  * Used by the /en/competition/[compCode] Server Component.
  */
 
-import { fetchAF, hasBodyErrors, currentSeason, COMP_CODE_TO_LEAGUE_ID, CUP_CODES, AF_LIVE_TTL_SECONDS, AF_HOT_TTL_SECONDS } from './config';
+import { fetchAF, hasBodyErrors, currentSeason, COMP_CODE_TO_LEAGUE_ID, CUP_CODES, AF_LIVE_TTL_SECONDS, AF_HOT_TTL_SECONDS, AF_SCORERS_TTL_SECONDS } from './config';
 import { isRateLimited } from './rateLimit';
 import { isDailyBudgetExhausted } from './dailyBudget';
 
@@ -398,7 +398,7 @@ export async function fetchCompetitionDetail(code: string): Promise<CompetitionD
   const isCup = CUP_CODES.has(code);
   let [fixtures, scorers] = await Promise.all([
     fetchFixtures(leagueId, seasonYear, isCup),
-    fetchScorers(leagueId, seasonYear),
+    fetchScorers(leagueId, seasonYear, AF_SCORERS_TTL_SECONDS), // 30-min default; hot path overrides to 5 min
   ]);
   let standingsFetch = standingsFirst;
 
