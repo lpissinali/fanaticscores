@@ -39,7 +39,7 @@ export const AF_HOT_TTL_SECONDS = 300;
  * so polling more than every 30 minutes between rounds isn't useful. During
  * an active match window the hot path overrides this with AF_HOT_TTL_SECONDS.
  */
-export const AF_SCORERS_TTL_SECONDS = 1800;
+export const AF_SCORERS_TTL_SECONDS = 900; // 15-min default; hot path overrides to 5 min
 
 /**
  * Short TTL for endpoints backing in-progress matches (fixture status, live

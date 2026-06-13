@@ -104,7 +104,7 @@ function toShort(name: string) {
 // ── Adaptive freshness (PitaCopa-style) ──────────────────────────────────────
 
 const LIVE_SHORTS = new Set(['1H', '2H', 'ET', 'BT', 'P', 'HT']);
-const RECENT_FINISH_MS = 4 * 3_600_000; // standings/scorers settle after FT
+const RECENT_FINISH_MS = 6 * 3_600_000; // AF scorer stats can lag 1-3h post-FT
 const IMMINENT_MS = 30 * 60_000;        // pre-kickoff: catch lineups/state flips
 
 /**
@@ -396,25 +396,29 @@ export async function fetchCompetitionDetail(code: string): Promise<CompetitionD
     : currentSeason();
 
   const isCup = CUP_CODES.has(code);
-  let [fixtures, scorers] = await Promise.all([
-    fetchFixtures(leagueId, seasonYear, isCup),
-    fetchScorers(leagueId, seasonYear, AF_SCORERS_TTL_SECONDS), // 30-min default; hot path overrides to 5 min
-  ]);
-  let standingsFetch = standingsFirst;
 
-  // Adaptive freshness: the hour-fresh fixtures just read tell us whether
-  // this competition is in a match window right now. If so, re-read
-  // everything at short TTLs — live scores on the rail (2 min) and
-  // settling standings/scorers (5 min) — instead of serving hour-old data
-  // during the most-watched moments. Idle competitions never pay this cost.
-  const hot = isCompHot(fixtures);
-  if (hot) {
-    [fixtures, standingsFetch, scorers] = await Promise.all([
-      fetchFixtures(leagueId, seasonYear, isCup, AF_LIVE_TTL_SECONDS),
-      fetchStandings(code, leagueId, AF_HOT_TTL_SECONDS),
-      fetchScorers(leagueId, seasonYear, AF_HOT_TTL_SECONDS),
-    ]);
-  }
+  // Step 1: fetch fixtures at the default TTL to determine whether the
+  // competition is currently in a match window. isCompHot() uses kickoff
+  // times (not cached status), so a 1-hour-old snapshot is accurate enough
+  // to detect hot vs cold — the kickoff time field never changes.
+  const fixtures0 = await fetchFixtures(leagueId, seasonYear, isCup);
+  const hot = isCompHot(fixtures0);
+
+  // Step 2: fetch everything else at the right TTL in one parallel batch.
+  // Scorers are fetched ONCE, at the correct TTL, avoiding the previous
+  // two-phase pattern where a cold-path write could make the hot re-read
+  // return stale data (the hot TTL check sees a freshly-written entry and
+  // skips the upstream call, so the scorers stay as stale as AF returned
+  // them during the cold path — a false "cache hit" at 5 min TTL).
+  const [fixtures, standingsFetch, scorers] = await Promise.all([
+    hot
+      ? fetchFixtures(leagueId, seasonYear, isCup, AF_LIVE_TTL_SECONDS)
+      : Promise.resolve(fixtures0),
+    hot
+      ? fetchStandings(code, leagueId, AF_HOT_TTL_SECONDS)
+      : Promise.resolve(standingsFirst),
+    fetchScorers(leagueId, seasonYear, hot ? AF_HOT_TTL_SECONDS : AF_SCORERS_TTL_SECONDS),
+  ]);
 
   // Multi-group competitions: rebuild the tables from the season's results
   // (AF's own group tables lag hours behind full time and their update
