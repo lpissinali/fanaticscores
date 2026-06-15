@@ -150,11 +150,11 @@ async function fetchFixture(matchId: string): Promise<{
     //    standard hour window — may trigger one upstream call per hour.
     // 3. If that says the match is LIVE, re-read at the live TTL (2 min).
     const res  = await fetchAF(path, AF_STABLE_TTL_SECONDS);
-    if (!res.ok) return null;
+    if (!res.ok) { console.warn(`[fetchFixture] HTTP ${res.status} for ${path}`); return null; }
     const json = await res.json() as { response: AFFixtureDetail[]; errors: unknown };
-    if (hasBodyErrors(json.errors)) return null;
+    if (hasBodyErrors(json.errors)) { console.warn(`[fetchFixture] body errors for ${path}:`, JSON.stringify(json.errors)); return null; }
     let f = json.response?.[0];
-    if (!f) return null;
+    if (!f) { console.warn(`[fetchFixture] empty response for ${path}`); return null; }
 
     if (!FINISHED_SHORTS.has(f.fixture.status.short)) {
       const hourRes = await fetchAF(path);
