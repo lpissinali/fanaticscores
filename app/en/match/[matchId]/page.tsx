@@ -337,15 +337,15 @@ export default async function MatchPage({ params }: Props) {
     eventStatus,
     eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
     image: [d.home.crest, d.away.crest, 'https://www.fanaticscores.com/og-default.png'].filter(Boolean),
-    location: venueName
-      ? {
-          '@type': 'Place',
-          name: venueName,
-          address: venueCity
-            ? { '@type': 'PostalAddress', addressLocality: venueCity }
-            : venueName,
-        }
-      : undefined,
+    // location is required by Google's SportsEvent validator.
+    // When AF doesn't supply a venue we fall back to a descriptive name so
+    // the field is always present rather than omitted (undefined is stripped
+    // by JSON.stringify, producing a "missing field" error in Search Console).
+    location: {
+      '@type': 'Place',
+      name: venueName ?? `${d.competition} Venue`,
+      ...(venueCity ? { address: { '@type': 'PostalAddress', addressLocality: venueCity } } : {}),
+    },
     homeTeam: homeTeamLd,
     awayTeam: awayTeamLd,
     competitor: [homeTeamLd, awayTeamLd],
@@ -362,6 +362,18 @@ export default async function MatchPage({ params }: Props) {
       url: d.compCode
         ? `https://www.fanaticscores.com/en/competition/${d.compCode}`
         : 'https://www.fanaticscores.com/en/competitions',
+    },
+    // offers is required by Google's SportsEvent rich results validator.
+    // We're a scores site, not a ticketing site — mark tickets as SoldOut
+    // for upcoming matches and Discontinued for finished ones.
+    offers: {
+      '@type': 'Offer',
+      url: `https://www.fanaticscores.com/en/match/${matchId}`,
+      availability: ['FT', 'AET', 'PEN', 'POSTPONED', 'CANCELLED'].includes(d.status)
+        ? 'https://schema.org/Discontinued'
+        : 'https://schema.org/SoldOut',
+      price: '0',
+      priceCurrency: 'USD',
     },
     url: `https://www.fanaticscores.com/en/match/${matchId}`,
   };

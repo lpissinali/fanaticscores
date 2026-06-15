@@ -35,7 +35,7 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
  * day. Leaves ~2,000 of the 7,500 quota for the scheduler (≤1,440) and
  * PitaCopa's World Cup proxy (a few hundred on match days).
  */
-const DAILY_LIMIT = 5500;
+const DAILY_LIMIT = 6800;
 
 /** How long one instance trusts its last exhausted-check, in ms. */
 const CHECK_TTL_MS = 60_000;
