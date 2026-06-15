@@ -37,11 +37,13 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 // ── Tunables ────────────────────────────────────────────────────────────────
 
 /** Max distinct detail-page requests permitted per client IP per window.
- *  Sized so a real fan never trips it: LiveRefresh re-renders a live match
- *  page every 60s (≈60 req/h) on top of normal browsing. Enumeration
- *  scrapers walk novel IDs far faster than this, and the daily budget
- *  breaker (dailyBudget.ts) remains the hard quota backstop. */
-const LIMIT = 300;
+ *  Sized so Googlebot (and real fans watching live matches) never trip it.
+ *  LiveRefresh re-renders a live match page every 60s (≈60 req/h) on top of
+ *  normal browsing. Googlebot can crawl hundreds of match/team pages per hour
+ *  from a small pool of IPs — 1000 keeps it unblocked. Enumeration scrapers
+ *  walk novel IDs far faster than this, and the daily budget breaker
+ *  (dailyBudget.ts) remains the hard quota backstop. */
+const LIMIT = 1000;
 
 /** Length of the fixed counting window, in seconds (1 hour). */
 const WINDOW_SECONDS = 3600;
