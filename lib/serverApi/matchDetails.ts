@@ -4,7 +4,7 @@
  * It fetches everything from api-football by fixture ID directly.
  */
 
-import { fetchAF, hasBodyErrors, currentSeason, COMP_CODE_TO_LEAGUE_ID, LEAGUE_ID_TO_CODE, CUP_CODES, AF_LIVE_TTL_SECONDS, AF_STABLE_TTL_SECONDS, AF_SLOW_TTL_SECONDS, AF_HOT_TTL_SECONDS } from './config';
+import { fetchAF, hasBodyErrors, currentSeason, COMP_CODE_TO_LEAGUE_ID, LEAGUE_ID_TO_CODE, CUP_CODES, AF_LIVE_TTL_SECONDS, AF_STABLE_TTL_SECONDS, AF_SLOW_TTL_SECONDS, AF_HOT_TTL_SECONDS, AF_TEAM_FIXTURES_TTL_SECONDS } from './config';
 import { isRateLimited } from './rateLimit';
 import { isDailyBudgetExhausted } from './dailyBudget';
 
@@ -261,8 +261,8 @@ async function fetchStats(matchId: string, homeId: string, isLive: boolean, isFi
 
 async function fetchH2H(homeId: string, awayId: string): Promise<MatchDetailData['h2h']> {
   try {
-    // H2H history gains at most one entry per meeting — daily is plenty.
-    const res  = await fetchAF(`/fixtures/headtohead?h2h=${homeId}-${awayId}`, AF_SLOW_TTL_SECONDS);
+    // H2H history is past results — immutable. Use stable 7-day TTL.
+    const res  = await fetchAF(`/fixtures/headtohead?h2h=${homeId}-${awayId}`, AF_STABLE_TTL_SECONDS);
     if (!res.ok) return null;
     const data = await res.json() as { response: AFH2HMatch[]; errors: unknown };
     if (hasBodyErrors(data.errors)) return null;
@@ -365,10 +365,11 @@ export async function fetchRelatedFixtures(
   if (!leagueId) return [];
   try {
     const season = currentSeason();
-    // Try upcoming first; fall back to recent results if season is over
+    // Try upcoming first; fall back to recent results if season is over.
+    // Use AF_TEAM_FIXTURES_TTL_SECONDS (6h): fixture schedules change at most daily.
     const [nextRes, lastRes] = await Promise.all([
-      fetchAF(`/fixtures?league=${leagueId}&season=${season}&next=10`),
-      fetchAF(`/fixtures?league=${leagueId}&season=${season}&last=10`),
+      fetchAF(`/fixtures?league=${leagueId}&season=${season}&next=10`, AF_TEAM_FIXTURES_TTL_SECONDS),
+      fetchAF(`/fixtures?league=${leagueId}&season=${season}&last=10`, AF_TEAM_FIXTURES_TTL_SECONDS),
     ]);
 
     const nextJson = nextRes.ok ? await nextRes.json() as { response: AFFixtureRow[] } : { response: [] };
