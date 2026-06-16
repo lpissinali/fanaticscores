@@ -296,10 +296,21 @@ async function fetchH2H(homeId: string, awayId: string): Promise<MatchDetailData
 
 // ── Fetch standings ───────────────────────────────────────────────────────────
 
+// "This league has no usable standings" marker (see competitionDetails.ts for
+// the rationale): a league whose table the loop never finds otherwise re-runs
+// up to 3 uncached /standings calls on every match-page render. Remember the
+// empty result per league for an hour; clear it the moment a table appears.
+const MATCH_STANDINGS_EMPTY_TTL_MS = 60 * 60_000;
+const matchEmptyStandingsUntil = new Map<number, number>();
+
 async function fetchStandings(compCode: string, ttlSeconds?: number): Promise<StandingRow[]> {
   if (CUP_CODES.has(compCode)) return [];
   const leagueId = COMP_CODE_TO_LEAGUE_ID[compCode];
   if (!leagueId) return [];
+
+  const negUntil = matchEmptyStandingsUntil.get(leagueId);
+  if (negUntil && Date.now() < negUntil) return [];
+
   for (let offset = 0; offset <= 2; offset++) {
     const season = currentSeason() - offset;
     try {
@@ -311,10 +322,12 @@ async function fetchStandings(compCode: string, ttlSeconds?: number): Promise<St
       if (hasBodyErrors(data.errors)) {
         const msg = JSON.stringify(data.errors);
         if (msg.includes('plan') || msg.includes('season')) continue;
+        matchEmptyStandingsUntil.set(leagueId, Date.now() + MATCH_STANDINGS_EMPTY_TTL_MS);
         return [];
       }
       const table = data.response?.[0]?.league?.standings?.[0] ?? [];
       if (table.length === 0) continue;
+      matchEmptyStandingsUntil.delete(leagueId);
       return table.map(r => ({
         position: r.rank, teamId: String(r.team.id), teamName: r.team.name,
         teamShort: r.team.name.split(/\s+/).map(w => w[0]).join('').slice(0, 3).toUpperCase(),
@@ -324,6 +337,7 @@ async function fetchStandings(compCode: string, ttlSeconds?: number): Promise<St
       }));
     } catch { continue; }
   }
+  matchEmptyStandingsUntil.set(leagueId, Date.now() + MATCH_STANDINGS_EMPTY_TTL_MS);
   return [];
 }
 

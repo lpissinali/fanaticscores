@@ -96,15 +96,15 @@ export function hasBodyErrors(errors: unknown): boolean {
  *
  * Retries with exponential back-off on 429, same as before.
  */
-const fetchAFCore = reactCache(async (
-  path: string,
-  ttlSeconds: number,
-  retries: number,
-  delayMs: number,
-): Promise<{ status: number; body: string; source: 'shared-hit' | 'upstream' }> => {
-  const cached = await readCachedAF(path, ttlSeconds);
-  if (cached) return { status: cached.status, body: cached.body, source: 'shared-hit' };
+type AFCoreResult = { status: number; body: string; source: 'shared-hit' | 'upstream' };
 
+/**
+ * The raw upstream fetch + cache-write loop, factored out of fetchAFCore so it
+ * can be shared by concurrent callers via the single-flight map below. Retries
+ * with exponential back-off on 429; records every real network attempt against
+ * the daily budget; writes only well-formed, error-free bodies to the cache.
+ */
+async function fetchUpstream(path: string, retries: number, delayMs: number): Promise<AFCoreResult> {
   for (;;) {
     // Every real network attempt counts against api-football's daily quota
     // (including retries and error responses), so record it as such.
@@ -138,6 +138,39 @@ const fetchAFCore = reactCache(async (
       if (shouldCache) void writeCachedAF(path, res.status, body);
     }
     return { status: res.status, body, source: 'upstream' };
+  }
+}
+
+/**
+ * Single-flight map: coalesces concurrent identical upstream fetches happening
+ * on the SAME instance. React cache() (below) only dedupes within a single
+ * request; this dedupes across concurrent requests — so a burst of crawler /
+ * user hits on the same uncached endpoint (e.g. many requests warming the World
+ * Cup competition page at a tournament kickoff) makes one upstream call per
+ * instance instead of one per request. Keyed by the full freshness signature so
+ * a live-TTL caller never piggybacks on a stable-TTL caller's staler read.
+ */
+const inFlight = new Map<string, Promise<AFCoreResult>>();
+
+const fetchAFCore = reactCache(async (
+  path: string,
+  ttlSeconds: number,
+  retries: number,
+  delayMs: number,
+): Promise<AFCoreResult> => {
+  const cached = await readCachedAF(path, ttlSeconds);
+  if (cached) return { status: cached.status, body: cached.body, source: 'shared-hit' };
+
+  const key = `${path}|${ttlSeconds}|${retries}|${delayMs}`;
+  const existing = inFlight.get(key);
+  if (existing) return existing;
+
+  const p = fetchUpstream(path, retries, delayMs);
+  inFlight.set(key, p);
+  try {
+    return await p;
+  } finally {
+    inFlight.delete(key);
   }
 });
 

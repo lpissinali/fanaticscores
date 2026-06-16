@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og';
-import { fetchTeamDetail } from '@/lib/serverApi/teamDetails';
+import { fetchTeamOG } from '@/lib/serverApi/ogData';
 
 export const runtime = 'nodejs';
 export const size = { width: 1200, height: 630 };
@@ -9,7 +9,7 @@ interface Props { params: Promise<{ teamId: string }> }
 
 export default async function TeamOGImage({ params }: Props) {
   const { teamId } = await params;
-  const data = await fetchTeamDetail(teamId);
+  const data = await fetchTeamOG(teamId);
 
   const bg      = '#0f0f13';
   const surface = '#1a1a22';
@@ -26,45 +26,31 @@ export default async function TeamOGImage({ params }: Props) {
     );
   }
 
-  const { info } = data;
   const chips = [
-    info.founded ? `Est. ${info.founded}` : null,
-    info.venue   ? info.venue : null,
+    data.founded ? `Est. ${data.founded}` : null,
+    data.venue   ? data.venue : null,
   ].filter(Boolean);
-
-  const competitions = info.runningCompetitions?.slice(0, 3) ?? [];
 
   return new ImageResponse(
     <div style={{ width: 1200, height: 630, background: bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif', padding: '0 80px' }}>
 
       {/* Crest */}
-      {info.crest
-        ? <img src={info.crest} width={120} height={120} style={{ objectFit: 'contain', marginBottom: 32 }} />
+      {data.crest
+        ? <img src={data.crest} width={120} height={120} style={{ objectFit: 'contain', marginBottom: 32 }} />
         : <div style={{ width: 120, height: 120, background: surface, borderRadius: 16, marginBottom: 32 }} />
       }
 
       {/* Team name */}
       <span style={{ color: white, fontSize: 64, fontWeight: 900, textAlign: 'center', lineHeight: 1.1, marginBottom: 20 }}>
-        {info.name}
+        {data.name}
       </span>
 
       {/* Meta chips */}
       {chips.length > 0 && (
-        <div style={{ display: 'flex', gap: 16, marginBottom: 28 }}>
+        <div style={{ display: 'flex', gap: 16 }}>
           {chips.map((chip, i) => (
             <span key={i} style={{ background: surface, color: dim, fontSize: 18, padding: '6px 16px', borderRadius: 8 }}>
               {chip}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Competitions */}
-      {competitions.length > 0 && (
-        <div style={{ display: 'flex', gap: 12 }}>
-          {competitions.map((c, i) => (
-            <span key={i} style={{ color: orange, fontSize: 16, fontWeight: 600 }}>
-              {c.name}{i < competitions.length - 1 ? '  ·' : ''}
             </span>
           ))}
         </div>

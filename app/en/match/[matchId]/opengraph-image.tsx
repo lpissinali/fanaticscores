@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og';
-import { fetchMatchDetail } from '@/lib/serverApi/matchDetails';
+import { fetchMatchOG } from '@/lib/serverApi/ogData';
 
 export const runtime = 'nodejs';
 export const size = { width: 1200, height: 630 };
@@ -9,7 +9,7 @@ interface Props { params: Promise<{ matchId: string }> }
 
 export default async function MatchOGImage({ params }: Props) {
   const { matchId } = await params;
-  const d = await fetchMatchDetail(matchId);
+  const d = await fetchMatchOG(matchId);
 
   const bg      = '#0f0f13';
   const surface = '#1a1a22';

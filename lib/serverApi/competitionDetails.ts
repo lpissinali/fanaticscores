@@ -218,19 +218,39 @@ async function fetchStandingsForSeason(leagueId: number, season: number, ttlSeco
   } catch { return null; }
 }
 
+/**
+ * In-memory "this league has no usable standings" marker. A competition with no
+ * standings table (knockout-only cups like AFCN, or seasons the plan doesn't
+ * cover) otherwise re-runs the whole season loop — several uncached upstream
+ * /standings calls — on EVERY render, because error/empty responses are never
+ * written to the shared cache. We remember the empty result per league for an
+ * hour so repeat crawls skip the loop entirely; cleared the moment a real table
+ * appears. Per-instance and fail-safe: a cold instance simply does the loop once.
+ */
+const STANDINGS_EMPTY_TTL_MS = 60 * 60_000;
+const emptyStandingsUntil = new Map<number, number>();
+
 async function fetchStandings(code: string, leagueId: number, ttlSeconds?: number): Promise<StandingsFetch> {
   const empty: StandingsFetch = { groups: [], currentMatchday: null, winner: null, updatedAt: null };
 
+  const negUntil = emptyStandingsUntil.get(leagueId);
+  if (negUntil && Date.now() < negUntil) return empty;
+
   const calendarYear = new Date().getFullYear();
   const baseSeason   = currentSeason();
-  const seasons = [...new Set([calendarYear, baseSeason, ...Array.from({ length: 5 }, (_, i) => baseSeason - i - 1)])];
+  // Current + just-ended seasons only. A live-scores site shows the active or
+  // most-recently-finished table; trawling 5+ historical seasons just burned
+  // quota on competitions that have no current table at all.
+  const seasons = [...new Set([calendarYear, baseSeason, baseSeason - 1])];
 
   for (const season of seasons) {
     const result = await fetchStandingsForSeason(leagueId, season, ttlSeconds);
     if (result === 'plan_error') continue;
     if (result === null) continue;
+    emptyStandingsUntil.delete(leagueId);
     return result;
   }
+  emptyStandingsUntil.set(leagueId, Date.now() + STANDINGS_EMPTY_TTL_MS);
   return empty;
 }
 
