@@ -199,8 +199,12 @@ Once the shared cache is warm, upstream calls per situation settle to:
 - **Negative caches and single-flight are per-instance, in-memory** — they reset on cold
   start. Fail-safe (a cold instance just does the work once), but not fleet-wide.
 - **"Discovered – currently not indexed" pages** (~39: `/en/competition/AFCN`, some date
-  pages) may render thin/empty. The standings negative-cache reduces their quota cost; the
-  thin-content/indexing question is still open.
+  pages) render thin/empty when a competition is off-season. **Partly addressed (2026-06-16):**
+  evergreen `LEAGUE_BLURBS` were added in `app/en/competition/[compCode]/page.tsx` for every
+  sitemap competition that lacked one (AFCN, UNL, CSUD, DED, PPL, SPL, JPL, TSL, MX), so each
+  page now carries unique descriptive prose even with no live data. Still open (deferred):
+  conditionally `noindex` a competition/date page that has zero data *and* no blurb, and only
+  listing date pages in the sitemap that actually had matches.
 - **If the daily count still exceeds 6,800** after these changes, `DAILY_LIMIT` can be
   raised toward **7,200** (leave ≥300 headroom for scheduler + PitaCopa under the 7,500 hard
   cap).
