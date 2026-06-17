@@ -37,6 +37,10 @@ export default function Sidebar({ locale, onScheduleClick, liveCount, activeFilt
     { id: 'studio',       label: 'Share Studio', icon: 'sparkles', path: `/${locale}/studio`, accent: true },
   ];
 
+  const yesterdayYmd = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+  const tomorrowYmd  = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+  const onTodayPage  = pathname === `/${locale}/today` || pathname === `/${locale}/`;
+
   function isActive(item: NavItem): boolean {
     if (item.id === 'today') return pathname === `/${locale}/today` || pathname === `/${locale}/`;
     return pathname.startsWith(item.path);
@@ -49,17 +53,61 @@ export default function Sidebar({ locale, onScheduleClick, liveCount, activeFilt
           <FSLogo size={36} showWordmark />
         </Link>
         <nav className={styles.nav} aria-label="Main navigation">
-          {navItems.map((item) => (
-            <div key={item.id}>
-              {item.id === 'schedule' ? (
-                <button
-                  className={[styles.navItem, styles.navButton, item.accent ? styles.accentItem : ''].filter(Boolean).join(' ')}
-                  onClick={() => { if (onScheduleClick) onScheduleClick(); else setShowSchedule(true); }}
-                >
-                  <Icon name={item.icon} size={16} />
-                  {item.label}
-                </button>
-              ) : (
+          {navItems.map((item) => {
+            if (item.id === 'today') {
+              return (
+                <div key={item.id}>
+                  <Link
+                    href={`/${locale}/${yesterdayYmd}`}
+                    onClick={() => onFilterChange?.('all')}
+                    className={[styles.navItem, pathname === `/${locale}/${yesterdayYmd}` ? styles.active : ''].filter(Boolean).join(' ')}
+                  >
+                    <Icon name="arrow-left" size={16} />
+                    Yesterday
+                  </Link>
+                  <Link
+                    href={item.path}
+                    onClick={() => onFilterChange?.('all')}
+                    className={[styles.navItem, (isActive(item) && activeFilter !== 'live') ? styles.active : ''].filter(Boolean).join(' ')}
+                  >
+                    <Icon name={item.icon} size={16} />
+                    {item.label}
+                  </Link>
+                  <Link
+                    href={`/${locale}/${tomorrowYmd}`}
+                    onClick={() => onFilterChange?.('all')}
+                    className={[styles.navItem, pathname === `/${locale}/${tomorrowYmd}` ? styles.active : ''].filter(Boolean).join(' ')}
+                  >
+                    <Icon name="arrow-right" size={16} />
+                    Tomorrow
+                  </Link>
+                  <button
+                    className={[styles.navItem, styles.navButton, (onTodayPage && activeFilter === 'live') ? styles.active : ''].filter(Boolean).join(' ')}
+                    onClick={() => { if (onTodayPage && onFilterChange) onFilterChange(activeFilter === 'live' ? 'all' : 'live'); else router.push(`/${locale}/today?filter=live`); }}
+                    aria-pressed={onTodayPage && activeFilter === 'live'}
+                  >
+                    <Icon name="zap" size={16} />
+                    Live
+                    <span className={styles.navBadge}>{liveCount ?? 0}</span>
+                  </button>
+                </div>
+              );
+            }
+            if (item.id === 'schedule') {
+              return (
+                <div key={item.id}>
+                  <button
+                    className={[styles.navItem, styles.navButton, item.accent ? styles.accentItem : ''].filter(Boolean).join(' ')}
+                    onClick={() => { if (onScheduleClick) onScheduleClick(); else setShowSchedule(true); }}
+                  >
+                    <Icon name={item.icon} size={16} />
+                    {item.label}
+                  </button>
+                </div>
+              );
+            }
+            return (
+              <div key={item.id}>
                 <Link
                   href={item.path}
                   className={[styles.navItem, isActive(item) ? styles.active : '', item.accent ? styles.accentItem : ''].filter(Boolean).join(' ')}
@@ -67,20 +115,9 @@ export default function Sidebar({ locale, onScheduleClick, liveCount, activeFilt
                   <Icon name={item.icon} size={16} />
                   {item.label}
                 </Link>
-              )}
-              {item.id === 'today' && (
-                <button
-                  className={[styles.navItem, styles.navButton, activeFilter === 'live' ? styles.active : ''].filter(Boolean).join(' ')}
-                  onClick={() => { if (onFilterChange) onFilterChange(activeFilter === 'live' ? 'all' : 'live'); else router.push(`/${locale}/today`); }}
-                  aria-pressed={activeFilter === 'live'}
-                >
-                  <Icon name="zap" size={16} />
-                  Live
-                  <span className={styles.navBadge}>{liveCount ?? 0}</span>
-                </button>
-              )}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </nav>
         {mounted && followedTeams.length > 0 && (
           <div className={styles.following}>

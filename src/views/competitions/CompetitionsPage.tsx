@@ -1,6 +1,8 @@
 'use client';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import type { SupportedLocale } from '../../i18n';
+import SearchModal from '../../components/shared/SearchModal/SearchModal';
 import { useSEO } from '../../lib/useSEO';
 import Sidebar from '../../components/layout/Sidebar/Sidebar';
 import RailPromo from '../../components/shared/RailPromo/RailPromo';
@@ -98,6 +100,7 @@ const COMPETITIONS = [
 
 export default function CompetitionsPage({ locale }: CompetitionsPageProps) {
   const router = useRouter();
+  const [showSearch, setShowSearch] = useState(false);
   useSEO({
     title: 'Competitions',
     description: 'Browse all football competitions on FanaticScores — Champions League, Premier League, La Liga, Serie A and more.',
@@ -111,9 +114,20 @@ export default function CompetitionsPage({ locale }: CompetitionsPageProps) {
         <div className={styles.desktop}>
           <Sidebar locale={locale} />
           <main className={styles.main}>
-            <div className={styles.header}>
-              <h1 className={styles.title}>Competitions</h1>
-              <p className={styles.subtitle}>All leagues and tournaments tracked on Fanatic Scores</p>
+            <div className={styles.header} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16 }}>
+              <div>
+                <h1 className={styles.title}>Competitions</h1>
+                <p className={styles.subtitle}>All leagues and tournaments tracked on Fanatic Scores</p>
+              </div>
+              <div
+                role="button" tabIndex={0}
+                onClick={() => setShowSearch(true)}
+                onKeyDown={(e) => { if (e.key === 'Enter') setShowSearch(true); }}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px', height: 38, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, cursor: 'text', minWidth: 240, flexShrink: 0 }}
+              >
+                <Icon name="search" size={14} style={{ color: 'var(--text-dim)', flexShrink: 0 }} />
+                <span style={{ color: 'var(--text-faint)', fontSize: 13 }}>Search teams, competitions…</span>
+              </div>
             </div>
 
             {COMPETITIONS.map(group => (
@@ -156,6 +170,15 @@ export default function CompetitionsPage({ locale }: CompetitionsPageProps) {
             <div style={{ padding: '8px 16px 16px' }}>
               <h1 className={styles.title}>Competitions</h1>
               <p className={styles.subtitle}>All leagues and tournaments tracked on Fanatic Scores</p>
+              <div
+                role="button" tabIndex={0}
+                onClick={() => setShowSearch(true)}
+                onKeyDown={(e) => { if (e.key === 'Enter') setShowSearch(true); }}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px', height: 38, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, cursor: 'text', marginTop: 12 }}
+              >
+                <Icon name="search" size={14} style={{ color: 'var(--text-dim)', flexShrink: 0 }} />
+                <span style={{ color: 'var(--text-faint)', fontSize: 13 }}>Search teams, competitions…</span>
+              </div>
             </div>
             {COMPETITIONS.map(group => (
               <section key={group.region}>
@@ -185,6 +208,7 @@ export default function CompetitionsPage({ locale }: CompetitionsPageProps) {
           <MobileBottomNav locale={locale} activeTab="comp" />
         </div>
       </div>
+      {showSearch && <SearchModal locale={locale} onClose={() => setShowSearch(false)} />}
     </>
   );
 }

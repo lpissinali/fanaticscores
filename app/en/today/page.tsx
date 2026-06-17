@@ -25,8 +25,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function TodayPage() {
+export default async function TodayPage({ searchParams }: { searchParams: Promise<{ filter?: string }> }) {
   const date = new Date().toISOString().slice(0, 10);
   const initialDoc = await getMatchdayDoc(date);
-  return <HomePageClient locale="en" initialDoc={initialDoc} />;
+  const sp = await searchParams;
+  const initialFilter = sp?.filter === 'live' ? 'live' : 'all';
+  return <HomePageClient locale="en" initialDoc={initialDoc} initialFilter={initialFilter} />;
 }

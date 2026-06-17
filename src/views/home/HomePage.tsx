@@ -25,6 +25,8 @@ interface HomePageProps {
   locale: SupportedLocale;
   /** Server-fetched matchday doc used to seed SSR/initial render (SEO). */
   initialDoc?: MatchdayDoc | null;
+  /** Initial All/Live filter, derived from ?filter=live on the today page. */
+  initialFilter?: 'all' | 'live';
 }
 
 // -----------------------------------------------------------------------
@@ -269,11 +271,12 @@ interface LayoutProps {
   resolvedDate: string;  // YYYY-MM-DD
   refresh: () => void;
   aiBrief: string | null;
+  initialFilter?: 'all' | 'live';
 }
 
-function DesktopLayout({ locale, featured, competitions, loading, error, resolvedDate, aiBrief }: LayoutProps) {
+function DesktopLayout({ locale, featured, competitions, loading, error, resolvedDate, aiBrief, initialFilter }: LayoutProps) {
   const [showSearch,    setShowSearch]    = useState(false);
-  const [activeFilter,  setActiveFilter]  = useState<'all' | 'live'>('all');
+  const [activeFilter,  setActiveFilter]  = useState<'all' | 'live'>(initialFilter ?? 'all');
 
   const LIVE_STATUSES = new Set(['LIVE', 'HT']);
   const liveCount = competitions.flatMap(c => c.matches).filter(m => LIVE_STATUSES.has(m.status)).length;
@@ -606,7 +609,7 @@ function MobileLayout({ featured, competitions, loading, error, aiBrief, locale,
 // PAGE
 // -----------------------------------------------------------------------
 
-export default function HomePage({ locale, initialDoc }: HomePageProps) {
+export default function HomePage({ locale, initialDoc, initialFilter }: HomePageProps) {
   const { date: dateParam } = useParams() as { date?: string };
   const today = new Date().toISOString().slice(0, 10);
   const resolvedDate = (!dateParam || dateParam === 'today') ? today : dateParam;
@@ -621,7 +624,7 @@ export default function HomePage({ locale, initialDoc }: HomePageProps) {
   return (
     <>
       <div className={styles.desktopOnly}>
-        <DesktopLayout locale={locale} featured={featured} competitions={competitions} loading={loading} error={error} hadErrors={hadErrors} resolvedDate={resolvedDate} refresh={refresh} aiBrief={aiBrief} />
+        <DesktopLayout locale={locale} featured={featured} competitions={competitions} loading={loading} error={error} hadErrors={hadErrors} resolvedDate={resolvedDate} refresh={refresh} aiBrief={aiBrief} initialFilter={initialFilter} />
       </div>
       <div className={styles.mobileOnly}>
         <MobileLayout featured={featured} competitions={competitions} loading={loading} error={error} hadErrors={hadErrors} resolvedDate={resolvedDate} refresh={refresh} aiBrief={aiBrief} />
