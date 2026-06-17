@@ -43,7 +43,7 @@ function ScoreHeader({ d, matchId }: { d: MatchDetailData; matchId: string }) {
           {d.matchday && <span className={styles.matchday}>MD {d.matchday}</span>}
         </div>
         <Link href={`/en/studio/${matchId}`} className="fs-btn ghost" style={{ height: 32, padding: '0 12px', fontSize: 12, textDecoration: 'none' }}>
-          <Icon name="share" size={14} /> Share Studio
+          <Icon name="share" size={14} /> Share match
         </Link>
       </div>
       <div className={styles.scoreGrid}>
@@ -52,9 +52,9 @@ function ScoreHeader({ d, matchId }: { d: MatchDetailData; matchId: string }) {
           <div><div className={styles.teamRole}>Home</div><div className={styles.teamName}>{d.home.name}</div></div>
         </Link>
         <div className={styles.scoreBlock}>
-          <span className={styles.score}>{d.home.score ?? '–'}</span>
+          <span className={styles.score}>{d.home.score ?? '--'}</span>
           <span className={styles.scoreDash}>–</span>
-          <span className={styles.score}>{d.away.score ?? '–'}</span>
+          <span className={styles.score}>{d.away.score ?? '--'}</span>
         </div>
         <Link href={`/en/team/${d.away.id}`} className={styles.teamRight} style={{ textDecoration: 'none' }}>
           <div style={{ textAlign: 'right' }}><div className={styles.teamRole}>Away</div><div className={styles.teamName}>{d.away.name}</div></div>
@@ -205,7 +205,7 @@ function MobMatchCard({ d, matchId }: { d: MatchDetailData; matchId: string }) {
           <span className={styles.compLabel}>{d.compCountry ? `${d.compCountry} · ` : ''}{d.competition}</span>
         </div>
         <Link href={`/en/studio/${matchId}`} className="fs-btn ghost" style={{ height: 28, padding: '0 10px', fontSize: 12, textDecoration: 'none' }}>
-          <Icon name="share" size={13} /> Share Studio
+          <Icon name="share" size={13} /> Share
         </Link>
       </div>
       <div className={styles.mobScoreGrid}>
@@ -214,9 +214,9 @@ function MobMatchCard({ d, matchId }: { d: MatchDetailData; matchId: string }) {
           <div className={styles.mobTeamName}>{d.home.short || d.home.name}</div>
         </Link>
         <div className={styles.mobScoreBlock}>
-          <span className={styles.mobScore}>{d.home.score ?? '–'}</span>
+          <span className={styles.mobScore}>{d.home.score ?? '--'}</span>
           <span className={styles.mobScoreDash}>–</span>
-          <span className={styles.mobScore}>{d.away.score ?? '–'}</span>
+          <span className={styles.mobScore}>{d.away.score ?? '--'}</span>
         </div>
         <Link href={`/en/team/${d.away.id}`} className={styles.mobTeamRight} style={{ textDecoration: 'none' }}>
           {d.away.crest && <img src={d.away.crest} alt={d.away.name} width={48} height={48} style={{ objectFit: 'contain' }} />}

@@ -74,7 +74,11 @@ function DesktopFeatured({ featured, locale }: { featured: FeaturedMatch | null;
           <Crest team={m.home} size="xl" />
           <div>
             <div className={styles.teamRole}>Home</div>
-            <div className={styles.teamName}>{m.home.name}</div>
+            <div className={styles.teamName}>
+              {m.home.id
+                ? <Link href={`/${locale}/team/${m.home.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>{m.home.name}</Link>
+                : m.home.name}
+            </div>
           </div>
         </div>
 
@@ -87,7 +91,11 @@ function DesktopFeatured({ featured, locale }: { featured: FeaturedMatch | null;
         <div className={styles.teamRight}>
           <div style={{ textAlign: 'right' }}>
             <div className={styles.teamRole}>Away</div>
-            <div className={styles.teamName}>{m.away.name}</div>
+            <div className={styles.teamName}>
+              {m.away.id
+                ? <Link href={`/${locale}/team/${m.away.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>{m.away.name}</Link>
+                : m.away.name}
+            </div>
           </div>
           <Crest team={m.away} size="xl" />
         </div>
@@ -412,7 +420,11 @@ function MobileFeatured({ featured, locale }: { featured: FeaturedMatch | null; 
       <div className={styles.mobScoreRow}>
         <div className={styles.mobTeam}>
           <Crest team={m.home} size="lg" />
-          <span className={styles.mobTeamName}>{m.home.short}</span>
+          <span className={styles.mobTeamName}>
+            {m.home.id
+              ? <Link href={`/${locale}/team/${m.home.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>{m.home.short}</Link>
+              : m.home.short}
+          </span>
         </div>
         <div className={styles.mobScore}>
           <span>{m.home.score ?? '--'}</span>
@@ -421,7 +433,11 @@ function MobileFeatured({ featured, locale }: { featured: FeaturedMatch | null; 
         </div>
         <div className={styles.mobTeam}>
           <Crest team={m.away} size="lg" />
-          <span className={styles.mobTeamName}>{m.away.short}</span>
+          <span className={styles.mobTeamName}>
+            {m.away.id
+              ? <Link href={`/${locale}/team/${m.away.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>{m.away.short}</Link>
+              : m.away.short}
+          </span>
         </div>
       </div>
 

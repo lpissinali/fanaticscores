@@ -78,8 +78,11 @@
 }
 .compLabel {
   font-size: 12px;
-  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--text-dim);
+  font-weight: 700;
+  font-family: var(--font-jetbrains-mono), monospace;
 }
 .matchday {
   font-size: 11px;
@@ -99,10 +102,10 @@
 .teamLeft  { display: flex; align-items: center; gap: 14px; }
 .teamRight { display: flex; align-items: center; gap: 14px; justify-content: flex-end; }
 .teamRole  { font-size: 10px; color: var(--text-faint); font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
-.teamName  { font-size: 18px; font-weight: 800; color: var(--text); margin-top: 2px; }
-.scoreBlock { display: flex; align-items: center; justify-content: center; gap: 8px; }
-.score     { font-size: 52px; font-weight: 900; color: var(--text); font-family: var(--font-jetbrains-mono), monospace; line-height: 1; }
-.scoreDash { font-size: 32px; font-weight: 300; color: var(--text-faint); }
+.teamName  { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -0.01em; margin-top: 2px; }
+.scoreBlock { display: flex; align-items: center; justify-content: center; gap: 16px; font-family: var(--font-archivo), sans-serif; font-weight: 900; font-size: 80px; line-height: 1; letter-spacing: -0.05em; }
+.score     { display: block; color: var(--text); }
+.scoreDash { font-size: 50px; font-weight: 400; color: var(--text-faint); }
 .htRow {
   display: flex;
   align-items: center;
