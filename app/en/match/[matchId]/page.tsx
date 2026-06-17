@@ -344,7 +344,13 @@ export default async function MatchPage({ params }: Props) {
     location: {
       '@type': 'Place',
       name: venueName ?? `${d.competition} Venue`,
-      ...(venueCity ? { address: { '@type': 'PostalAddress', addressLocality: venueCity } } : {}),
+      // address is required by Google's Event validator. Always emit a
+      // non-empty PostalAddress: the venue city when known, otherwise fall back
+      // to the competition's country/region (or the venue / competition name).
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: venueCity ?? d.compCountry ?? venueName ?? d.competition,
+      },
     },
     homeTeam: homeTeamLd,
     awayTeam: awayTeamLd,
@@ -374,6 +380,8 @@ export default async function MatchPage({ params }: Props) {
         : 'https://schema.org/SoldOut',
       price: '0',
       priceCurrency: 'USD',
+      // validFrom is required by Google's Offer validator; use the kickoff time.
+      validFrom: d.kickoff ?? new Date().toISOString(),
     },
     url: `https://www.fanaticscores.com/en/match/${matchId}`,
   };
