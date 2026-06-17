@@ -6,7 +6,7 @@
  *  - Upcoming matches excluded from context (they don't make interesting copy)
  *  - Context capped at 12 most-significant matches, with competition tier
  *  - Hash-based short-circuit: skips the API call if live/FT state is unchanged
- *  - max_tokens lowered from 180 → 140
+ *  - max_tokens 320 + trim-to-last-sentence so the brief never ends mid-clause
  *
  * Quality improvements:
  *  - Prompt gives editorial guidance: what counts as a good story
@@ -90,6 +90,21 @@ function buildStateHash(competitions: CompetitionData[]): string {
   return parts.sort().join('|');
 }
 
+// ── Sentence-boundary guard ───────────────────────────────────────────────────
+// Defends against a brief that ends mid-sentence (e.g. the model hit max_tokens
+// partway through a clause — "...It's the kind of performance that"). If the
+// text doesn't already end on terminal punctuation, trim back to the last
+// complete sentence so the card never shows a dangling fragment. With the
+// higher max_tokens this is usually a no-op; it's the belt-and-suspenders.
+function trimToLastSentence(text: string): string {
+  const t = text.trim();
+  if (!t) return t;
+  if (/[.!?]["'”’)]?$/.test(t)) return t;            // already ends cleanly
+  const lastEnd = Math.max(t.lastIndexOf('.'), t.lastIndexOf('!'), t.lastIndexOf('?'));
+  if (lastEnd <= 0) return t;                          // no sentence boundary found — leave as-is
+  return t.slice(0, lastEnd + 1).trim();
+}
+
 // ── Main export ───────────────────────────────────────────────────────────────
 
 export interface BriefResult {
@@ -139,15 +154,19 @@ export async function generateAiBrief(
     };
   }
 
-  const prompt = `You are a sharp football writer for a live scores app. Your job is to write one punchy paragraph (2 sentences max) that gives fans the essential story of the moment — not a list, not a summary, but an actual take.
+  const prompt = `You are a sharp football writer for a live scores app. Write a brief, opinionated read on today's action — not a list or a dry summary, but an actual take with voice.
+
+Reply as one or two labelled sections, using ONLY the sections that have matches in the data below:
+**LIVE:** two sentences on the most compelling in-progress match (treat half-time games as live) — the tension, the goals, the drama. Present tense.
+**FINISHED:** two sentences leading with the most surprising or significant result. Past tense.
 
 Editorial rules:
-- Prioritise higher-tier competitions (Champions League > MLS, etc.)
-- A comeback, an upset, or a high-scoring game is more interesting than a routine win
-- For live matches: describe the tension or the goals, not just the score
-- For finished matches: lead with the result that will surprise people most
-- Never write "Here is…" or "In today's…" — just start with the story
-- Use present tense for live/HT, past tense for FT
+- Begin each section with its label inline exactly as written (e.g. "**LIVE:** Austria are…"), and separate the two sections with a blank line.
+- Include a section ONLY if the data has matches in that state: only finished matches → write just FINISHED; only live → just LIVE.
+- Prioritise higher-tier competitions (Champions League > MLS, etc.).
+- A comeback, an upset, or a high-scoring game beats a routine win.
+- Be specific — teams, scores, minute — and always finish your sentences.
+- Never write "Here is…" or "In today's…" — start straight with the story.
 
 Match data:
 ${context}`;
@@ -156,12 +175,12 @@ ${context}`;
     const client = new Anthropic({ apiKey: anthropicKey });
     const msg = await client.messages.create({
       model:      'claude-haiku-4-5-20251001',
-      max_tokens: 140,
+      max_tokens: 320,
       messages:   [{ role: 'user', content: prompt }],
     });
 
     const text = msg.content.find(b => b.type === 'text');
-    const brief = text?.type === 'text' ? text.text.trim() : '';
+    const brief = trimToLastSentence(text?.type === 'text' ? text.text : '');
     console.log(`[aiBrief] generated (hash=${stateHash.slice(0, 20)}): "${brief.slice(0, 80)}…"`);
     return { brief, generatedAt: now, stateHash };
   } catch (err) {
