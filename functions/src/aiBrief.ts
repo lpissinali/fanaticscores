@@ -29,6 +29,9 @@ const COMP_TIER: Record<string, string> = {
   PL: 'Premier League', PD: 'La Liga', SA: 'Serie A', BL1: 'Bundesliga', FL1: 'Ligue 1',
   DED: 'Eredivisie', PPL: 'Primeira Liga', TSL: 'Süper Lig',
   BSA: 'Brasileirão', ARG: 'Liga Profesional', MX: 'Liga MX', MLS: 'MLS',
+  ACL: 'AFC Champions League', ACL2: 'AFC Champions League Two', CAFCL: 'CAF Champions League',
+  CCL: 'CONCACAF Champions League', GOLD: 'Gold Cup', ASIAN: 'Asian Cup',
+  CNL: 'CONCACAF Nations League', USC: 'UEFA Super Cup', CDB: 'Copa do Brasil',
 };
 
 // ── Build a compact, editorially-weighted context string ──────────────────────

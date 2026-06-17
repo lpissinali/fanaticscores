@@ -30,6 +30,14 @@ const COMPETITIONS: { code: string; priority: number }[] = [
   { code: 'ARG',  priority: 0.7 },
   { code: 'MX',   priority: 0.6 },
   { code: 'MLS',  priority: 0.6 },
+  { code: 'ACL',   priority: 0.7 },
+  { code: 'CAFCL', priority: 0.7 },
+  { code: 'CCL',   priority: 0.7 },
+  { code: 'GOLD',  priority: 0.7 },
+  { code: 'ASIAN', priority: 0.7 },
+  { code: 'CNL',   priority: 0.6 },
+  { code: 'USC',   priority: 0.6 },
+  { code: 'CDB',   priority: 0.7 },
 ];
 
 // ── Team fetching ─────────────────────────────────────────────────────────────

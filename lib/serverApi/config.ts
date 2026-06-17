@@ -205,6 +205,7 @@ export const COMP_CODE_TO_LEAGUE_ID: Record<string, number> = {
   BSA:  71,  ARG: 128, MX:  262, MLS: 253, COL: 239, CHI: 265,
   J1:   98,  CSL: 169,
   FAC:  45,  LCC:  48, CDR: 143, DFB:  81, CI:  137, CDF:  66,
+  ACL:  17,  ACL2: 18, CAFCL: 12, CCL: 16, GOLD: 22, ASIAN: 7, CNL: 536, USC: 531, CDB: 73,
 };
 
 export const LEAGUE_ID_TO_CODE: Record<number, string> = Object.fromEntries(
@@ -215,4 +216,5 @@ export const CUP_CODES = new Set([
   'WC', 'CWC', 'EURO', 'CA', 'AFCN', 'UNL',
   'CL', 'EL', 'UECL', 'LIBT', 'CSUD',
   'FAC', 'LCC', 'CDR', 'DFB', 'CI', 'CDF',
+  'ACL', 'ACL2', 'CAFCL', 'CCL', 'GOLD', 'ASIAN', 'CNL', 'USC', 'CDB',
 ]);
