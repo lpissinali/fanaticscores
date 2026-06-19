@@ -255,7 +255,7 @@ function ScorersSection({ scorers, compact = false }: { scorers: CompScorer[]; c
           <span className={styles.scorerNum}>G</span>
           <span className={styles.scorerNum}>A</span>
         </div>
-        {scorers.map((s, i) => (
+        {scorers.slice(0, 10).map((s, i) => (
           <div key={i} className={styles.scorerRow}>
             <span className={styles.scorerRank}>{i + 1}</span>
             <span className={styles.scorerPlayer}>
