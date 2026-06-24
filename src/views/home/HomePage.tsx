@@ -289,16 +289,16 @@ function DesktopLayout({ locale, featured, competitions, loading, error, resolve
   let pageTitle: string;
   if (resolvedDate === today) {
     dateLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-    pageTitle = "Today's matches";
+    pageTitle = "Today's Football Scores";
   } else if (resolvedDate === yesterday) {
     dateLabel = new Date(resolvedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-    pageTitle = "Yesterday's matches";
+    pageTitle = "Yesterday's Football Scores";
   } else if (resolvedDate === tomorrow) {
     dateLabel = new Date(resolvedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-    pageTitle = "Tomorrow's matches";
+    pageTitle = "Tomorrow's Football Scores";
   } else {
     dateLabel = new Date(resolvedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-    pageTitle = `Matches · ${dateLabel}`;
+    pageTitle = `Football Scores · ${dateLabel}`;
   }
 
   const display = activeFilter === 'live'

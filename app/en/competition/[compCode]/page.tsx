@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { compCode } = await params;
   const data = await fetchCompetitionDetail(compCode);
   if (!data) return { title: 'Competition' };
-  const title = `${data.info.name} — Standings & Results`;
+  const title = `${data.info.name} Scores, Results & Standings`;
   const description = `Live standings, upcoming fixtures and top scorers for ${data.info.name} ${data.info.season?.startDate?.slice(0,4) ?? ''}.`;
   const url = `/en/competition/${compCode}`;
   return {
