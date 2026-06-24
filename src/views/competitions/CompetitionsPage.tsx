@@ -34,6 +34,9 @@ const COMPETITIONS = [
       { code: 'CA',   name: 'Copa America',                country: 'S. America', flag: '#006400', type: 'Cup'    },
       { code: 'AFCN', name: 'Africa Cup of Nations',       country: 'Africa',     flag: '#8b4513', type: 'Cup'    },
       { code: 'UNL',  name: 'UEFA Nations League',         country: 'Europe',     flag: '#1a3a6b', type: 'Cup'    },
+      { code: 'ASIAN',name: 'AFC Asian Cup',               country: 'Asia',       flag: '#c8102e', type: 'Cup'    },
+      { code: 'GOLD', name: 'CONCACAF Gold Cup',           country: 'N. America', flag: '#0a4d8c', type: 'Cup'    },
+      { code: 'CNL',  name: 'CONCACAF Nations League',     country: 'N. America', flag: '#0a4d8c', type: 'Cup'    },
     ],
   },
   {
@@ -42,8 +45,18 @@ const COMPETITIONS = [
       { code: 'CL',   name: 'UEFA Champions League',       country: 'Europe',     flag: '#1a3a6b', type: 'Cup'    },
       { code: 'EL',   name: 'UEFA Europa League',          country: 'Europe',     flag: '#e87800', type: 'Cup'    },
       { code: 'UECL', name: 'UEFA Conference League',      country: 'Europe',     flag: '#1a6b3a', type: 'Cup'    },
+      { code: 'USC',  name: 'UEFA Super Cup',              country: 'Europe',     flag: '#1a3a6b', type: 'Cup'    },
       { code: 'LIBT', name: 'Copa Libertadores',           country: 'S. America', flag: '#006400', type: 'Cup'    },
       { code: 'CSUD', name: 'Copa Sudamericana',           country: 'S. America', flag: '#005500', type: 'Cup'    },
+    ],
+  },
+  {
+    region: 'Other Continental Club',
+    comps: [
+      { code: 'ACL',  name: 'AFC Champions League Elite',  country: 'Asia',       flag: '#c8102e', type: 'Cup'    },
+      { code: 'ACL2', name: 'AFC Champions League Two',     country: 'Asia',       flag: '#c8102e', type: 'Cup'    },
+      { code: 'CAFCL',name: 'CAF Champions League',         country: 'Africa',     flag: '#1a7a3a', type: 'Cup'    },
+      { code: 'CCL',  name: 'CONCACAF Champions League',    country: 'N. America', flag: '#0a4d8c', type: 'Cup'    },
     ],
   },
   {
@@ -82,6 +95,7 @@ const COMPETITIONS = [
     region: 'Americas',
     comps: [
       { code: 'BSA', name: 'Brasileirao',     country: 'Brazil',     flag: '#006400', type: 'League' },
+      { code: 'CDB', name: 'Copa do Brasil',   country: 'Brazil',     flag: '#006400', type: 'Cup'    },
       { code: 'ARG', name: 'Liga Profesional', country: 'Argentina', flag: '#75aadb', type: 'League' },
       { code: 'MX',  name: 'Liga MX',          country: 'Mexico',    flag: '#006847', type: 'League' },
       { code: 'MLS', name: 'MLS',              country: 'USA',       flag: '#002a5c', type: 'League' },
