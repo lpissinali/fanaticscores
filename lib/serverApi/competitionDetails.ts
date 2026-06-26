@@ -318,7 +318,8 @@ interface AFEventRaw {
   player: { id: number; name: string };
   assist: { id: number | null; name: string | null };
   type: string;   // "Goal" | "Card" | "subst" | ...
-  detail: string; // "Normal Goal" | "Own Goal" | "Penalty" | ...
+  detail: string; // "Normal Goal" | "Own Goal" | "Penalty" | "Missed Penalty" | ...
+  comments: string | null; // e.g. "Penalty Shootout" for tiebreaker pens
 }
 
 /**
@@ -482,7 +483,13 @@ function buildScorersFromEvents(
     const events = eventsByFixture.get(result.fixtureId) ?? [];
 
     for (const e of events) {
-      if (e.type !== 'Goal' || e.detail === 'Own Goal') continue;
+      if (e.type !== 'Goal') continue;
+      // api-football models these as type "Goal" too — none count as a scorer goal:
+      //   • Own Goal      — credited against the other team, not a scorer stat
+      //   • Missed Penalty — a miss, not a goal
+      //   • Penalty Shootout — tiebreaker pens never count toward goal tallies
+      if (e.detail === 'Own Goal' || e.detail === 'Missed Penalty') continue;
+      if (e.comments === 'Penalty Shootout') continue;
 
       // Goal scorer
       const pid = e.player.id;
