@@ -381,7 +381,7 @@ async function fetchSeasonResults(leagueId: number, season: number, ttlSeconds?:
 const rankRows = (rows: CompStandingRow[]): void => {
   rows.sort((x, y) =>
     y.points - x.points || y.goalDifference - x.goalDifference ||
-    y.goalsFor - x.goalsFor || x.teamName.localeCompare(y.teamName));
+    y.goalsFor - x.goalsFor || (x.teamName ?? '').localeCompare(y.teamName ?? ''));
   rows.forEach((r, i) => { r.position = i + 1; });
 };
 
@@ -488,7 +488,7 @@ function buildScorersFromEvents(
       const pid = e.player.id;
       if (!map.has(pid)) {
         map.set(pid, {
-          playerName: e.player.name, teamName: e.team.name, teamCrest: e.team.logo,
+          playerName: e.player.name ?? 'Unknown', teamName: e.team.name ?? '', teamCrest: e.team.logo,
           goals: 0, assists: 0, penalties: 0,
         });
       }
@@ -501,7 +501,7 @@ function buildScorersFromEvents(
         const aid = e.assist.id;
         if (!map.has(aid)) {
           map.set(aid, {
-            playerName: e.assist.name ?? 'Unknown', teamName: e.team.name, teamCrest: e.team.logo,
+            playerName: e.assist.name ?? 'Unknown', teamName: e.team.name ?? '', teamCrest: e.team.logo,
             goals: 0, assists: 0, penalties: 0,
           });
         }
@@ -511,7 +511,7 @@ function buildScorersFromEvents(
   }
 
   return [...map.values()]
-    .sort((a, b) => b.goals - a.goals || b.assists - a.assists || a.playerName.localeCompare(b.playerName))
+    .sort((a, b) => b.goals - a.goals || b.assists - a.assists || (a.playerName ?? '').localeCompare(b.playerName ?? ''))
     .map(s => ({
       playerName: s.playerName,
       nationality: '',            // not available from events; not shown in the UI
