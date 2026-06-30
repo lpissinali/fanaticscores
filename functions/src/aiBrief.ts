@@ -58,10 +58,28 @@ function buildContext(competitions: CompetitionData[]): string {
         ht.push(`[${tier}] ${h} ${score} ${a} (HT)`);
       } else if (m.status === 'FT' || m.status === 'AET' || m.status === 'PEN') {
         // Only include finished matches that actually have a score worth
-        // mentioning. Note the decided-by suffix for ET/penalty finishes.
+        // mentioning. Spell out the stage + how a tie was decided so the model
+        // never mistakes a knockout shootout for a group-stage draw.
         if (hs !== null && as_ !== null) {
-          const suffix = m.status === 'AET' ? ' (AET)' : m.status === 'PEN' ? ' (pens)' : '';
-          finished.push(`[${tier}] ${h} ${score} ${a}${suffix}`);
+          const stageLabel = comp.stage ? ` · ${comp.stage}` : '';
+          const winnerName = m.winner === 'home' ? h : m.winner === 'away' ? a : null;
+          const loserName  = m.winner === 'home' ? a : m.winner === 'away' ? h : null;
+          let line = `[${tier}${stageLabel}] ${h} ${score} ${a}`;
+          if (m.status === 'PEN' && winnerName) {
+            // Present the shootout score winner-first so it reads correctly
+            // regardless of which side (home/away) won.
+            const pHome = m.penalty?.home ?? 0;
+            const pAway = m.penalty?.away ?? 0;
+            const pens = m.penalty ? ` ${m.winner === 'home' ? `${pHome}–${pAway}` : `${pAway}–${pHome}`}` : '';
+            line += ` — level after extra time; ${winnerName} won${pens} on penalties and advance, ${loserName} eliminated`;
+          } else if (m.status === 'PEN') {
+            line += ` — decided on penalties`;
+          } else if (m.status === 'AET' && winnerName) {
+            line += ` — ${winnerName} won after extra time and advance, ${loserName} eliminated`;
+          } else if (m.status === 'AET') {
+            line += ` — after extra time`;
+          }
+          finished.push(line);
         }
       }
       // UPCOMING matches deliberately excluded — not interesting copy
@@ -141,7 +159,10 @@ export async function generateAiBrief(
   if (existingBrief && existingBriefAt) {
     const fresh      = (now - existingBriefAt) < ttl;
     const unchanged  = existingHash === stateHash;
-    if (fresh || unchanged) {
+    // Reuse only when BOTH hold: a recent brief AND no change in match state.
+    // (Previously `||`, which reused a still-fresh brief even after the score/
+    // status changed — so a corrected brief could lag up to a full TTL.)
+    if (fresh && unchanged) {
       const reason = unchanged ? 'state unchanged' : `${Math.round((now - existingBriefAt) / 60_000)}m old, within TTL`;
       console.log(`[aiBrief] reusing existing brief (${reason})`);
       return { brief: existingBrief, generatedAt: existingBriefAt, stateHash };
@@ -170,6 +191,7 @@ Editorial rules:
 - Include a section ONLY if the data has matches in that state: only finished matches → write just FINISHED; only live → just LIVE.
 - Prioritise higher-tier competitions (Champions League > MLS, etc.).
 - A comeback, an upset, or a high-scoring game beats a routine win.
+- For knockout ties (Round of 32/16, quarter-final, etc.), frame the result as who advanced and who was eliminated — never as "a point", "a draw", or league/group standing. A penalty-shootout result means the winner went through and the loser is OUT; the level 90/120-minute score is not a draw in the table sense.
 - Be specific — teams, scores, minute — and always finish your sentences.
 - Never write "Here is…" or "In today's…" — start straight with the story.
 

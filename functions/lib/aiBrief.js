@@ -7,7 +7,7 @@
  *  - Upcoming matches excluded from context (they don't make interesting copy)
  *  - Context capped at 12 most-significant matches, with competition tier
  *  - Hash-based short-circuit: skips the API call if live/FT state is unchanged
- *  - max_tokens lowered from 180 → 140
+ *  - max_tokens 320 + trim-to-last-sentence so the brief never ends mid-clause
  *
  * Quality improvements:
  *  - Prompt gives editorial guidance: what counts as a good story
@@ -31,10 +31,13 @@ const COMP_TIER = {
     PL: 'Premier League', PD: 'La Liga', SA: 'Serie A', BL1: 'Bundesliga', FL1: 'Ligue 1',
     DED: 'Eredivisie', PPL: 'Primeira Liga', TSL: 'Süper Lig',
     BSA: 'Brasileirão', ARG: 'Liga Profesional', MX: 'Liga MX', MLS: 'MLS',
+    ACL: 'AFC Champions League', ACL2: 'AFC Champions League Two', CAFCL: 'CAF Champions League',
+    CCL: 'CONCACAF Champions League', GOLD: 'Gold Cup', ASIAN: 'Asian Cup',
+    CNL: 'CONCACAF Nations League', USC: 'UEFA Super Cup', CDB: 'Copa do Brasil',
 };
 // ── Build a compact, editorially-weighted context string ──────────────────────
 function buildContext(competitions) {
-    var _a;
+    var _a, _b, _c, _d, _e;
     const live = [];
     const ht = [];
     const finished = [];
@@ -53,10 +56,33 @@ function buildContext(competitions) {
             else if (m.status === 'HT') {
                 ht.push(`[${tier}] ${h} ${score} ${a} (HT)`);
             }
-            else if (m.status === 'FT') {
-                // Only include FT matches that actually have a score worth mentioning
+            else if (m.status === 'FT' || m.status === 'AET' || m.status === 'PEN') {
+                // Only include finished matches that actually have a score worth
+                // mentioning. Spell out the stage + how a tie was decided so the model
+                // never mistakes a knockout shootout for a group-stage draw.
                 if (hs !== null && as_ !== null) {
-                    finished.push(`[${tier}] ${h} ${score} ${a}`);
+                    const stageLabel = comp.stage ? ` · ${comp.stage}` : '';
+                    const winnerName = m.winner === 'home' ? h : m.winner === 'away' ? a : null;
+                    const loserName = m.winner === 'home' ? a : m.winner === 'away' ? h : null;
+                    let line = `[${tier}${stageLabel}] ${h} ${score} ${a}`;
+                    if (m.status === 'PEN' && winnerName) {
+                        // Present the shootout score winner-first so it reads correctly
+                        // regardless of which side (home/away) won.
+                        const pHome = (_c = (_b = m.penalty) === null || _b === void 0 ? void 0 : _b.home) !== null && _c !== void 0 ? _c : 0;
+                        const pAway = (_e = (_d = m.penalty) === null || _d === void 0 ? void 0 : _d.away) !== null && _e !== void 0 ? _e : 0;
+                        const pens = m.penalty ? ` ${m.winner === 'home' ? `${pHome}–${pAway}` : `${pAway}–${pHome}`}` : '';
+                        line += ` — level after extra time; ${winnerName} won${pens} on penalties and advance, ${loserName} eliminated`;
+                    }
+                    else if (m.status === 'PEN') {
+                        line += ` — decided on penalties`;
+                    }
+                    else if (m.status === 'AET' && winnerName) {
+                        line += ` — ${winnerName} won after extra time and advance, ${loserName} eliminated`;
+                    }
+                    else if (m.status === 'AET') {
+                        line += ` — after extra time`;
+                    }
+                    finished.push(line);
                 }
             }
             // UPCOMING matches deliberately excluded — not interesting copy
@@ -80,13 +106,30 @@ function buildStateHash(competitions) {
     const parts = [];
     for (const comp of competitions) {
         for (const m of comp.matches) {
-            if (m.status === 'LIVE' || m.status === 'HT' || m.status === 'FT') {
+            if (m.status === 'LIVE' || m.status === 'HT' || m.status === 'FT' || m.status === 'AET' || m.status === 'PEN') {
                 parts.push(`${m.id}:${m.status}:${m.home.score}:${m.away.score}:${(_a = m.minute) !== null && _a !== void 0 ? _a : ''}`);
             }
         }
     }
     // Simple hash — good enough to detect score changes
     return parts.sort().join('|');
+}
+// ── Sentence-boundary guard ───────────────────────────────────────────────────
+// Defends against a brief that ends mid-sentence (e.g. the model hit max_tokens
+// partway through a clause — "...It's the kind of performance that"). If the
+// text doesn't already end on terminal punctuation, trim back to the last
+// complete sentence so the card never shows a dangling fragment. With the
+// higher max_tokens this is usually a no-op; it's the belt-and-suspenders.
+function trimToLastSentence(text) {
+    const t = text.trim();
+    if (!t)
+        return t;
+    if (/[.!?]["'”’)]?$/.test(t))
+        return t; // already ends cleanly
+    const lastEnd = Math.max(t.lastIndexOf('.'), t.lastIndexOf('!'), t.lastIndexOf('?'));
+    if (lastEnd <= 0)
+        return t; // no sentence boundary found — leave as-is
+    return t.slice(0, lastEnd + 1).trim();
 }
 async function generateAiBrief(competitions, hasLive, existingBrief, existingBriefAt, anthropicKey, existingHash) {
     const now = Date.now();
@@ -101,7 +144,10 @@ async function generateAiBrief(competitions, hasLive, existingBrief, existingBri
     if (existingBrief && existingBriefAt) {
         const fresh = (now - existingBriefAt) < ttl;
         const unchanged = existingHash === stateHash;
-        if (fresh || unchanged) {
+        // Reuse only when BOTH hold: a recent brief AND no change in match state.
+        // (Previously `||`, which reused a still-fresh brief even after the score/
+        // status changed — so a corrected brief could lag up to a full TTL.)
+        if (fresh && unchanged) {
             const reason = unchanged ? 'state unchanged' : `${Math.round((now - existingBriefAt) / 60000)}m old, within TTL`;
             console.log(`[aiBrief] reusing existing brief (${reason})`);
             return { brief: existingBrief, generatedAt: existingBriefAt, stateHash };
@@ -116,15 +162,20 @@ async function generateAiBrief(competitions, hasLive, existingBrief, existingBri
             stateHash,
         };
     }
-    const prompt = `You are a sharp football writer for a live scores app. Your job is to write one punchy paragraph (2 sentences max) that gives fans the essential story of the moment — not a list, not a summary, but an actual take.
+    const prompt = `You are a sharp football writer for a live scores app. Write a brief, opinionated read on today's action — not a list or a dry summary, but an actual take with voice.
+
+Reply as one or two labelled sections, using ONLY the sections that have matches in the data below:
+**LIVE:** two sentences on the most compelling in-progress match (treat half-time games as live) — the tension, the goals, the drama. Present tense.
+**FINISHED:** two sentences leading with the most surprising or significant result. Past tense.
 
 Editorial rules:
-- Prioritise higher-tier competitions (Champions League > MLS, etc.)
-- A comeback, an upset, or a high-scoring game is more interesting than a routine win
-- For live matches: describe the tension or the goals, not just the score
-- For finished matches: lead with the result that will surprise people most
-- Never write "Here is…" or "In today's…" — just start with the story
-- Use present tense for live/HT, past tense for FT
+- Begin each section with its label inline exactly as written (e.g. "**LIVE:** Austria are…"), and separate the two sections with a blank line.
+- Include a section ONLY if the data has matches in that state: only finished matches → write just FINISHED; only live → just LIVE.
+- Prioritise higher-tier competitions (Champions League > MLS, etc.).
+- A comeback, an upset, or a high-scoring game beats a routine win.
+- For knockout ties (Round of 32/16, quarter-final, etc.), frame the result as who advanced and who was eliminated — never as "a point", "a draw", or league/group standing. A penalty-shootout result means the winner went through and the loser is OUT; the level 90/120-minute score is not a draw in the table sense.
+- Be specific — teams, scores, minute — and always finish your sentences.
+- Never write "Here is…" or "In today's…" — start straight with the story.
 
 Match data:
 ${context}`;
@@ -132,11 +183,11 @@ ${context}`;
         const client = new sdk_1.default({ apiKey: anthropicKey });
         const msg = await client.messages.create({
             model: 'claude-haiku-4-5-20251001',
-            max_tokens: 140,
+            max_tokens: 320,
             messages: [{ role: 'user', content: prompt }],
         });
         const text = msg.content.find(b => b.type === 'text');
-        const brief = (text === null || text === void 0 ? void 0 : text.type) === 'text' ? text.text.trim() : '';
+        const brief = trimToLastSentence((text === null || text === void 0 ? void 0 : text.type) === 'text' ? text.text : '');
         console.log(`[aiBrief] generated (hash=${stateHash.slice(0, 20)}): "${brief.slice(0, 80)}…"`);
         return { brief, generatedAt: now, stateHash };
     }

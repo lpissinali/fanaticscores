@@ -27,6 +27,18 @@ exports.LEAGUE_LIST = [
     // ── South American club competitions ─────────────────────────────────────────
     { id: 13, code: 'LIBT', name: 'Copa Libertadores', country: 'S. America', short: 'LIBT', flag: '#006400', type: 'CUP' },
     { id: 11, code: 'CSUD', name: 'Copa Sudamericana', country: 'S. America', short: 'CSUD', flag: '#005500', type: 'CUP' },
+    // ── Other continental club competitions ──────────────────────────────────────
+    { id: 17, code: 'ACL', name: 'AFC Champions League Elite', country: 'Asia', short: 'ACL', flag: '#c8102e', type: 'CUP' },
+    { id: 18, code: 'ACL2', name: 'AFC Champions League Two', country: 'Asia', short: 'ACL2', flag: '#c8102e', type: 'CUP' },
+    { id: 12, code: 'CAFCL', name: 'CAF Champions League', country: 'Africa', short: 'CAF', flag: '#1a7a3a', type: 'CUP' },
+    { id: 16, code: 'CCL', name: 'CONCACAF Champions League', country: 'N. America', short: 'CCL', flag: '#0a4d8c', type: 'CUP' },
+    // ── International (national teams) ────────────────────────────────────────────
+    { id: 22, code: 'GOLD', name: 'CONCACAF Gold Cup', country: 'N. America', short: 'GC', flag: '#0a4d8c', type: 'CUP' },
+    { id: 7, code: 'ASIAN', name: 'AFC Asian Cup', country: 'Asia', short: 'AC', flag: '#c8102e', type: 'CUP' },
+    { id: 536, code: 'CNL', name: 'CONCACAF Nations League', country: 'N. America', short: 'CNL', flag: '#0a4d8c', type: 'CUP' },
+    { id: 531, code: 'USC', name: 'UEFA Super Cup', country: 'Europe', short: 'USC', flag: '#1a3a6b', type: 'CUP' },
+    // ── Brazilian cup ─────────────────────────────────────────────────────────────
+    { id: 73, code: 'CDB', name: 'Copa do Brasil', country: 'Brazil', short: 'CDB', flag: '#006400', type: 'CUP' },
     // ── Top 5 European leagues ────────────────────────────────────────────────────
     { id: 39, code: 'PL', name: 'Premier League', country: 'England', short: 'PL', flag: '#3d0d6b', type: 'LEAGUE' },
     { id: 140, code: 'PD', name: 'La Liga', country: 'Spain', short: 'LL', flag: '#8b0000', type: 'LEAGUE' },
@@ -74,6 +86,8 @@ const TIER = {
     2: 10, 3: 9, 848: 7, 5: 7,
     // South American club
     13: 9, 11: 7,
+    // Other continental club + international (national teams) + Brazilian cup
+    17: 8, 18: 6, 12: 8, 16: 7, 22: 11, 7: 11, 536: 7, 531: 8, 73: 6,
     // Top 5 leagues
     39: 8, 140: 8, 135: 8, 78: 7, 61: 7,
     // Other European leagues
@@ -96,9 +110,9 @@ function mapStatus(s) {
         case 'BT':
         case 'P': return 'LIVE';
         case 'HT': return 'HT';
-        case 'FT':
-        case 'AET':
-        case 'PEN': return 'FT';
+        case 'FT': return 'FT';
+        case 'AET': return 'AET';
+        case 'PEN': return 'PEN';
         case 'PST': return 'POSTPONED';
         case 'CANC':
         case 'ABD':
@@ -116,6 +130,7 @@ const STALE_LIVE_MS = 3.5 * 3600000;
  * we force the status to FT so stale data never gets written to Firestore.
  */
 function mapFixtureToDoc(f, now) {
+    var _a, _b, _c;
     let status = mapStatus(f.fixture.status.short);
     const kickoffMs = new Date(f.fixture.date).getTime();
     // Stale-LIVE guard: override to FT if the match should be long finished.
@@ -125,6 +140,13 @@ function mapFixtureToDoc(f, now) {
     }
     const elapsed = f.fixture.status.elapsed;
     const minute = (elapsed != null && (status === 'LIVE' || status === 'HT')) ? elapsed : null;
+    // Winner side (api-football flags it on the team object for decided games).
+    const winner = f.teams.home.winner === true ? 'home' :
+        f.teams.away.winner === true ? 'away' : null;
+    // Penalty-shootout score — only meaningful when the tie was settled on pens.
+    const penalty = status === 'PEN' && ((_a = f.score) === null || _a === void 0 ? void 0 : _a.penalty)
+        ? { home: (_b = f.score.penalty.home) !== null && _b !== void 0 ? _b : null, away: (_c = f.score.penalty.away) !== null && _c !== void 0 ? _c : null }
+        : undefined;
     return {
         id: String(f.fixture.id),
         status,
@@ -136,6 +158,8 @@ function mapFixtureToDoc(f, now) {
         kickoffIso: status === 'SCHEDULED' ? f.fixture.date : undefined,
         home: mapTeam(f.teams.home, f.goals.home),
         away: mapTeam(f.teams.away, f.goals.away),
+        winner,
+        penalty,
     };
 }
 function formatKickoff(isoDate) {

@@ -240,6 +240,7 @@ body {
   text-overflow: ellipsis;
 }
 .match-row .team-name.muted { color: var(--text-dim); }
+.match-row .team-name.winner { font-weight: 800; color: var(--text); }
 
 .match-row .score-col {
   font-family: var(--font-archivo), sans-serif;
@@ -254,3 +255,4 @@ body {
 }
 .match-row .score-col .num { display: block; }
 .match-row .score-col .num.muted { color: var(--text-dim); font-weight: 700; }
+.match-row .score-col .num.winner { color: var(--text); }

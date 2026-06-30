@@ -59,8 +59,8 @@ function TimeCol({ match }: { match: Match }) {
 }
 
 // -- Team name (linked if id available) -------------------------------------
-function TeamName({ team, muted, locale }: { team: TeamInfo; muted: boolean; locale: string }) {
-  const cls = `team-name${muted ? ' muted' : ''}`;
+function TeamName({ team, muted, winner, locale }: { team: TeamInfo; muted: boolean; winner: boolean; locale: string }) {
+  const cls = `team-name${muted ? ' muted' : ''}${winner ? ' winner' : ''}`;
   if (team.id) {
     return (
       <Link
@@ -83,14 +83,22 @@ interface MatchRowProps {
   onClick?: (match: Match) => void;
 }
 
-// Small "PEN" marker shown after the shootout winner's name.
-function PenTag() {
+// Small marker shown after the winning team when a tie was settled beyond 90' —
+// "PEN" (orange) for a shootout, "AET" (outlined) for an extra-time decision.
+function DecidedTag({ kind }: { kind: 'PEN' | 'AET' }) {
+  const pen = kind === 'PEN';
   return (
     <span
-      aria-label="won on penalties"
-      style={{ fontSize: 9, fontWeight: 800, letterSpacing: 0.5, color: 'var(--orange)', background: 'var(--orange-soft)', padding: '1px 4px', borderRadius: 4, marginLeft: 4, flexShrink: 0 }}
+      aria-label={pen ? 'won on penalties' : 'won after extra time'}
+      style={{
+        fontSize: 9, fontWeight: 800, letterSpacing: 0.5, flexShrink: 0,
+        padding: '1px 4px', borderRadius: 4, marginLeft: 4,
+        color: pen ? 'var(--orange)' : 'var(--text-dim)',
+        background: pen ? 'var(--orange-soft)' : 'transparent',
+        border: pen ? '1px solid transparent' : '1px solid var(--border)',
+      }}
     >
-      PEN
+      {kind}
     </span>
   );
 }
@@ -99,10 +107,13 @@ export default function MatchRow({ match, featured = false, locale = 'en', onCli
   const { home, away } = match;
   const hasScore = home.score !== null && away.score !== null;
   const isPen = match.status === 'PEN';
+  const isAet = match.status === 'AET';
+  const decided = isPen || isAet; // tie settled beyond 90'
   // For a shootout the 90'/ET score is level, so the winner comes from
   // `match.winner` rather than the goal score.
   const homeWins = isPen ? match.winner === 'home' : (hasScore && (home.score as number) > (away.score as number));
   const awayWins = isPen ? match.winner === 'away' : (hasScore && (away.score as number) > (home.score as number));
+  const decidedKind: 'PEN' | 'AET' = isPen ? 'PEN' : 'AET';
 
   return (
     <div
@@ -129,14 +140,14 @@ export default function MatchRow({ match, featured = false, locale = 'en', onCli
       <div className="teams">
         <div className="team-line">
           <Crest team={home} size="md" />
-          <TeamName team={home} muted={awayWins} locale={locale} />
-          {isPen && homeWins && <PenTag />}
+          <TeamName team={home} muted={awayWins} winner={homeWins} locale={locale} />
+          {decided && homeWins && <DecidedTag kind={decidedKind} />}
           <FollowStar team={home} />
         </div>
         <div className="team-line">
           <Crest team={away} size="md" />
-          <TeamName team={away} muted={homeWins} locale={locale} />
-          {isPen && awayWins && <PenTag />}
+          <TeamName team={away} muted={homeWins} winner={awayWins} locale={locale} />
+          {decided && awayWins && <DecidedTag kind={decidedKind} />}
           <FollowStar team={away} />
         </div>
       </div>
@@ -146,8 +157,8 @@ export default function MatchRow({ match, featured = false, locale = 'en', onCli
           <span className={styles.noScore}>&#8212;</span>
         ) : (
           <>
-            <span className={`num${awayWins ? ' muted' : ''}`}>{home.score}</span>
-            <span className={`num${homeWins ? ' muted' : ''}`}>{away.score}</span>
+            <span className={`num${awayWins ? ' muted' : homeWins ? ' winner' : ''}`}>{home.score}</span>
+            <span className={`num${homeWins ? ' muted' : awayWins ? ' winner' : ''}`}>{away.score}</span>
           </>
         )}
       </div>

@@ -25,8 +25,10 @@ exports.captionRewrite = (0, https_1.onRequest)({ secrets: [secrets_1.anthropicA
     const statusStr = status === 'LIVE'
         ? `Live ${minute !== null && minute !== void 0 ? minute : '?'}'`
         : status === 'FT' ? 'Full Time'
-            : status === 'HT' ? 'Half Time'
-                : 'Upcoming';
+            : status === 'AET' ? 'After Extra Time'
+                : status === 'PEN' ? 'After Penalties'
+                    : status === 'HT' ? 'Half Time'
+                        : 'Upcoming';
     const matchLine = hasScore
         ? `${home} ${scoreStr} ${away} (${statusStr}, ${competition})`
         : `${home} vs ${away} (${statusStr}, ${competition})`;
