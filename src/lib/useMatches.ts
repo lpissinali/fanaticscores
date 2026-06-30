@@ -33,7 +33,7 @@ export interface MatchesState extends TodayData {
 // ── Firestore document shape (mirrors functions/src/footballDataFetch.ts) ──
 
 interface TeamData  { id: string; name: string; short: string; initial: string; color: string; crest?: string; score: number | null; }
-interface MatchData { id: string; status: string; minute: string | number | null; kickoff?: string; kickoffIso?: string; competition?: string; home: TeamData; away: TeamData; }
+interface MatchData { id: string; status: string; minute: string | number | null; kickoff?: string; kickoffIso?: string; competition?: string; home: TeamData; away: TeamData; winner?: 'home' | 'away' | null; penalty?: { home: number | null; away: number | null }; }
 interface CompData  { id: string; name: string; country: string; short: string; flag: string; stage?: string; matches: MatchData[]; }
 export interface MatchdayDoc {
   competitions:       CompData[];
@@ -79,6 +79,8 @@ export function mapDoc(doc: MatchdayDoc): TodayData {
       kickoff: localKickoff(m.kickoffIso, m.kickoff),
       home:    { ...m.home },
       away:    { ...m.away },
+      winner:  m.winner ?? null,
+      penalty: m.penalty,
     } as Match)),
   }));
 
@@ -96,6 +98,8 @@ export function mapDoc(doc: MatchdayDoc): TodayData {
       compCountry,
       home:           { ...m.home },
       away:           { ...m.away },
+      winner:         m.winner ?? null,
+      penalty:        m.penalty,
       stats:          { possession: [50, 50], shots: [0, 0], xG: [0, 0] },
       events:         [],
       aiPulse:        '',

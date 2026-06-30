@@ -27,6 +27,8 @@ export default function StatusChip({ match }: StatusChipProps) {
 
   if (status === 'HT') return <span className="chip ht">HT</span>;
   if (status === 'FT') return <span className="chip ft">FT</span>;
+  if (status === 'AET') return <span className="chip ft">AET</span>;
+  if (status === 'PEN') return <span className="chip ft">AP</span>;
 
   return <span className="chip">{match.kickoff ?? '–'}</span>;
 }

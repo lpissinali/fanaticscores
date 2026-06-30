@@ -131,6 +131,11 @@ export interface MatchData {
   /** Raw ISO kickoff datetime — clients format this in the viewer's timezone. */
   kickoffIso?: string;
   home: TeamData; away: TeamData;
+  /** Winning side for a decided knockout tie (esp. when level after ET and
+   *  settled on penalties). null when drawn / not applicable. */
+  winner?: 'home' | 'away' | null;
+  /** Penalty-shootout score — present only when status is 'PEN'. */
+  penalty?: { home: number | null; away: number | null };
 }
 
 export interface TeamData {
@@ -143,13 +148,14 @@ export interface TeamData {
 interface AFFixtureStatus { short: string; elapsed: number | null; }
 interface AFFixtureInfo   { id: number; date: string; status: AFFixtureStatus; }
 interface AFLeague        { id: number; name: string; country: string; round: string; }
-interface AFTeam          { id: number; name: string; logo: string; }
+interface AFTeam          { id: number; name: string; logo: string; winner?: boolean | null; }
 interface AFGoals         { home: number | null; away: number | null; }
 interface AFFixture {
   fixture: AFFixtureInfo;
   league:  AFLeague;
   teams:   { home: AFTeam; away: AFTeam };
   goals:   AFGoals;
+  score?:  { penalty?: { home: number | null; away: number | null } };
 }
 
 // ── Mapping helpers ──────────────────────────────────────────────────────────
@@ -162,9 +168,9 @@ function mapStatus(s: string): string {
     case 'BT':
     case 'P':   return 'LIVE';
     case 'HT':  return 'HT';
-    case 'FT':
-    case 'AET':
-    case 'PEN': return 'FT';
+    case 'FT':  return 'FT';
+    case 'AET': return 'AET';
+    case 'PEN': return 'PEN';
     case 'PST': return 'POSTPONED';
     case 'CANC':
     case 'ABD':
@@ -197,6 +203,16 @@ function mapFixtureToDoc(f: AFFixture, now: number): MatchData {
   const minute: string | number | null =
     (elapsed != null && (status === 'LIVE' || status === 'HT')) ? elapsed : null;
 
+  // Winner side (api-football flags it on the team object for decided games).
+  const winner: 'home' | 'away' | null =
+    f.teams.home.winner === true ? 'home' :
+    f.teams.away.winner === true ? 'away' : null;
+
+  // Penalty-shootout score — only meaningful when the tie was settled on pens.
+  const penalty = status === 'PEN' && f.score?.penalty
+    ? { home: f.score.penalty.home ?? null, away: f.score.penalty.away ?? null }
+    : undefined;
+
   return {
     id:      String(f.fixture.id),
     status,
@@ -208,6 +224,8 @@ function mapFixtureToDoc(f: AFFixture, now: number): MatchData {
     kickoffIso: status === 'SCHEDULED' ? f.fixture.date : undefined,
     home:    mapTeam(f.teams.home, f.goals.home),
     away:    mapTeam(f.teams.away, f.goals.away),
+    winner,
+    penalty,
   };
 }
 

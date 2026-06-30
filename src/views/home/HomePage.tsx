@@ -33,7 +33,20 @@ interface HomePageProps {
 // DESKTOP
 // -----------------------------------------------------------------------
 
+// Small "PEN" marker shown next to a penalty-shootout winner.
+function PenTag() {
+  return (
+    <span
+      aria-label="won on penalties"
+      style={{ fontSize: 9, fontWeight: 800, letterSpacing: 0.5, color: 'var(--orange)', background: 'var(--orange-soft)', padding: '1px 5px', borderRadius: 4, margin: '0 6px', verticalAlign: 'middle', flexShrink: 0 }}
+    >
+      PEN
+    </span>
+  );
+}
+
 function DesktopFeatured({ featured, locale }: { featured: FeaturedMatch | null; locale: string }) {
+  const router = useRouter();
   if (!featured) {
     return (
       <div className={styles.featured} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 160 }}>
@@ -45,9 +58,20 @@ function DesktopFeatured({ featured, locale }: { featured: FeaturedMatch | null;
 
   const m = featured;
   const hasStats = m.stats && (m.stats.shots[0] + m.stats.shots[1] > 0 || m.stats.possession[0] !== 50);
+  const isPen = m.status === 'PEN';
+  const bothScores = m.home.score !== null && m.away.score !== null;
+  const homeWins = isPen ? m.winner === 'home' : (bothScores && (m.home.score as number) > (m.away.score as number));
+  const awayWins = isPen ? m.winner === 'away' : (bothScores && (m.away.score as number) > (m.home.score as number));
 
   return (
-    <div className={styles.featured}>
+    <div
+      className={styles.featured}
+      role="button"
+      tabIndex={0}
+      style={{ cursor: 'pointer' }}
+      onClick={() => router.push(`/${locale}/match/${m.id}`)}
+      onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/${locale}/match/${m.id}`); }}
+    >
       <div className={styles.featuredGlow} aria-hidden="true" />
 
       <div className={styles.featuredTop}>
@@ -61,12 +85,16 @@ function DesktopFeatured({ featured, locale }: { featured: FeaturedMatch | null;
             <span className="chip ht">Half Time</span>
           ) : m.status === 'FT' ? (
             <span className="chip ft">Full Time</span>
+          ) : m.status === 'AET' ? (
+            <span className="chip ft">After Extra Time</span>
+          ) : m.status === 'PEN' ? (
+            <span className="chip ft">After Penalties</span>
           ) : (
             <span className="chip">{m.kickoff ?? 'Upcoming'}</span>
           )}
           <span className={styles.featuredCompLabel}>{m.compCountry ? `${m.compCountry} · ` : ''}{m.competition}</span>
         </div>
-        <Link href={`/${locale}/studio/${m.id}`} className="fs-btn ghost" style={{ height: 32, padding: '0 12px', fontSize: 12, textDecoration: 'none' }}>
+        <Link href={`/${locale}/studio/${m.id}`} onClick={e => e.stopPropagation()} className="fs-btn ghost" style={{ height: 32, padding: '0 12px', fontSize: 12, textDecoration: 'none' }}>
           <Icon name="share" size={14} /> Share match
         </Link>
       </div>
@@ -76,26 +104,31 @@ function DesktopFeatured({ featured, locale }: { featured: FeaturedMatch | null;
           <Crest team={m.home} size="xl" />
           <div>
             <div className={styles.teamRole}>Home</div>
-            <div className={styles.teamName}>
+            <div className={styles.teamName} style={awayWins ? { opacity: 0.5 } : undefined}>
               {m.home.id
-                ? <Link href={`/${locale}/team/${m.home.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>{m.home.name}</Link>
+                ? <Link href={`/${locale}/team/${m.home.id}`} onClick={e => e.stopPropagation()} style={{ color: 'inherit', textDecoration: 'none' }}>{m.home.name}</Link>
                 : m.home.name}
+              {isPen && homeWins && <PenTag />}
             </div>
           </div>
         </div>
 
         <div className={styles.scoreBlock}>
-          <span className={styles.score}>{m.home.score ?? '--'}</span>
+          <span className={styles.score} style={awayWins ? { opacity: 0.5 } : undefined}>{m.home.score ?? '--'}</span>
           <span className={styles.scoreDash}>&ndash;</span>
-          <span className={styles.score}>{m.away.score ?? '--'}</span>
+          <span className={styles.score} style={homeWins ? { opacity: 0.5 } : undefined}>{m.away.score ?? '--'}</span>
+          {isPen && m.penalty && (
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', marginTop: 4, fontFamily: 'JetBrains Mono, monospace', whiteSpace: 'nowrap' }}>Pen {m.penalty.home ?? 0}&ndash;{m.penalty.away ?? 0}</div>
+          )}
         </div>
 
         <div className={styles.teamRight}>
           <div style={{ textAlign: 'right' }}>
             <div className={styles.teamRole}>Away</div>
-            <div className={styles.teamName}>
+            <div className={styles.teamName} style={homeWins ? { opacity: 0.5 } : undefined}>
+              {isPen && awayWins && <PenTag />}
               {m.away.id
-                ? <Link href={`/${locale}/team/${m.away.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>{m.away.name}</Link>
+                ? <Link href={`/${locale}/team/${m.away.id}`} onClick={e => e.stopPropagation()} style={{ color: 'inherit', textDecoration: 'none' }}>{m.away.name}</Link>
                 : m.away.name}
             </div>
           </div>
@@ -209,7 +242,7 @@ function buildTrendingItems(competitions: Competition[]): TrendingItem[] {
           tag: 'MOMENT',
           text: `${h} ${score} ${a} · Half Time — ${comp.name}`,
         });
-      } else if (m.status === 'FT' && hs !== null && as_ !== null && (hs + as_) >= 3) {
+      } else if ((m.status === 'FT' || m.status === 'AET' || m.status === 'PEN') && hs !== null && as_ !== null && (hs + as_) >= 3) {
         // Only surface high-scoring finished games
         items.push({
           id: m.id, matchId: m.id,
@@ -388,6 +421,7 @@ function DesktopLayout({ locale, featured, competitions, loading, error, resolve
 
 
 function MobileFeatured({ featured, locale }: { featured: FeaturedMatch | null; locale: string }) {
+  const router = useRouter();
   if (!featured) {
     return (
       <div className={styles.mobFeatured} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 120 }}>
@@ -398,8 +432,19 @@ function MobileFeatured({ featured, locale }: { featured: FeaturedMatch | null; 
   }
 
   const m = featured;
+  const isPen = m.status === 'PEN';
+  const bothScores = m.home.score !== null && m.away.score !== null;
+  const homeWins = isPen ? m.winner === 'home' : (bothScores && (m.home.score as number) > (m.away.score as number));
+  const awayWins = isPen ? m.winner === 'away' : (bothScores && (m.away.score as number) > (m.home.score as number));
   return (
-    <div className={styles.mobFeatured}>
+    <div
+      className={styles.mobFeatured}
+      role="button"
+      tabIndex={0}
+      style={{ cursor: 'pointer' }}
+      onClick={() => router.push(`/${locale}/match/${m.id}`)}
+      onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/${locale}/match/${m.id}`); }}
+    >
       <div className={styles.mobFeaturedGlow} aria-hidden="true" />
 
       <div className={styles.mobFeaturedTop}>
@@ -410,12 +455,16 @@ function MobileFeatured({ featured, locale }: { featured: FeaturedMatch | null; 
             <span className="chip ht">HT</span>
           ) : m.status === 'FT' ? (
             <span className="chip ft">FT</span>
+          ) : m.status === 'AET' ? (
+            <span className="chip ft">AET</span>
+          ) : m.status === 'PEN' ? (
+            <span className="chip ft">AP</span>
           ) : (
             <span className="chip">{m.kickoff ?? ''}</span>
           )}
           <span className={styles.mobCompLabel}>{m.compCountry ? `${m.compCountry} · ` : ''}{m.competition}</span>
         </div>
-        <Link href={`/${locale}/studio/${m.id}`} className="fs-btn ghost" style={{ height: 28, padding: '0 10px', borderColor: 'transparent', fontSize: 12, textDecoration: 'none' }}>
+        <Link href={`/${locale}/studio/${m.id}`} onClick={e => e.stopPropagation()} className="fs-btn ghost" style={{ height: 28, padding: '0 10px', borderColor: 'transparent', fontSize: 12, textDecoration: 'none' }}>
           <Icon name="share" size={14} /> Share
         </Link>
       </div>
@@ -423,26 +472,33 @@ function MobileFeatured({ featured, locale }: { featured: FeaturedMatch | null; 
       <div className={styles.mobScoreRow}>
         <div className={styles.mobTeam}>
           <Crest team={m.home} size="lg" />
-          <span className={styles.mobTeamName}>
+          <span className={styles.mobTeamName} style={awayWins ? { opacity: 0.5 } : undefined}>
             {m.home.id
-              ? <Link href={`/${locale}/team/${m.home.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>{m.home.short}</Link>
+              ? <Link href={`/${locale}/team/${m.home.id}`} onClick={e => e.stopPropagation()} style={{ color: 'inherit', textDecoration: 'none' }}>{m.home.short}</Link>
               : m.home.short}
+            {isPen && homeWins && <PenTag />}
           </span>
         </div>
         <div className={styles.mobScore}>
-          <span>{m.home.score ?? '--'}</span>
+          <span style={awayWins ? { opacity: 0.5 } : undefined}>{m.home.score ?? '--'}</span>
           <span className={styles.mobScoreSep}>:</span>
-          <span>{m.away.score ?? '--'}</span>
+          <span style={homeWins ? { opacity: 0.5 } : undefined}>{m.away.score ?? '--'}</span>
         </div>
         <div className={styles.mobTeam}>
           <Crest team={m.away} size="lg" />
-          <span className={styles.mobTeamName}>
+          <span className={styles.mobTeamName} style={homeWins ? { opacity: 0.5 } : undefined}>
             {m.away.id
-              ? <Link href={`/${locale}/team/${m.away.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>{m.away.short}</Link>
+              ? <Link href={`/${locale}/team/${m.away.id}`} onClick={e => e.stopPropagation()} style={{ color: 'inherit', textDecoration: 'none' }}>{m.away.short}</Link>
               : m.away.short}
+            {isPen && awayWins && <PenTag />}
           </span>
         </div>
       </div>
+      {isPen && m.penalty && (
+        <div style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', marginTop: 6, fontFamily: 'JetBrains Mono, monospace' }}>
+          Pen {m.penalty.home ?? 0}&ndash;{m.penalty.away ?? 0}
+        </div>
+      )}
 
       {m.momentumSeries && m.momentumSeries.length > 0 && (
         <div className={styles.mobMomentumBar}>

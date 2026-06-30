@@ -36,6 +36,8 @@ export const captionRewrite = onRequest(
     const statusStr = status === 'LIVE'
       ? `Live ${minute ?? '?'}'`
       : status === 'FT' ? 'Full Time'
+      : status === 'AET' ? 'After Extra Time'
+      : status === 'PEN' ? 'After Penalties'
       : status === 'HT' ? 'Half Time'
       : 'Upcoming';
 

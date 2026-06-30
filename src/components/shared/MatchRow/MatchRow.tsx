@@ -52,6 +52,9 @@ function TimeCol({ match }: { match: Match }) {
   }
   if (match.status === 'HT') return <span className={styles.timeHT}>HT</span>;
   if (match.status === 'FT') return <span className={styles.timeFT}>FT</span>;
+  // Tie decided in extra time / on penalties — finished, with a distinct label.
+  if (match.status === 'AET') return <span className={styles.timeFT}>AET</span>;
+  if (match.status === 'PEN') return <span className={styles.timeFT}>AP</span>;
   return <span className={styles.timeScheduled}>{match.kickoff ?? ''}</span>;
 }
 
@@ -80,11 +83,26 @@ interface MatchRowProps {
   onClick?: (match: Match) => void;
 }
 
+// Small "PEN" marker shown after the shootout winner's name.
+function PenTag() {
+  return (
+    <span
+      aria-label="won on penalties"
+      style={{ fontSize: 9, fontWeight: 800, letterSpacing: 0.5, color: 'var(--orange)', background: 'var(--orange-soft)', padding: '1px 4px', borderRadius: 4, marginLeft: 4, flexShrink: 0 }}
+    >
+      PEN
+    </span>
+  );
+}
+
 export default function MatchRow({ match, featured = false, locale = 'en', onClick }: MatchRowProps) {
   const { home, away } = match;
   const hasScore = home.score !== null && away.score !== null;
-  const homeWins = hasScore && (home.score as number) > (away.score as number);
-  const awayWins = hasScore && (away.score as number) > (home.score as number);
+  const isPen = match.status === 'PEN';
+  // For a shootout the 90'/ET score is level, so the winner comes from
+  // `match.winner` rather than the goal score.
+  const homeWins = isPen ? match.winner === 'home' : (hasScore && (home.score as number) > (away.score as number));
+  const awayWins = isPen ? match.winner === 'away' : (hasScore && (away.score as number) > (home.score as number));
 
   return (
     <div
@@ -112,11 +130,13 @@ export default function MatchRow({ match, featured = false, locale = 'en', onCli
         <div className="team-line">
           <Crest team={home} size="md" />
           <TeamName team={home} muted={awayWins} locale={locale} />
+          {isPen && homeWins && <PenTag />}
           <FollowStar team={home} />
         </div>
         <div className="team-line">
           <Crest team={away} size="md" />
           <TeamName team={away} muted={homeWins} locale={locale} />
+          {isPen && awayWins && <PenTag />}
           <FollowStar team={away} />
         </div>
       </div>

@@ -107,16 +107,18 @@
 .score     { display: block; color: var(--text); }
 .scoreDash { font-size: 50px; font-weight: 400; color: var(--text-faint); }
 .htRow {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  column-gap: 10px;
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid var(--border);
 }
-.htLabel { font-size: 11px; color: var(--text-faint); font-family: var(--font-jetbrains-mono), monospace; }
-.htScore { font-size: 13px; color: var(--text-dim); font-weight: 700; font-family: var(--font-jetbrains-mono), monospace; }
+/* Label right-aligned to the centre line; score centred in the middle column so
+   the dash lines up vertically between the Half-time and Penalties rows. */
+.htLabel { font-size: 11px; color: var(--text-faint); font-family: var(--font-jetbrains-mono), monospace; text-align: right; }
+.htScore { font-size: 13px; color: var(--text-dim); font-weight: 700; font-family: var(--font-jetbrains-mono), monospace; text-align: center; white-space: pre; }
 
 /* ── Section wrapper ─────────────────────────────────────────────────────── */
 .section {
@@ -188,7 +190,10 @@
 .h2hRow:hover { background: var(--bg); }
 .h2hDate   { color: var(--text-faint); font-family: var(--font-jetbrains-mono), monospace; font-size: 11px; }
 .h2hName   { color: var(--text-dim); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.h2hResult { color: var(--text); font-weight: 800; text-align: center; font-family: var(--font-jetbrains-mono), monospace; }
+.h2hResult { color: var(--text); font-weight: 800; font-family: var(--font-jetbrains-mono), monospace; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; column-gap: 6px; }
+.h2hResult > span:first-child { text-align: right; }
+.h2hResult > span:last-child  { text-align: left; }
+.h2hDash { color: var(--text-faint); }
 
 /* ── Standings table ─────────────────────────────────────────────────────── */
 .table { width: 100%; }
@@ -578,10 +583,10 @@
 .mobScore     { font-size: 40px; font-weight: 900; color: var(--text); font-family: var(--font-jetbrains-mono), monospace; line-height: 1; }
 .mobScoreDash { font-size: 24px; font-weight: 300; color: var(--text-faint); }
 .mobHtRow {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  column-gap: 10px;
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--border);

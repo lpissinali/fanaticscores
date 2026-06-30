@@ -4,7 +4,7 @@
    Real API adapters (src/adapters/*) must return these types.
    ============================================================ */
 
-export type MatchStatus = 'LIVE' | 'HT' | 'FT' | 'SCHEDULED' | 'POSTPONED' | 'CANCELLED';
+export type MatchStatus = 'LIVE' | 'HT' | 'FT' | 'AET' | 'PEN' | 'SCHEDULED' | 'POSTPONED' | 'CANCELLED';
 
 export interface TeamInfo {
   id?: string;
@@ -45,6 +45,10 @@ export interface Match {
   aggregate?: string;
   kickoff?: string;
   featured?: boolean;
+  /** Winning side for a decided knockout tie (esp. settled on penalties). */
+  winner?: 'home' | 'away' | null;
+  /** Penalty-shootout score — present only when status is 'PEN'. */
+  penalty?: { home: number | null; away: number | null };
 }
 
 export interface FeaturedMatch extends Match {

@@ -95,13 +95,14 @@ const TIER: Record<number, number> = {
 interface AFFixtureStatus { short: string; elapsed: number | null; }
 interface AFFixtureInfo   { id: number; date: string; status: AFFixtureStatus; }
 interface AFLeague        { id: number; name: string; country: string; round: string; }
-interface AFTeam          { id: number; name: string; logo: string; }
+interface AFTeam          { id: number; name: string; logo: string; winner?: boolean | null; }
 interface AFGoals         { home: number | null; away: number | null; }
 interface AFFixture {
   fixture: AFFixtureInfo;
   league:  AFLeague;
   teams:   { home: AFTeam; away: AFTeam };
   goals:   AFGoals;
+  score?:  { penalty?: { home: number | null; away: number | null } };
 }
 
 // ── Mapping helpers ──────────────────────────────────────────────────────────
@@ -114,9 +115,9 @@ function mapStatus(s: string): MatchStatus {
     case 'BT':
     case 'P':   return 'LIVE';
     case 'HT':  return 'HT';
-    case 'FT':
-    case 'AET':
-    case 'PEN': return 'FT';
+    case 'FT':  return 'FT';
+    case 'AET': return 'AET';
+    case 'PEN': return 'PEN';
     case 'PST': return 'POSTPONED';
     case 'CANC':
     case 'ABD':
@@ -161,6 +162,14 @@ function mapFixtureToMatch(f: AFFixture): Match {
 
   const minute: string | number | null =
     (elapsed != null && (status === 'LIVE' || status === 'HT')) ? elapsed : null;
+
+  const winner: 'home' | 'away' | null =
+    f.teams.home.winner === true ? 'home' :
+    f.teams.away.winner === true ? 'away' : null;
+  const penalty = status === 'PEN' && f.score?.penalty
+    ? { home: f.score.penalty.home ?? null, away: f.score.penalty.away ?? null }
+    : undefined;
+
   return {
     id:      String(f.fixture.id),
     status,
@@ -168,6 +177,8 @@ function mapFixtureToMatch(f: AFFixture): Match {
     kickoff: status === 'SCHEDULED' ? formatKickoff(f.fixture.date) : undefined,
     home:    mapTeam(f.teams.home, f.goals.home),
     away:    mapTeam(f.teams.away, f.goals.away),
+    winner,
+    penalty,
   };
 }
 

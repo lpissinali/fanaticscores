@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { fetchMatchDetail, fetchRelatedFixtures } from '@/lib/serverApi/matchDetails';
-import type { MatchDetailData, MatchEvent, StandingRow, RelatedFixture } from '@/lib/serverApi/matchDetails';
+import type { MatchDetailData, MatchEvent, PenaltyKick, StandingRow, RelatedFixture } from '@/lib/serverApi/matchDetails';
 import Sidebar from '@/src/components/layout/Sidebar/Sidebar';
 import Footer from '@/src/components/layout/Footer/Footer';
 import RailPromo from '@/src/components/shared/RailPromo/RailPromo';
@@ -25,12 +25,34 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title, description, alternates: { canonical: url }, openGraph: { title, description, url }, twitter: { title, description } };
 }
 
+// Small "PEN" marker shown next to a shootout winner's name.
+function PenTag() {
+  return (
+    <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.5, color: 'var(--orange)', background: 'var(--orange-soft)', padding: '1px 5px', borderRadius: 4, marginLeft: 6, verticalAlign: 'middle' }}>PEN</span>
+  );
+}
+
+/** Winner side for emphasis: penalties use d.winner, otherwise the goal score. */
+function decideWinner(d: MatchDetailData): { home: boolean; away: boolean } {
+  if (d.status === 'PEN' || d.status === 'AET') {
+    if (d.winner) return { home: d.winner === 'home', away: d.winner === 'away' };
+  }
+  const both = d.home.score !== null && d.away.score !== null;
+  return {
+    home: both && (d.home.score as number) > (d.away.score as number),
+    away: both && (d.away.score as number) > (d.home.score as number),
+  };
+}
+
 function ScoreHeader({ d, matchId }: { d: MatchDetailData; matchId: string }) {
   const statusChip =
     d.status === 'LIVE' ? <span className="chip live">Live{d.minute ? ` · ${d.minute}′` : ''}</span> :
     d.status === 'HT'   ? <span className="chip ht">Half Time</span> :
     d.status === 'FT'   ? <span className="chip ft">Full Time</span> :
+    d.status === 'AET'  ? <span className="chip ft">After Extra Time</span> :
+    d.status === 'PEN'  ? <span className="chip ft">After Penalties</span> :
                           <span className="chip"><LocalKickoff iso={d.kickoff} /></span>;
+  const win = decideWinner(d);
   return (
     <div className={styles.featured}>
       <div className={styles.featuredGlow} aria-hidden="true" />
@@ -49,15 +71,15 @@ function ScoreHeader({ d, matchId }: { d: MatchDetailData; matchId: string }) {
       <div className={styles.scoreGrid}>
         <Link href={`/en/team/${d.home.id}`} className={styles.teamLeft} style={{ textDecoration: 'none' }}>
           {d.home.crest && <img src={d.home.crest} alt={d.home.name} width={56} height={56} style={{ objectFit: 'contain' }} />}
-          <div><div className={styles.teamRole}>Home</div><div className={styles.teamName}>{d.home.name}</div></div>
+          <div><div className={styles.teamRole}>Home</div><div className={styles.teamName} style={win.away ? { opacity: 0.5 } : undefined}>{d.home.name}{d.status === 'PEN' && win.home && <PenTag />}</div></div>
         </Link>
         <div className={styles.scoreBlock}>
-          <span className={styles.score}>{d.home.score ?? '--'}</span>
+          <span className={styles.score} style={win.away ? { opacity: 0.5 } : undefined}>{d.home.score ?? '--'}</span>
           <span className={styles.scoreDash}>–</span>
-          <span className={styles.score}>{d.away.score ?? '--'}</span>
+          <span className={styles.score} style={win.home ? { opacity: 0.5 } : undefined}>{d.away.score ?? '--'}</span>
         </div>
         <Link href={`/en/team/${d.away.id}`} className={styles.teamRight} style={{ textDecoration: 'none' }}>
-          <div style={{ textAlign: 'right' }}><div className={styles.teamRole}>Away</div><div className={styles.teamName}>{d.away.name}</div></div>
+          <div style={{ textAlign: 'right' }}><div className={styles.teamRole}>Away</div><div className={styles.teamName} style={win.home ? { opacity: 0.5 } : undefined}>{d.status === 'PEN' && win.away && <PenTag />}{d.away.name}</div></div>
           {d.away.crest && <img src={d.away.crest} alt={d.away.name} width={56} height={56} style={{ objectFit: 'contain' }} />}
         </Link>
       </div>
@@ -65,6 +87,12 @@ function ScoreHeader({ d, matchId }: { d: MatchDetailData; matchId: string }) {
         <div className={styles.htRow}>
           <span className={styles.htLabel}>Half-time</span>
           <span className={styles.htScore}>{d.halfTime.home} – {d.halfTime.away ?? 0}</span>
+        </div>
+      )}
+      {d.penalty && (
+        <div className={styles.htRow}>
+          <span className={styles.htLabel}>Penalties</span>
+          <span className={styles.htScore}>{d.penalty.home ?? 0} – {d.penalty.away ?? 0}</span>
         </div>
       )}
     </div>
@@ -126,6 +154,56 @@ function EventsSection({ events }: { events: MatchEvent[] }) {
   );
 }
 
+function ShootoutSection({ shootout, penalty }: { shootout: PenaltyKick[]; penalty: MatchDetailData['penalty'] }) {
+  if (!shootout || shootout.length === 0) return null;
+
+  // Pair kicks into rounds (one home + one away per row) with a running tally.
+  let h = 0, a = 0;
+  type Cell = { player: string; scored: boolean } | undefined;
+  type Row = { home: Cell; away: Cell; tally: string };
+  const rows: Row[] = [];
+  let cur: Row | null = null;
+  for (const k of shootout) {
+    if (k.scored) { if (k.team === 'home') h++; else a++; }
+    if (!cur) cur = { home: undefined, away: undefined, tally: '' };
+    if (k.team === 'home') {
+      if (cur.home) { rows.push(cur); cur = { home: undefined, away: undefined, tally: '' }; }
+      cur.home = { player: k.player, scored: k.scored };
+    } else {
+      if (cur.away) { rows.push(cur); cur = { home: undefined, away: undefined, tally: '' }; }
+      cur.away = { player: k.player, scored: k.scored };
+    }
+    cur.tally = `${h}–${a}`;
+    if (cur.home && cur.away) { rows.push(cur); cur = null; }
+  }
+  if (cur) rows.push(cur);
+
+  const Mark = ({ scored }: { scored: boolean }) => (
+    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 16, height: 16, borderRadius: '50%', fontSize: 10, fontWeight: 800, color: '#fff', background: scored ? '#22c55e' : '#e03131', flexShrink: 0 }}>
+      {scored ? '✓' : '✕'}
+    </span>
+  );
+
+  return (
+    <div className={styles.section}>
+      <h2 className={styles.sectionTitle}>Penalty Shootout{penalty ? ` · ${penalty.home ?? 0}–${penalty.away ?? 0}` : ''}</h2>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {rows.map((r, i) => (
+          <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 10, padding: '7px 0', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, minWidth: 0 }}>
+              {r.home && <><span style={{ fontSize: 13, color: r.home.scored ? 'var(--text)' : 'var(--text-faint)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.home.player}</span><Mark scored={r.home.scored} /></>}
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 800, fontFamily: 'JetBrains Mono, monospace', color: 'var(--text-dim)', minWidth: 48, textAlign: 'center' }}>{r.tally}</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8, minWidth: 0 }}>
+              {r.away && <><Mark scored={r.away.scored} /><span style={{ fontSize: 13, color: r.away.scored ? 'var(--text)' : 'var(--text-faint)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.away.player}</span></>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function StandingsSection({ rows, homeId, awayId, compName }: { rows: StandingRow[]; homeId: string; awayId: string; compName: string }) {
   if (rows.length === 0) return null;
   return (
@@ -181,7 +259,11 @@ function H2HSection({ d }: { d: MatchDetailData }) {
           <div key={m.id} className={styles.h2hRow}>
             <span className={styles.h2hDate}>{m.date}</span>
             <span className={styles.h2hName} style={{ textAlign: 'right' }}>{m.homeTeam}</span>
-            <span className={styles.h2hResult}>{m.homeScore ?? '–'} – {m.awayScore ?? '–'}</span>
+            <span className={styles.h2hResult}>
+              <span>{m.homeScore ?? '–'}</span>
+              <span className={styles.h2hDash}>–</span>
+              <span>{m.awayScore ?? '–'}</span>
+            </span>
             <span className={styles.h2hName}>{m.awayTeam}</span>
           </div>
         ))}
@@ -195,7 +277,10 @@ function MobMatchCard({ d, matchId }: { d: MatchDetailData; matchId: string }) {
     d.status === 'LIVE' ? <span className="chip live">Live{d.minute ? ` · ${d.minute}′` : ''}</span> :
     d.status === 'HT'   ? <span className="chip ht">Half Time</span> :
     d.status === 'FT'   ? <span className="chip ft">Full Time</span> :
+    d.status === 'AET'  ? <span className="chip ft">AET</span> :
+    d.status === 'PEN'  ? <span className="chip ft">After Penalties</span> :
                           <span className="chip"><LocalKickoff iso={d.kickoff} /></span>;
+  const win = decideWinner(d);
   return (
     <div className={styles.mobFeatured}>
       <div className={styles.featuredGlow} aria-hidden="true" />
@@ -211,22 +296,28 @@ function MobMatchCard({ d, matchId }: { d: MatchDetailData; matchId: string }) {
       <div className={styles.mobScoreGrid}>
         <Link href={`/en/team/${d.home.id}`} className={styles.mobTeamLeft} style={{ textDecoration: 'none' }}>
           {d.home.crest && <img src={d.home.crest} alt={d.home.name} width={48} height={48} style={{ objectFit: 'contain' }} />}
-          <div className={styles.mobTeamName}>{d.home.short || d.home.name}</div>
+          <div className={styles.mobTeamName} style={win.away ? { opacity: 0.5 } : undefined}>{d.home.short || d.home.name}{d.status === 'PEN' && win.home && <PenTag />}</div>
         </Link>
         <div className={styles.mobScoreBlock}>
-          <span className={styles.mobScore}>{d.home.score ?? '--'}</span>
+          <span className={styles.mobScore} style={win.away ? { opacity: 0.5 } : undefined}>{d.home.score ?? '--'}</span>
           <span className={styles.mobScoreDash}>–</span>
-          <span className={styles.mobScore}>{d.away.score ?? '--'}</span>
+          <span className={styles.mobScore} style={win.home ? { opacity: 0.5 } : undefined}>{d.away.score ?? '--'}</span>
         </div>
         <Link href={`/en/team/${d.away.id}`} className={styles.mobTeamRight} style={{ textDecoration: 'none' }}>
           {d.away.crest && <img src={d.away.crest} alt={d.away.name} width={48} height={48} style={{ objectFit: 'contain' }} />}
-          <div className={styles.mobTeamName}>{d.away.short || d.away.name}</div>
+          <div className={styles.mobTeamName} style={win.home ? { opacity: 0.5 } : undefined}>{d.away.short || d.away.name}{d.status === 'PEN' && win.away && <PenTag />}</div>
         </Link>
       </div>
-      {(d.status === 'FT' || d.status === 'HT') && d.halfTime.home !== null && (
+      {(d.status === 'FT' || d.status === 'AET' || d.status === 'PEN' || d.status === 'HT') && d.halfTime.home !== null && (
         <div className={styles.mobHtRow}>
           <span className={styles.htLabel}>Half-time</span>
           <span className={styles.htScore}>{d.halfTime.home} – {d.halfTime.away ?? 0}</span>
+        </div>
+      )}
+      {d.penalty && (
+        <div className={styles.mobHtRow}>
+          <span className={styles.htLabel}>Penalties</span>
+          <span className={styles.htScore}>{d.penalty.home ?? 0} – {d.penalty.away ?? 0}</span>
         </div>
       )}
     </div>
@@ -418,6 +509,7 @@ export default async function MatchPage({ params }: Props) {
           <main className={styles.main}>
             <ScoreHeader d={d} matchId={matchId} />
             <EventsSection events={d.events} />
+            <ShootoutSection shootout={d.shootout} penalty={d.penalty} />
             <H2HSection d={d} />
             <StandingsSection rows={d.standings} homeId={d.home.id} awayId={d.away.id} compName={d.competition} />
             <Footer />
@@ -443,6 +535,7 @@ export default async function MatchPage({ params }: Props) {
           <div className="scroll" style={{ padding: '16px 16px 40px' }}>
             <MobMatchCard d={d} matchId={matchId} />
             <EventsSection events={d.events} />
+            <ShootoutSection shootout={d.shootout} penalty={d.penalty} />
             <H2HSection d={d} />
             <StandingsSection rows={d.standings} homeId={d.home.id} awayId={d.away.id} compName={d.competition} />
             <InfoCard d={d} />

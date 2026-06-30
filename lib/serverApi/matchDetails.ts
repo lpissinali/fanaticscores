@@ -17,6 +17,11 @@ export interface MatchEvent {
   team: 'home' | 'away'; player: string; detail?: string;
 }
 
+/** A single penalty-shootout kick (collected separately from the timeline). */
+export interface PenaltyKick {
+  team: 'home' | 'away'; player: string; scored: boolean;
+}
+
 export interface MatchStats {
   possession: [number, number]; shots: [number, number];
   shotsOnTarget: [number, number]; xG: [number, number];
@@ -41,9 +46,15 @@ export interface MatchDetailData {
   competition: string; compCountry: string; compCode: string; compType: string;
   matchday: number | null; stage: string | null; venue: string | null; referee: string | null;
   halfTime: { home: number | null; away: number | null };
+  /** Shootout score — non-null only when the tie was settled on penalties. */
+  penalty: { home: number | null; away: number | null } | null;
+  /** Winning side for a decided knockout tie (esp. on penalties). */
+  winner: 'home' | 'away' | null;
   home: { id: string; name: string; short: string; initial: string; color: string; crest?: string; score: number | null };
   away: { id: string; name: string; short: string; initial: string; color: string; crest?: string; score: number | null };
   events: MatchEvent[];
+  /** Penalty-shootout kicks in order (empty unless a shootout occurred). */
+  shootout: PenaltyKick[];
   stats: MatchStats | null;
   h2h: { homeWins: number; draws: number; awayWins: number; totalGoals: number; recent: H2HMatch[] } | null;
   standings: StandingRow[];
@@ -68,7 +79,10 @@ interface AFFixtureDetail {
   league: { id: number; name: string; country: string; round: string; logo: string };
   teams: { home: AFTeamRef & { winner: boolean | null }; away: AFTeamRef & { winner: boolean | null } };
   goals: { home: number | null; away: number | null };
-  score: { halftime: { home: number | null; away: number | null } };
+  score: {
+    halftime: { home: number | null; away: number | null };
+    penalty?: { home: number | null; away: number | null };
+  };
   events: AFRawEvent[];
 }
 interface AFStatItem { type: string; value: string | number | null; }
@@ -136,6 +150,7 @@ function parseStage(round: string | null): string | null {
 async function fetchFixture(matchId: string): Promise<{
   fixture: AFFixtureDetail;
   events: MatchEvent[];
+  shootout: PenaltyKick[];
   compCode: string;
   compType: string;
 } | null> {
@@ -194,10 +209,18 @@ async function fetchFixture(matchId: string): Promise<{
     const compCode = LEAGUE_ID_TO_CODE[f.league.id] ?? '';
     const compType = CUP_CODES.has(compCode) ? 'CUP' : 'LEAGUE';
 
+    const shootout: PenaltyKick[] = [];
     const events: MatchEvent[] = (f.events ?? []).flatMap((e): MatchEvent[] => {
-      const min  = e.time.extra ? `${e.time.elapsed}+${e.time.extra}` : String(e.time.elapsed);
       const team: 'home' | 'away' = String(e.team.id) === homeId ? 'home' : 'away';
       const player = e.player.name ?? '';
+      // Penalty-shootout kicks: api-football tags them comments==='Penalty
+      // Shootout' (detail 'Penalty' = scored, 'Missed Penalty' = missed).
+      // Collect them separately so they don't pollute the match timeline.
+      if (e.comments === 'Penalty Shootout') {
+        if (e.type === 'Goal') shootout.push({ team, player, scored: e.detail !== 'Missed Penalty' });
+        return [];
+      }
+      const min  = e.time.extra ? `${e.time.elapsed}+${e.time.extra}` : String(e.time.elapsed);
       if (e.type === 'Goal') {
         const detail = e.detail === 'Own Goal' ? 'own goal' : e.detail === 'Penalty' ? 'pen' : undefined;
         return [{ min, type: 'goal', team, player, detail }];
@@ -215,7 +238,7 @@ async function fetchFixture(matchId: string): Promise<{
       return [];
     });
 
-    return { fixture: f, events, compCode, compType };
+    return { fixture: f, events, shootout, compCode, compType };
   } catch { return null; }
 }
 
@@ -407,7 +430,7 @@ export async function fetchMatchDetail(matchId: string): Promise<MatchDetailData
   const fixtureData = await fetchFixture(matchId);
   if (!fixtureData) return null;
 
-  const { fixture: f, events, compCode, compType } = fixtureData;
+  const { fixture: f, events, shootout, compCode, compType } = fixtureData;
   const homeId = String(f.teams.home.id);
   const awayId = String(f.teams.away.id);
   const isLive = isLiveStatus(f.fixture.status.short);
@@ -430,6 +453,16 @@ export async function fetchMatchDetail(matchId: string): Promise<MatchDetailData
   const status = mapStatus(f.fixture.status.short);
   const round  = f.league.round ?? null;
 
+  // Penalty score: present only when the tie was settled on penalties.
+  const pen = f.score.penalty;
+  const penalty = pen && (pen.home !== null || pen.away !== null)
+    ? { home: pen.home, away: pen.away }
+    : null;
+  // Winning side (api-football flags it on the team object for decided games).
+  const winner: 'home' | 'away' | null =
+    f.teams.home.winner === true ? 'home' :
+    f.teams.away.winner === true ? 'away' : null;
+
   return {
     id:          matchId,
     status,
@@ -444,6 +477,8 @@ export async function fetchMatchDetail(matchId: string): Promise<MatchDetailData
     venue:       f.fixture.venue?.name ? [f.fixture.venue.name, f.fixture.venue.city].filter(Boolean).join(', ') : null,
     referee:     f.fixture.referee ?? null,
     halfTime:    { home: f.score.halftime.home, away: f.score.halftime.away },
+    penalty,
+    winner,
     home: {
       id:      homeId, name: f.teams.home.name,
       short:   toShort(f.teams.home.name), initial: toInitial(f.teams.home.name),
@@ -454,6 +489,6 @@ export async function fetchMatchDetail(matchId: string): Promise<MatchDetailData
       short:   toShort(f.teams.away.name), initial: toInitial(f.teams.away.name),
       color:   '#3a3a48', crest: f.teams.away.logo, score: f.goals.away,
     },
-    events, stats, h2h, standings,
+    events, shootout, stats, h2h, standings,
   };
 }

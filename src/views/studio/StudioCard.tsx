@@ -68,6 +68,8 @@ function palette(style: CardStyle, homeColor: string, awayColor: string): Palett
 function statusLabel(status: string, minute?: string | number | null, kickoff?: string) {
   switch (status) {
     case 'FT':        return 'Full Time';
+    case 'AET':       return 'After Extra Time';
+    case 'PEN':       return 'After Penalties';
     case 'HT':        return 'Half Time';
     case 'LIVE':      return minute ? `Live · ${minute}'` : 'Live';
     case 'SCHEDULED':

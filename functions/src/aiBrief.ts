@@ -56,10 +56,12 @@ function buildContext(competitions: CompetitionData[]): string {
         live.push(`[${tier}] ${h} ${score} ${a}${min}`);
       } else if (m.status === 'HT') {
         ht.push(`[${tier}] ${h} ${score} ${a} (HT)`);
-      } else if (m.status === 'FT') {
-        // Only include FT matches that actually have a score worth mentioning
+      } else if (m.status === 'FT' || m.status === 'AET' || m.status === 'PEN') {
+        // Only include finished matches that actually have a score worth
+        // mentioning. Note the decided-by suffix for ET/penalty finishes.
         if (hs !== null && as_ !== null) {
-          finished.push(`[${tier}] ${h} ${score} ${a}`);
+          const suffix = m.status === 'AET' ? ' (AET)' : m.status === 'PEN' ? ' (pens)' : '';
+          finished.push(`[${tier}] ${h} ${score} ${a}${suffix}`);
         }
       }
       // UPCOMING matches deliberately excluded — not interesting copy
@@ -84,7 +86,7 @@ function buildStateHash(competitions: CompetitionData[]): string {
   const parts: string[] = [];
   for (const comp of competitions) {
     for (const m of comp.matches) {
-      if (m.status === 'LIVE' || m.status === 'HT' || m.status === 'FT') {
+      if (m.status === 'LIVE' || m.status === 'HT' || m.status === 'FT' || m.status === 'AET' || m.status === 'PEN') {
         parts.push(`${m.id}:${m.status}:${m.home.score}:${m.away.score}:${m.minute ?? ''}`);
       }
     }

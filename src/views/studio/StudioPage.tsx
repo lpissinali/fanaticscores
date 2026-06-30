@@ -62,7 +62,7 @@ function MatchList({ groups, onSelect }: {
           {comp.matches.map(m => {
             const hasScore = m.home.score !== null && m.away.score !== null;
             const isLive = m.status === 'LIVE' || m.status === 'HT';
-            const statusText = m.status === 'FT' ? 'FT' : m.status === 'HT' ? 'HT' : isLive ? (m.minute ?? '') : (m.kickoff ?? '');
+            const statusText = m.status === 'FT' ? 'FT' : m.status === 'AET' ? 'AET' : m.status === 'PEN' ? 'AP' : m.status === 'HT' ? 'HT' : isLive ? (m.minute ?? '') : (m.kickoff ?? '');
             return (
               <button key={m.id} className={styles.popoverMatch} onClick={() => onSelect(m, comp)}>
                 <div className={styles.popoverMatchMin}>
@@ -185,7 +185,7 @@ function MatchPopover({
     if (tab === 'past7') {
       return pastDays.flatMap(({ date, comps }) =>
         applyQuery(comps
-          .map(c => ({ ...c, matches: c.matches.filter(m => m.status === 'FT') }))
+          .map(c => ({ ...c, matches: c.matches.filter(m => m.status === 'FT' || m.status === 'AET' || m.status === 'PEN') }))
           .filter(c => c.matches.length > 0)
         ).map(comp => ({ label: dateLabel(date), comp }))
       );
