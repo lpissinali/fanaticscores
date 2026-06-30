@@ -46,6 +46,10 @@ export interface CompScorer {
 
 export interface CompFixture {
   id: number; utcDate: string; status: string; round: string | null;
+  /** Winning side for a decided knockout tie (esp. on penalties). */
+  winner: 'home' | 'away' | null;
+  /** Penalty-shootout score — present only when status is 'PEN'. */
+  penalty?: { home: number | null; away: number | null };
   homeTeam: { id: number; name: string; crest: string; score: number | null };
   awayTeam: { id: number; name: string; crest: string; score: number | null };
 }
@@ -85,8 +89,22 @@ interface AFScorer {
 interface AFFixtureRaw {
   fixture: { id: number; date: string; status: { short: string } };
   league: { round: string | null };
-  teams: { home: { id: number; name: string; logo: string }; away: { id: number; name: string; logo: string } };
+  teams: {
+    home: { id: number; name: string; logo: string; winner?: boolean | null };
+    away: { id: number; name: string; logo: string; winner?: boolean | null };
+  };
   goals: { home: number | null; away: number | null };
+  score?: { penalty?: { home: number | null; away: number | null } };
+}
+
+/** Shared helpers for deriving the winner side + penalty score from a raw fixture. */
+function fixtureWinner(f: AFFixtureRaw): 'home' | 'away' | null {
+  return f.teams.home.winner === true ? 'home' : f.teams.away.winner === true ? 'away' : null;
+}
+function fixturePenalty(f: AFFixtureRaw): { home: number | null; away: number | null } | undefined {
+  return f.fixture.status.short === 'PEN' && f.score?.penalty
+    ? { home: f.score.penalty.home ?? null, away: f.score.penalty.away ?? null }
+    : undefined;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -129,6 +147,7 @@ function mapFixture(f: AFFixtureRaw): CompFixture {
   return {
     id: f.fixture.id, utcDate: f.fixture.date,
     status: f.fixture.status.short, round: f.league.round ?? null,
+    winner: fixtureWinner(f), penalty: fixturePenalty(f),
     homeTeam: { id: f.teams.home.id, name: f.teams.home.name, crest: f.teams.home.logo, score: f.goals.home },
     awayTeam: { id: f.teams.away.id, name: f.teams.away.name, crest: f.teams.away.logo, score: f.goals.away },
   };
@@ -305,6 +324,8 @@ const FINISHED_SHORTS = new Set(['FT', 'AET', 'PEN', 'AWD', 'WO']);
 interface SeasonResult {
   fixtureId: number;
   round: string; utcDate: string; status: string;
+  winner: 'home' | 'away' | null;
+  penalty?: { home: number | null; away: number | null };
   homeId: string; awayId: string;
   homeGoals: number | null; awayGoals: number | null;
   // Display fields — used to build CompFixture for upcoming/recent rails
@@ -336,6 +357,7 @@ function fixturesFromSeasonResults(
 
   const toFixture = (r: SeasonResult): CompFixture => ({
     id: r.fixtureId, utcDate: r.utcDate, status: r.status, round: r.round || null,
+    winner: r.winner, penalty: r.penalty,
     homeTeam: { id: parseInt(r.homeId), name: r.homeName, crest: r.homeCrest, score: r.homeGoals },
     awayTeam: { id: parseInt(r.awayId), name: r.awayName, crest: r.awayCrest, score: r.awayGoals },
   });
@@ -371,6 +393,7 @@ async function fetchSeasonResults(leagueId: number, season: number, ttlSeconds?:
     return (json.response ?? []).map(f => ({
       fixtureId: f.fixture.id,
       round: f.league.round ?? '', utcDate: f.fixture.date, status: f.fixture.status.short,
+      winner: fixtureWinner(f), penalty: fixturePenalty(f),
       homeId: String(f.teams.home.id), awayId: String(f.teams.away.id),
       homeGoals: f.goals.home, awayGoals: f.goals.away,
       homeName: f.teams.home.name, homeCrest: f.teams.home.logo,

@@ -117,9 +117,6 @@ function DesktopFeatured({ featured, locale }: { featured: FeaturedMatch | null;
           <span className={styles.score} style={awayWins ? { opacity: 0.5 } : undefined}>{m.home.score ?? '--'}</span>
           <span className={styles.scoreDash}>&ndash;</span>
           <span className={styles.score} style={homeWins ? { opacity: 0.5 } : undefined}>{m.away.score ?? '--'}</span>
-          {isPen && m.penalty && (
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', marginTop: 4, fontFamily: 'JetBrains Mono, monospace', whiteSpace: 'nowrap' }}>Pen {m.penalty.home ?? 0}&ndash;{m.penalty.away ?? 0}</div>
-          )}
         </div>
 
         <div className={styles.teamRight}>
@@ -135,6 +132,12 @@ function DesktopFeatured({ featured, locale }: { featured: FeaturedMatch | null;
           <Crest team={m.away} size="xl" />
         </div>
       </div>
+
+      {isPen && m.penalty && (
+        <div style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: 'var(--text-dim)', marginTop: 8, fontFamily: 'JetBrains Mono, monospace' }}>
+          Penalties {m.penalty.home ?? 0}&ndash;{m.penalty.away ?? 0}
+        </div>
+      )}
 
       {hasStats && (
         <div className={styles.statsRow}>

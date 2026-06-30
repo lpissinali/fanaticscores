@@ -288,8 +288,15 @@ function FixtureSection({ title, fixtures }: { title: string; fixtures: CompFixt
           const isFinished = FINISHED_UI.has(f.status);
           const isLive = LIVE_UI.has(f.status);
           const isScheduled = !isFinished && !isLive;
-          // Finished → "FT" (or AET/PEN); live → "LIVE"; else date + time.
-          const finishedLabel = f.status === 'AET' || f.status === 'PEN' ? f.status : 'FT';
+          // Finished → "FT"/"AET"/"AP" (after penalties); live → "LIVE"; else date + time.
+          const finishedLabel = f.status === 'PEN' ? 'AP' : f.status === 'AET' ? 'AET' : 'FT';
+          // Winner: from f.winner for a shootout (level score), else from the goals.
+          const isPen = f.status === 'PEN';
+          const bothScores = f.homeTeam.score !== null && f.awayTeam.score !== null;
+          const homeWins = isPen ? f.winner === 'home' : (bothScores && (f.homeTeam.score as number) > (f.awayTeam.score as number));
+          const awayWins = isPen ? f.winner === 'away' : (bothScores && (f.awayTeam.score as number) > (f.homeTeam.score as number));
+          const winStyle = (won: boolean, lost: boolean) => ({ opacity: lost ? 0.5 : 1, fontWeight: won ? 800 : undefined } as const);
+          const penText = isPen && f.penalty ? `${f.penalty.home ?? 0}–${f.penalty.away ?? 0}` : null;
           return (
             <Link key={f.id} href={`/en/match/${f.id}`} className={styles.fixtureRow} style={{ textDecoration: 'none' }}>
               <div className={styles.dateCell}>
@@ -304,19 +311,22 @@ function FixtureSection({ title, fixtures }: { title: string; fixtures: CompFixt
                   </>
                 )}
               </div>
-              <span className={[styles.teamName, styles.teamNameRight].join(' ')}>{f.homeTeam.name}</span>
+              <span className={[styles.teamName, styles.teamNameRight].join(' ')} style={winStyle(homeWins, awayWins)}>{f.homeTeam.name}</span>
               <img src={f.homeTeam.crest} alt={f.homeTeam.name} className={styles.teamCrest} width={20} height={20} />
               {isScheduled ? (
                 <div className={styles.vsSep}>vs</div>
               ) : (
-                <div className={styles.scoreCell}>
-                  <span>{f.homeTeam.score ?? '–'}</span>
-                  <span className={styles.scoreDash}>–</span>
-                  <span>{f.awayTeam.score ?? '–'}</span>
+                <div className={styles.scoreCell} style={{ flexDirection: 'column', gap: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={winStyle(homeWins, awayWins)}>{f.homeTeam.score ?? '–'}</span>
+                    <span className={styles.scoreDash}>–</span>
+                    <span style={winStyle(awayWins, homeWins)}>{f.awayTeam.score ?? '–'}</span>
+                  </div>
+                  {penText && <span title="penalty shootout" style={{ fontSize: 9, fontWeight: 700, color: 'var(--orange)', lineHeight: 1, whiteSpace: 'nowrap' }}>{penText}</span>}
                 </div>
               )}
               <img src={f.awayTeam.crest} alt={f.awayTeam.name} className={styles.teamCrest} width={20} height={20} />
-              <span className={styles.teamName}>{f.awayTeam.name}</span>
+              <span className={styles.teamName} style={winStyle(awayWins, homeWins)}>{f.awayTeam.name}</span>
             </Link>
           );
         })}

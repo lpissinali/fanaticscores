@@ -4,6 +4,7 @@
  * All styles are intentionally inline so html2canvas can capture them.
  */
 import type { CachedMatch } from '../../lib/matchCache';
+import type { Match } from '../../lib/types';
 
 export type CardTemplate = 'minimal' | 'moment' | 'stat' | 'ticker';
 export type CardFormat   = 'square' | 'story' | 'wide';
@@ -79,6 +80,22 @@ function statusLabel(status: string, minute?: string | number | null, kickoff?: 
   }
 }
 
+/** For a tie decided beyond 90', e.g. "Morocco won 4–3 on pens" / "Morocco won
+ *  (a.e.t.)". Returns null for normal results. Pen score is winner-first. */
+function decidedText(match: Match): string | null {
+  if (!match.winner || (match.status !== 'PEN' && match.status !== 'AET')) return null;
+  const w = match.winner === 'home' ? match.home : match.away;
+  const name = w.short || w.name;
+  if (match.status === 'AET') return `${name} won (a.e.t.)`;
+  let pens = '';
+  if (match.penalty) {
+    const ph = match.penalty.home ?? 0;
+    const pa = match.penalty.away ?? 0;
+    pens = ` ${match.winner === 'home' ? `${ph}–${pa}` : `${pa}–${ph}`}`;
+  }
+  return `${name} won${pens} on pens`;
+}
+
 /** Brand mark — uses the real PNG assets; inverted=true selects the light variant (black F) */
 function FSLogo({ size = 26, inverted = false }: { size?: number; inverted?: boolean }) {
   const src = inverted ? '/assets/logo-mark-light.png' : '/assets/logo-mark-dark.png';
@@ -141,6 +158,7 @@ function MinimalCard({ m, cfg, p, w, h }: { m: CachedMatch; cfg: CardConfig; p: 
   const statusText = isLive
     ? `Live · ${minute ?? ''}'`
     : statusLabel(status, minute, kickoff);
+  const decided = decidedText(match);
 
   return (
     <div style={{
@@ -230,6 +248,9 @@ function MinimalCard({ m, cfg, p, w, h }: { m: CachedMatch; cfg: CardConfig; p: 
               fontSize: isWide ? 10 : isStory ? 10 : 13, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase',
               color: isLive ? '#ff3b3b' : p.accent, fontFamily: MONO, marginBottom: 4,
             }}>{statusText}</div>
+            {decided && (
+              <div style={{ fontSize: isWide ? 11 : isStory ? 11 : 14, fontWeight: 800, color: p.text, fontFamily: MONO, marginBottom: 4 }}>{decided}</div>
+            )}
             {match.venue && (
               <div style={{ fontSize: isWide ? 11 : isStory ? 11 : 13, color: p.faint, fontFamily: MONO }}>{match.venue}</div>
             )}
@@ -268,9 +289,12 @@ function MomentCard({ m, cfg, p, w, h }: { m: CachedMatch; cfg: CardConfig; p: P
 
   const scoreStr = hasScore ? `${home.score}–${away.score}` : '';
 
+  const decided = decidedText(match);
   const chipLabel = isLive && minute
     ? `· ${minute}' · GOAL`
     : status === 'FT' ? 'FULL TIME'
+    : status === 'AET' ? 'AFTER EXTRA TIME'
+    : status === 'PEN' ? 'AFTER PENALTIES'
     : status === 'HT' ? 'HALF TIME'
     : competition.toUpperCase().slice(0, 16);
 
@@ -303,12 +327,12 @@ function MomentCard({ m, cfg, p, w, h }: { m: CachedMatch; cfg: CardConfig; p: P
         }}>{chipLabel}</div>
       </div>
 
-      {/* Player/team name in accent */}
+      {/* Player/team name in accent — for a decided tie, show the winner. */}
       <div style={{
         fontSize: playerSz, fontWeight: 800, letterSpacing: '0.16em',
         textTransform: 'uppercase', color: p.accent, fontFamily: MONO,
         marginBottom: isWide ? 12 : 20, position: 'relative',
-      }}>{home.name}</div>
+      }}>{decided ?? home.name}</div>
 
       {/* Editorial headline */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
@@ -385,9 +409,12 @@ function StatCard({ m, cfg, p, w, h }: { m: CachedMatch; cfg: CardConfig; p: Pal
     { label: 'CORNERS',    hv: String(hG * 2 + 3),      av: String(aG * 2 + 2),          pct: hPct },
   ];
 
+  const decided = decidedText(match);
   const snapshotLabel = isLive && minute
     ? `${minute}' SNAPSHOT`
     : status === 'FT' ? 'FULL TIME'
+    : status === 'AET' ? 'AFTER EXTRA TIME'
+    : status === 'PEN' ? 'AFTER PENALTIES'
     : status === 'HT' ? 'HALF TIME'
     : competition.toUpperCase().slice(0, 20);
 
@@ -437,6 +464,11 @@ function StatCard({ m, cfg, p, w, h }: { m: CachedMatch; cfg: CardConfig; p: Pal
           </div>
         </div>
 
+        {/* Decided-by line (penalties / extra time) */}
+        {decided && (
+          <div style={{ textAlign: 'center', fontSize: isWide ? 11 : 13, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: p.accent, fontFamily: MONO, marginBottom: isWide ? 8 : 14 }}>{decided}</div>
+        )}
+
         {/* Divider */}
         <div style={{ height: 1, background: p.border, marginBottom: isWide ? 10 : 16 }} />
 
@@ -476,6 +508,8 @@ function TickerCard({ m, cfg, p, w, h }: { m: CachedMatch; cfg: CardConfig; p: P
 
   const statusText = isLive ? `Live · ${minute}'`
     : status === 'FT' ? 'Full Time'
+    : status === 'AET' ? 'After Extra Time'
+    : status === 'PEN' ? 'After Penalties'
     : status === 'HT' ? 'Half Time'
     : kickoff ?? 'Upcoming';
 
@@ -483,10 +517,17 @@ function TickerCard({ m, cfg, p, w, h }: { m: CachedMatch; cfg: CardConfig; p: P
   const shortH   = (home.short || home.name).toUpperCase();
   const shortA   = (away.short || away.name).toUpperCase();
 
-  // Auto headline — caption overrides it entirely
-  const autoHl = hasScore
-    ? `${shortH} ${home.score === away.score ? 'HELD' : home.score! > away.score! ? 'BEAT' : 'LOSE TO'} ${scoreStr} ${shortA}`
-    : `${shortH} VS ${shortA}`;
+  // Auto headline — caption overrides it entirely. A tie settled beyond 90'
+  // leads with the winner instead of a misleading "HELD"/draw.
+  const koWinner = (status === 'PEN' || status === 'AET') && match.winner
+    ? (match.winner === 'home' ? shortH : shortA)
+    : null;
+  const koLoser  = koWinner ? (match.winner === 'home' ? shortA : shortH) : null;
+  const autoHl = !hasScore
+    ? `${shortH} VS ${shortA}`
+    : koWinner
+      ? `${koWinner} BEAT ${koLoser} ${status === 'PEN' ? 'ON PENS' : 'A.E.T.'}`
+      : `${shortH} ${home.score === away.score ? 'HELD' : home.score! > away.score! ? 'BEAT' : 'LOSE TO'} ${scoreStr} ${shortA}`;
 
   const headline = cfg.caption ? cfg.caption.toUpperCase() : autoHl;
 

@@ -115,8 +115,9 @@ function EventIcon({ type, detail }: { type: string; detail?: string }) {
   return <span style={{ fontSize: 10, color: 'var(--text-faint)', fontFamily: 'monospace' }}>VAR</span>;
 }
 
-function EventsSection({ events }: { events: MatchEvent[] }) {
-  if (events.length === 0) return null;
+function EventsSection({ events, shootout, penalty }: { events: MatchEvent[]; shootout: PenaltyKick[]; penalty: MatchDetailData['penalty'] }) {
+  const hasShootout = !!shootout && shootout.length > 0;
+  if (events.length === 0 && !hasShootout) return null;
   const mainEvents = events.filter(e => e.type !== 'sub' && e.type !== 'var');
   const subs       = events.filter(e => e.type === 'sub');
   function EventRow({ e }: { e: MatchEvent }) {
@@ -138,6 +139,34 @@ function EventsSection({ events }: { events: MatchEvent[] }) {
       </div>
     );
   }
+
+  // Pair shootout kicks into rounds (one home + one away) with a running tally.
+  type Cell = { player: string; scored: boolean } | undefined;
+  type PRow = { home: Cell; away: Cell; tally: string };
+  const penRows: PRow[] = [];
+  if (hasShootout) {
+    let h = 0, a = 0;
+    let cur: PRow | null = null;
+    for (const k of shootout) {
+      if (k.scored) { if (k.team === 'home') h++; else a++; }
+      if (!cur) cur = { home: undefined, away: undefined, tally: '' };
+      if (k.team === 'home') {
+        if (cur.home) { penRows.push(cur); cur = { home: undefined, away: undefined, tally: '' }; }
+        cur.home = { player: k.player, scored: k.scored };
+      } else {
+        if (cur.away) { penRows.push(cur); cur = { home: undefined, away: undefined, tally: '' }; }
+        cur.away = { player: k.player, scored: k.scored };
+      }
+      cur.tally = `${h}–${a}`;
+      if (cur.home && cur.away) { penRows.push(cur); cur = null; }
+    }
+    if (cur) penRows.push(cur);
+  }
+  // Scored = solid goal ball; missed = faded ball (same glyphs as match goals).
+  const Ball = ({ scored }: { scored: boolean }) => (
+    <span className={scored ? styles.iconGoal : styles.iconGoalOwn}>⚽</span>
+  );
+
   return (
     <div className={styles.section}>
       <h2 className={styles.sectionTitle}>Match Events</h2>
@@ -149,56 +178,22 @@ function EventsSection({ events }: { events: MatchEvent[] }) {
             {subs.map((e, i) => <EventRow key={i} e={e} />)}
           </>
         )}
-      </div>
-    </div>
-  );
-}
-
-function ShootoutSection({ shootout, penalty }: { shootout: PenaltyKick[]; penalty: MatchDetailData['penalty'] }) {
-  if (!shootout || shootout.length === 0) return null;
-
-  // Pair kicks into rounds (one home + one away per row) with a running tally.
-  let h = 0, a = 0;
-  type Cell = { player: string; scored: boolean } | undefined;
-  type Row = { home: Cell; away: Cell; tally: string };
-  const rows: Row[] = [];
-  let cur: Row | null = null;
-  for (const k of shootout) {
-    if (k.scored) { if (k.team === 'home') h++; else a++; }
-    if (!cur) cur = { home: undefined, away: undefined, tally: '' };
-    if (k.team === 'home') {
-      if (cur.home) { rows.push(cur); cur = { home: undefined, away: undefined, tally: '' }; }
-      cur.home = { player: k.player, scored: k.scored };
-    } else {
-      if (cur.away) { rows.push(cur); cur = { home: undefined, away: undefined, tally: '' }; }
-      cur.away = { player: k.player, scored: k.scored };
-    }
-    cur.tally = `${h}–${a}`;
-    if (cur.home && cur.away) { rows.push(cur); cur = null; }
-  }
-  if (cur) rows.push(cur);
-
-  const Mark = ({ scored }: { scored: boolean }) => (
-    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 16, height: 16, borderRadius: '50%', fontSize: 10, fontWeight: 800, color: '#fff', background: scored ? '#22c55e' : '#e03131', flexShrink: 0 }}>
-      {scored ? '✓' : '✕'}
-    </span>
-  );
-
-  return (
-    <div className={styles.section}>
-      <h2 className={styles.sectionTitle}>Penalty Shootout{penalty ? ` · ${penalty.home ?? 0}–${penalty.away ?? 0}` : ''}</h2>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {rows.map((r, i) => (
-          <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 10, padding: '7px 0', borderBottom: '1px solid var(--border)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, minWidth: 0 }}>
-              {r.home && <><span style={{ fontSize: 13, color: r.home.scored ? 'var(--text)' : 'var(--text-faint)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.home.player}</span><Mark scored={r.home.scored} /></>}
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 800, fontFamily: 'JetBrains Mono, monospace', color: 'var(--text-dim)', minWidth: 48, textAlign: 'center' }}>{r.tally}</div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8, minWidth: 0 }}>
-              {r.away && <><Mark scored={r.away.scored} /><span style={{ fontSize: 13, color: r.away.scored ? 'var(--text)' : 'var(--text-faint)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.away.player}</span></>}
-            </div>
-          </div>
-        ))}
+        {penRows.length > 0 && (
+          <>
+            <div className={styles.eventsDivider}><div className={styles.eventsDividerLine} /><span className={styles.eventsDividerLabel}>Penalty Shootout{penalty ? ` · ${penalty.home ?? 0}–${penalty.away ?? 0}` : ''}</span><div className={styles.eventsDividerLine} /></div>
+            {penRows.map((r, i) => (
+              <div key={`pen-${i}`} className={styles.eventRow}>
+                <div className={`${styles.eventCell} ${styles.eventCellHome}`}>
+                  {r.home && (<><span className={styles.eventPlayer} style={r.home.scored ? undefined : { opacity: 0.5 }}>{r.home.player}</span><div className={styles.eventIconWrap}><Ball scored={r.home.scored} /></div></>)}
+                </div>
+                <div className={styles.eventMinCol}><span className={styles.eventMinBadge}>{r.tally}</span></div>
+                <div className={`${styles.eventCell} ${styles.eventCellAway}`}>
+                  {r.away && (<><div className={styles.eventIconWrap}><Ball scored={r.away.scored} /></div><span className={styles.eventPlayer} style={r.away.scored ? undefined : { opacity: 0.5 }}>{r.away.player}</span></>)}
+                </div>
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </div>
   );
@@ -508,8 +503,7 @@ export default async function MatchPage({ params }: Props) {
           <Sidebar locale="en" />
           <main className={styles.main}>
             <ScoreHeader d={d} matchId={matchId} />
-            <EventsSection events={d.events} />
-            <ShootoutSection shootout={d.shootout} penalty={d.penalty} />
+            <EventsSection events={d.events} shootout={d.shootout} penalty={d.penalty} />
             <H2HSection d={d} />
             <StandingsSection rows={d.standings} homeId={d.home.id} awayId={d.away.id} compName={d.competition} />
             <Footer />
@@ -534,8 +528,7 @@ export default async function MatchPage({ params }: Props) {
           </div>
           <div className="scroll" style={{ padding: '16px 16px 40px' }}>
             <MobMatchCard d={d} matchId={matchId} />
-            <EventsSection events={d.events} />
-            <ShootoutSection shootout={d.shootout} penalty={d.penalty} />
+            <EventsSection events={d.events} shootout={d.shootout} penalty={d.penalty} />
             <H2HSection d={d} />
             <StandingsSection rows={d.standings} homeId={d.home.id} awayId={d.away.id} compName={d.competition} />
             <InfoCard d={d} />
