@@ -42,3 +42,11 @@ cache, plus a per-minute Cloud Function scheduler.
   graph, or scheduler cadence described in [`lib/serverApi/README.md`](lib/serverApi/README.md)
   (or this file) must update that documentation **in the same change** — e.g. editing
   `DAILY_LIMIT`, `LIMIT`, a TTL constant, or how a page fetches data.
+- **Keep [`HANDOVER.md`](HANDOVER.md) current — on EVERY change (mandatory).** It is the
+  living session/deploy-state doc (distinct from this architecture map). Whenever you edit
+  code in a turn, update `HANDOVER.md` in the **same turn**:
+  - Add what changed under the correct deploy target (**WEB** = App Hosting git push, or
+    **FUNCTIONS** = `firebase deploy --only functions`), so "pending deploy" stays accurate.
+  - Record any new gotcha or follow-up; remove items once the user confirms they're deployed/done.
+  - The user should never have to ask for this — treat it as part of finishing any change.
+  If `HANDOVER.md` is missing, create it (see its own header for structure).
