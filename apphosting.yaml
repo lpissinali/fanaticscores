@@ -2,7 +2,9 @@ runConfig:
   runtime: nodejs20
   concurrency: 40
   cpu: 1
-  memoryMiB: 1024
+  # 512 MiB keeps the warm instance's idle cost down. If SSR OOMs under load
+  # (watch for 503s / instance restarts in Cloud Run logs), bump back to 1024.
+  memoryMiB: 512
   # Keep one instance warm so Googlebot (and users) never hit a cold start.
   # Cold starts caused multi-second TTFB / fetch timeouts, which throttles
   # crawl rate and hurts indexing for a new domain.
