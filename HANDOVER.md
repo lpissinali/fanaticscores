@@ -11,7 +11,7 @@
 ## ⚠️ Deploy state
 
 - **FUNCTIONS — ✅ deployed 2026-07-01** via `firebase deploy --only functions` (predeploy build hook active).
-- **WEB — ⏳ HOTFIX PENDING (git push).** A first web deploy went out 2026-07-01, but **512 MiB + the heavy sitemap OOM'd the sitemap route** ("upstream connect error … connection termination"). Fix is on disk, needs a redeploy: `memoryMiB` reverted to **1024**, and the sitemap lightened (90-day match reads in 15-doc batches; standings `retries=0`). Everything else from the 2026-07-01 web deploy is live.
+- **WEB — ⏳ HOTFIX PENDING (git push).** The 2026-07-01 web deploy OOM'd the sitemap route ("connection termination") — 512 MiB + ~90 concurrent matchday-doc reads. Fix on disk, needs redeploy: sitemap no longer does heavy I/O (match window 90→**30 days**, batched, standings `retries=0`; date URLs are pure date-math, widened to **90 days**), so `memoryMiB` stays at **512**. Everything else from the 2026-07-01 web deploy is live.
 
 (Reminder: `firebase deploy` does NOT deploy the Next.js web app — git push; build locally first, `ignoreBuildErrors` is on.)
 
@@ -21,7 +21,7 @@
 - Date/today page H1s → "Football Scores · {date}" / "Today's Football Scores" (+ Yesterday/Tomorrow). Competition `<title>` → "{name} Scores, Results & Standings". (`HomePage.tsx`, `competition/[compCode]/page.tsx`)
 - Synced the 9 new competitions into the hardcoded `COMPETITIONS` list in `src/views/competitions/CompetitionsPage.tsx`.
 - Deleted orphaned `app/en/competition/[compCode]/CompetitionSearch.tsx`.
-- **Sitemap** (`app/sitemap.ts`): team pages from ~27 comps (was 8); match pages 90-day cumulative (was 7, read in 15-doc **batches** to cap memory); date pages 45 (was 14); standings fetched with **retries=0**. Grows the URL set over time. **Resubmit sitemap in Search Console after the hotfix deploy.**
+- **Sitemap** (`app/sitemap.ts`): hardcoded competitions (~33) + computed date URLs (90 days, zero I/O) + team pages from ~27 comps (standings, `retries=0`) + recent match pages (**30-day** window, batched). Kept deliberately light — past-date matchday docs are sparse, so old match URLs aren't read; those pages are found via internal links from competition/date pages. **Resubmit in Search Console after the hotfix deploy.**
 
 **Penalties / AET / winner feature**
 - Types + data flow: `src/lib/types.ts` (`MatchStatus` += 'AET'|'PEN', `winner`, `penalty`), `useMatches.ts` mapDoc, dev fetcher `src/lib/api/footballData.ts`.
@@ -32,7 +32,7 @@
 - Share cards (`StudioCard.tsx`): all 4 templates show After Penalties/AET and a "who won" line (`decidedText`).
 
 **Cost / crawl-health**
-- `apphosting.yaml`: tried `memoryMiB 512` (halves the dominant min-instance cost) but it OOM'd the sitemap route → **reverted to 1024** (2026-07-01). Retry 512 only after confirming the lightened sitemap is stable.
+- `apphosting.yaml`: `memoryMiB 512` (halves the dominant min-instance cost). First 512 attempt OOM'd via the heavy sitemap read; that read is now removed, so 512 is back on. **Watch Cloud Run logs for 503 / "connection termination" after deploy**; bump to 1024 if any recur.
 - **Budget lockout no longer 404s**: `config.ts` `fetchAF` serves stale cache (any age) when `DAILY_LIMIT` trips; removed the budget early-return from `matchDetails/competitionDetails/teamDetails` fetchers (kept the per-IP rate limit). Docs updated (`CLAUDE.md`, `lib/serverApi/README.md`, `dailyBudget.ts`).
 
 ## FUNCTIONS — ✅ DEPLOYED 2026-07-01 (`firebase deploy --only functions`)

@@ -136,7 +136,7 @@ async function fetchTeamIds(): Promise<string[]> {
 // at build time / when no credentials exist keeps the Admin SDK out of the
 // build entirely. Returns [] then — populated on the daily production
 // revalidation, where ADC is available.
-async function fetchRecentMatchIds(now: Date, days = 90): Promise<string[]> {
+async function fetchRecentMatchIds(now: Date, days = 30): Promise<string[]> {
   if (process.env.NEXT_PHASE === 'phase-production-build') return [];
   const hasCreds =
     process.env.NODE_ENV === 'production' ||
@@ -145,12 +145,12 @@ async function fetchRecentMatchIds(now: Date, days = 90): Promise<string[]> {
 
   const { getMatchdayDoc } = await import('@/lib/serverApi/matchdayDoc');
 
-  // Accumulating ~90 days of finished matches keeps every result page — unique
-  // long-tail content — in the sitemap instead of rolling it off after a week.
-  // Read in small batches (not all 90 at once): a single Promise.all over 90
-  // matchday docs spiked peak memory enough to OOM the instance at 512 MiB and
-  // reset the sitemap request. Batching caps peak memory to BATCH docs, and we
-  // fold each batch into the id set and drop it before fetching the next.
+  // Only the recent window: past-date matchday docs exist only for days that
+  // were actually crawled (the scheduler writes today's doc; older ones are
+  // created on-demand), so reading months back mostly returns nulls — expensive
+  // and unproductive, and the big concurrent read OOM'd the instance at 512 MiB.
+  // 30 days covers the days that reliably have docs; older match pages are found
+  // by Google via links from the competition / date pages. Batched to cap memory.
   const ymds = Array.from({ length: days }, (_, i) => {
     const d = new Date(now);
     d.setUTCDate(d.getUTCDate() - (i + 1));
@@ -195,7 +195,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // day's fixtures/results, so each is unique, indexable content. Start at
   // yesterday and go back 14 days — today is already covered by /en/today
   // (which carries its own canonical), so we skip it to avoid duplication.
-  const recentDateEntries: MetadataRoute.Sitemap = Array.from({ length: 45 }, (_, i) => {
+  const recentDateEntries: MetadataRoute.Sitemap = Array.from({ length: 90 }, (_, i) => {
     const d = new Date(now);
     d.setUTCDate(d.getUTCDate() - (i + 1));
     return {

@@ -2,10 +2,12 @@ runConfig:
   runtime: nodejs20
   concurrency: 40
   cpu: 1
-  # Back to 1024: 512 caused OOM / "connection termination" on the heavy sitemap
-  # route (2026-07-01). The sitemap is now lightened (batched reads, no retries),
-  # so 512 could be retried later — but only after confirming stability first.
-  memoryMiB: 1024
+  # 512 MiB to keep the warm-instance cost down. The earlier 512 OOM was the
+  # sitemap doing ~90 concurrent matchday-doc reads; that heavy read is now gone
+  # (30-day window, batched), so no route does big concurrent I/O. Watch Cloud
+  # Run logs for 503s / "connection termination" after deploy; if any recur,
+  # bump back to 1024.
+  memoryMiB: 512
   # Keep one instance warm so Googlebot (and users) never hit a cold start.
   # Cold starts caused multi-second TTFB / fetch timeouts, which throttles
   # crawl rate and hurts indexing for a new domain.
