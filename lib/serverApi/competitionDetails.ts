@@ -6,7 +6,6 @@
 
 import { fetchAF, hasBodyErrors, currentSeason, COMP_CODE_TO_LEAGUE_ID, CUP_CODES, AF_LIVE_TTL_SECONDS, AF_HOT_TTL_SECONDS, AF_SCORERS_TTL_SECONDS, AF_STABLE_TTL_SECONDS } from './config';
 import { isRateLimited } from './rateLimit';
-import { isDailyBudgetExhausted } from './dailyBudget';
 
 // ── Public types (mirrors src/lib/api/competitionDetails.ts) ─────────────────
 
@@ -562,7 +561,8 @@ export async function fetchCompetitionDetail(code: string): Promise<CompetitionD
   if (!leagueId) return null;
 
   if (await isRateLimited()) return null;
-  if (await isDailyBudgetExhausted()) return null;
+  // No daily-budget gate: fetchAF serves stale cache when the quota trips, so
+  // competition pages stay up (200) for crawlers instead of 404ing.
 
   const [info, standingsFirst] = await Promise.all([
     fetchCompInfo(code, leagueId),

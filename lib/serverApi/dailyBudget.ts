@@ -9,11 +9,15 @@
  * total daily spend. This module gives the fleet one hard ceiling: every real
  * upstream fetch increments a Firestore counter (one doc per UTC day, same
  * reset boundary as api-football's quota), and once the day's count crosses
- * DAILY_LIMIT the api-football-backed detail pages/routes stop calling
- * upstream and render 404 instead.
+ * DAILY_LIMIT the api-football-backed routes stop calling upstream. Rather than
+ * 404 (which would tell Googlebot the URLs are gone), fetchAF then serves the
+ * last cached copy of each endpoint at any age (stale-while-exhausted); only an
+ * endpoint that was never cached fails. The page fetchers no longer gate on this
+ * check themselves — it lives in fetchAF so cached pages survive a lockout.
  *
  * What stays alive when the budget trips:
  * - /en/today and date pages (served from Firestore matchday docs)
+ * - any detail page whose endpoints are in the shared cache (served stale)
  * - the scheduler Cloud Function (separate code path, ~1 call/min max)
  * - PitaCopa (own server, own cache — the whole point of the headroom)
  *

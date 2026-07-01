@@ -42,16 +42,24 @@ const COMPETITIONS: { code: string; priority: number }[] = [
 
 // ── Team fetching ─────────────────────────────────────────────────────────────
 
-// Fetch team IDs from standings for these leagues (sequential to avoid rate limits)
+// Fetch team IDs from standings for these leagues (sequential to avoid rate
+// limits; each /standings call is cached for a week, so this is ~free after
+// the first warm-up). Broadened from 8 to all domestic leagues + the main
+// continental/national competitions so every club/nation gets a team page in
+// the sitemap — the single biggest source of new indexable URLs.
 const TEAM_LEAGUE_IDS = [
-  39,   // Premier League
-  140,  // La Liga
-  135,  // Serie A
-  78,   // Bundesliga
-  61,   // Ligue 1
-  2,    // UEFA Champions League
-  13,   // Copa Libertadores
-  71,   // Brasileirão
+  // Top-5 European leagues
+  39, 140, 135, 78, 61,
+  // Other European leagues
+  88, 94, 179, 144, 203, 307,
+  // European 2nd divisions
+  40, 141, 136, 79, 62,
+  // Americas
+  71, 128, 262, 253, 239, 265,
+  // Asia
+  98, 169,
+  // Continental club + national-team tournaments (populate during their seasons)
+  2, 3, 13, 1,
 ];
 
 function currentSeason(): number {
@@ -126,7 +134,7 @@ async function fetchTeamIds(): Promise<string[]> {
 // at build time / when no credentials exist keeps the Admin SDK out of the
 // build entirely. Returns [] then — populated on the daily production
 // revalidation, where ADC is available.
-async function fetchRecentMatchIds(now: Date, days = 7): Promise<string[]> {
+async function fetchRecentMatchIds(now: Date, days = 90): Promise<string[]> {
   if (process.env.NEXT_PHASE === 'phase-production-build') return [];
   const hasCreds =
     process.env.NODE_ENV === 'production' ||
@@ -135,12 +143,19 @@ async function fetchRecentMatchIds(now: Date, days = 7): Promise<string[]> {
 
   const { getMatchdayDoc } = await import('@/lib/serverApi/matchdayDoc');
 
-  const ids = new Set<string>();
-  for (let i = 1; i <= days; i++) {
+  // Read the last `days` matchday docs in parallel (Firestore reads are free
+  // and fast). Accumulating ~90 days of finished matches keeps every result
+  // page — unique long-tail content — in the sitemap instead of rolling it off
+  // after a week, so the URL set grows steadily as the site ages.
+  const ymds = Array.from({ length: days }, (_, i) => {
     const d = new Date(now);
-    d.setUTCDate(d.getUTCDate() - i);
-    const ymd = d.toISOString().slice(0, 10);
-    const doc = await getMatchdayDoc(ymd);
+    d.setUTCDate(d.getUTCDate() - (i + 1));
+    return d.toISOString().slice(0, 10);
+  });
+  const docs = await Promise.all(ymds.map(ymd => getMatchdayDoc(ymd)));
+
+  const ids = new Set<string>();
+  for (const doc of docs) {
     if (!doc) continue;
     for (const c of doc.competitions ?? []) {
       for (const m of c.matches ?? []) {
@@ -173,7 +188,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // day's fixtures/results, so each is unique, indexable content. Start at
   // yesterday and go back 14 days — today is already covered by /en/today
   // (which carries its own canonical), so we skip it to avoid duplication.
-  const recentDateEntries: MetadataRoute.Sitemap = Array.from({ length: 14 }, (_, i) => {
+  const recentDateEntries: MetadataRoute.Sitemap = Array.from({ length: 45 }, (_, i) => {
     const d = new Date(now);
     d.setUTCDate(d.getUTCDate() - (i + 1));
     return {

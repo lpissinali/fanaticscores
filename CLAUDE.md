@@ -29,7 +29,7 @@ cache, plus a per-minute Cloud Function scheduler.
 ## Quick facts
 
 - **Date/`today` pages cost 0 api-football quota** — they read Firestore docs the scheduler writes.
-- **Detail pages 404 when the daily budget (6,800) trips.** Date pages stay up.
+- **When the daily budget (6,800) trips, `fetchAF()` serves stale cache** (any age) instead of calling upstream, so already-crawled detail pages stay up (200) for Googlebot rather than 404ing. Only a page whose endpoints were never cached fails. Date pages stay up regardless.
 - Caching layers: shared Firestore cache → React per-request memo → per-instance single-flight. See the README.
 - To clear a quota lockout: set `afDaily/{today-UTC}.count = 0` in Firestore.
 

@@ -8,7 +8,6 @@ import {
   AF_STABLE_TTL_SECONDS, AF_SLOW_TTL_SECONDS, AF_TEAM_FIXTURES_TTL_SECONDS,
 } from './config';
 import { isRateLimited } from './rateLimit';
-import { isDailyBudgetExhausted } from './dailyBudget';
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
@@ -148,9 +147,9 @@ export async function fetchTeamDetail(teamId: string): Promise<TeamDetailData | 
   // Behavioral rate limit: deny enumeration scrapers before spending any
   // api-football quota. Over-limit looks identical to "team not found" (→ 404).
   if (await isRateLimited()) return null;
-  // Hard daily ceiling on the shared api-football quota (protects PitaCopa
-  // and the scheduler when crawl volume outruns the per-IP limiter).
-  if (await isDailyBudgetExhausted()) return null;
+  // No daily-budget gate: fetchAF serves stale cache when the quota trips (the
+  // ceiling still holds — fetchAF makes no upstream call — but team pages stay
+  // up for crawlers instead of 404ing).
 
   const [teamData, squad, fixtures] = await Promise.all([
     fetchTeamInfo(teamId),

@@ -25,9 +25,12 @@ api-football quota goes.
   - the **scheduler** Cloud Function (self-throttled to ~50–150/day, see §6), and
   - **PitaCopa** (own server, own cache; a few hundred on match days).
 
-When the web tier crosses 6,800 in a UTC day, the api-football-backed **detail pages
-render 404** until the next reset. The date/`today` pages keep working (they read
-Firestore, not upstream — see §5).
+When the web tier crosses 6,800 in a UTC day, `fetchAF()` stops calling upstream and
+instead **serves the last cached copy of each endpoint at any age** (stale-while-
+exhausted) until the next reset — so already-crawled detail pages keep returning 200
+for Googlebot rather than 404ing (a 404 would de-index them). Only a detail page whose
+endpoints were **never** cached fails. The date/`today` pages keep working regardless
+(they read Firestore, not upstream — see §5).
 
 The original 404 incident (2026-06-15) was the daily counter hitting 6,801/6,800. The
 counter lives in Firestore at **`afDaily/{YYYY-MM-DD}`** and can be manually reset to 0.
@@ -43,7 +46,10 @@ protections. In order:
    spent. `LIMIT = 1000` distinct detail-page requests per IP per hour, Firestore-backed
    (`rateLimits` collection), fail-open. Over-limit looks identical to "not found" → 404.
 2. **Daily budget breaker** (`dailyBudget.ts`) — fleet-wide counter `afDaily/{date}`,
-   memoized 60 s per instance, fail-open. Over `DAILY_LIMIT` → detail pages 404.
+   memoized 60 s per instance, fail-open. Checked inside `fetchAF` (not the page
+   fetchers): over `DAILY_LIMIT`, `fetchAF` skips the upstream call and returns the
+   stale cached body if one exists (`source: 'shared-stale'`), else a 503
+   (`source: 'budget-exhausted'`). So a lockout degrades to stale data, not 404s.
 3. **Shared Firestore cache** (`sharedCache.ts`) — collection `afCache`, doc id =
    `base64url(path)`. Makes "cache for TTL" mean **one upstream call per TTL window across
    the entire Cloud Run fleet**, not once per instance. Only well-formed, error-free

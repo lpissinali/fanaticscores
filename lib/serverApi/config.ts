@@ -6,7 +6,7 @@
 
 import { cache as reactCache } from 'react';
 import { readCachedAF, writeCachedAF } from './sharedCache';
-import { recordUpstreamCall } from './dailyBudget';
+import { recordUpstreamCall, isDailyBudgetExhausted } from './dailyBudget';
 
 export const AF_BASE = 'https://v3.football.api-sports.io';
 
@@ -96,7 +96,7 @@ export function hasBodyErrors(errors: unknown): boolean {
  *
  * Retries with exponential back-off on 429, same as before.
  */
-type AFCoreResult = { status: number; body: string; source: 'shared-hit' | 'upstream' };
+type AFCoreResult = { status: number; body: string; source: 'shared-hit' | 'shared-stale' | 'budget-exhausted' | 'upstream' };
 
 /**
  * The raw upstream fetch + cache-write loop, factored out of fetchAFCore so it
@@ -160,6 +160,19 @@ const fetchAFCore = reactCache(async (
 ): Promise<AFCoreResult> => {
   const cached = await readCachedAF(path, ttlSeconds);
   if (cached) return { status: cached.status, body: cached.body, source: 'shared-hit' };
+
+  // Hard daily ceiling on the shared api-football quota. When it trips we must
+  // not call upstream — but returning an error here makes detail pages render
+  // 404, which tells Googlebot the URLs are gone and de-indexes them. Instead
+  // serve the last cached copy at ANY age (stale-while-exhausted); only an
+  // endpoint that has never been cached fails. This preserves the upstream
+  // ceiling (no fetchUpstream call → recordUpstreamCall never runs) while
+  // keeping the crawlable result pages alive through a quota lockout.
+  if (await isDailyBudgetExhausted()) {
+    const stale = await readCachedAF(path, Number.POSITIVE_INFINITY);
+    if (stale) return { status: stale.status, body: stale.body, source: 'shared-stale' };
+    return { status: 503, body: '{"errors":{"budget":"daily upstream budget exhausted"}}', source: 'budget-exhausted' };
+  }
 
   const key = `${path}|${ttlSeconds}|${retries}|${delayMs}`;
   const existing = inFlight.get(key);

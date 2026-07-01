@@ -6,7 +6,6 @@
 
 import { fetchAF, hasBodyErrors, currentSeason, COMP_CODE_TO_LEAGUE_ID, LEAGUE_ID_TO_CODE, CUP_CODES, AF_LIVE_TTL_SECONDS, AF_STABLE_TTL_SECONDS, AF_SLOW_TTL_SECONDS, AF_HOT_TTL_SECONDS, AF_TEAM_FIXTURES_TTL_SECONDS } from './config';
 import { isRateLimited } from './rateLimit';
-import { isDailyBudgetExhausted } from './dailyBudget';
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
@@ -424,8 +423,9 @@ export async function fetchMatchDetail(matchId: string): Promise<MatchDetailData
   // Behavioral rate limit: deny enumeration scrapers before spending any
   // api-football quota. Over-limit looks identical to "match not found" (→ 404).
   if (await isRateLimited()) return null;
-  // Hard daily ceiling on the shared api-football quota.
-  if (await isDailyBudgetExhausted()) return null;
+  // NOTE: no daily-budget gate here. When the shared quota trips, fetchAF now
+  // serves the last cached copy (stale-while-exhausted) instead of failing, so
+  // already-crawled result pages stay up (200) rather than 404ing Googlebot.
 
   const fixtureData = await fetchFixture(matchId);
   if (!fixtureData) return null;
