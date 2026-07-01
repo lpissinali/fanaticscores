@@ -8,23 +8,20 @@
 > (quota model, cache layers, file map, conventions) lives in `CLAUDE.md` and
 > [`lib/serverApi/README.md`](lib/serverApi/README.md).
 
-## ⚠️ First thing: deploy both targets
+## ⚠️ Deploy state
 
-Everything below is **on disk**; some was deployed mid-session but not all. To be
-safe, do a fresh deploy of **both**:
+- **FUNCTIONS — ✅ deployed 2026-07-01** via `firebase deploy --only functions` (predeploy build hook active).
+- **WEB — ⏳ HOTFIX PENDING (git push).** A first web deploy went out 2026-07-01, but **512 MiB + the heavy sitemap OOM'd the sitemap route** ("upstream connect error … connection termination"). Fix is on disk, needs a redeploy: `memoryMiB` reverted to **1024**, and the sitemap lightened (90-day match reads in 15-doc batches; standings `retries=0`). Everything else from the 2026-07-01 web deploy is live.
 
-- **Web** (Next.js on App Hosting): **git push** to the App Hosting branch. `firebase deploy` does NOT deploy the web app (its `hosting` block is the legacy `dist` site).
-- **Functions**: `firebase deploy --only functions`. A **predeploy build hook** was added to `firebase.json`, so this now recompiles `functions/src → functions/lib` automatically. (The earlier "changes not updating" bug was a stale `lib/` shipped without a rebuild.)
+(Reminder: `firebase deploy` does NOT deploy the Next.js web app — git push; build locally first, `ignoreBuildErrors` is on.)
 
-Build locally first: `npm run build`. `next.config.ts` has `ignoreBuildErrors: true`, and there are ~4 pre-existing type errors unrelated to this work (Sidebar, useAnalytics, StudioPage:369).
-
-## Done this session — WEB (App Hosting push)
+## WEB — ✅ DEPLOYED 2026-07-01 (App Hosting push)
 
 **SEO**
 - Date/today page H1s → "Football Scores · {date}" / "Today's Football Scores" (+ Yesterday/Tomorrow). Competition `<title>` → "{name} Scores, Results & Standings". (`HomePage.tsx`, `competition/[compCode]/page.tsx`)
 - Synced the 9 new competitions into the hardcoded `COMPETITIONS` list in `src/views/competitions/CompetitionsPage.tsx`.
 - Deleted orphaned `app/en/competition/[compCode]/CompetitionSearch.tsx`.
-- **Sitemap expansion** (`app/sitemap.ts`): team pages from ~27 comps (was 8); match pages 90-day cumulative (was 7); date pages 45 (was 14). Grows the URL set over time. **Resubmit sitemap in Search Console after deploy.**
+- **Sitemap** (`app/sitemap.ts`): team pages from ~27 comps (was 8); match pages 90-day cumulative (was 7, read in 15-doc **batches** to cap memory); date pages 45 (was 14); standings fetched with **retries=0**. Grows the URL set over time. **Resubmit sitemap in Search Console after the hotfix deploy.**
 
 **Penalties / AET / winner feature**
 - Types + data flow: `src/lib/types.ts` (`MatchStatus` += 'AET'|'PEN', `winner`, `penalty`), `useMatches.ts` mapDoc, dev fetcher `src/lib/api/footballData.ts`.
@@ -35,10 +32,10 @@ Build locally first: `npm run build`. `next.config.ts` has `ignoreBuildErrors: t
 - Share cards (`StudioCard.tsx`): all 4 templates show After Penalties/AET and a "who won" line (`decidedText`).
 
 **Cost / crawl-health**
-- `apphosting.yaml`: `memoryMiB 1024 → 512` (halves the dominant min-instance cost; **watch Cloud Run logs for 503/OOM**, revert to 1024 if needed).
+- `apphosting.yaml`: tried `memoryMiB 512` (halves the dominant min-instance cost) but it OOM'd the sitemap route → **reverted to 1024** (2026-07-01). Retry 512 only after confirming the lightened sitemap is stable.
 - **Budget lockout no longer 404s**: `config.ts` `fetchAF` serves stale cache (any age) when `DAILY_LIMIT` trips; removed the budget early-return from `matchDetails/competitionDetails/teamDetails` fetchers (kept the per-IP rate limit). Docs updated (`CLAUDE.md`, `lib/serverApi/README.md`, `dailyBudget.ts`).
 
-## Done this session — FUNCTIONS (`firebase deploy --only functions`)
+## FUNCTIONS — ✅ DEPLOYED 2026-07-01 (`firebase deploy --only functions`)
 
 - `apiFootballFetch.ts`: emit distinct `AET`/`PEN` status (was collapsing to FT); write `winner` + `penalty` per match.
 - `aiBrief.ts`: knockout/penalty context (stage, shootout winner, "advance/eliminated") + editorial rule so it stops calling a shootout a "draw"; cache reuse fixed to `fresh && unchanged`.

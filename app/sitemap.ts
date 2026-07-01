@@ -94,7 +94,9 @@ async function fetchTeamIds(): Promise<string[]> {
     try {
       // Read freshness of 1 week: standings entries are refreshed hourly by
       // competition-page traffic anyway; the sitemap only needs team IDs.
-      const res = await fetchAF(`/standings?league=${leagueId}&season=${season}`, 604800);
+      // retries=0: with ~27 leagues, letting each cold/429 call back off for
+      // up to 9s would blow the request timeout — skip a slow league instead.
+      const res = await fetchAF(`/standings?league=${leagueId}&season=${season}`, 604800, 0);
       if (!res.ok) continue;
 
       const json = await res.json() as {
@@ -143,23 +145,28 @@ async function fetchRecentMatchIds(now: Date, days = 90): Promise<string[]> {
 
   const { getMatchdayDoc } = await import('@/lib/serverApi/matchdayDoc');
 
-  // Read the last `days` matchday docs in parallel (Firestore reads are free
-  // and fast). Accumulating ~90 days of finished matches keeps every result
-  // page — unique long-tail content — in the sitemap instead of rolling it off
-  // after a week, so the URL set grows steadily as the site ages.
+  // Accumulating ~90 days of finished matches keeps every result page — unique
+  // long-tail content — in the sitemap instead of rolling it off after a week.
+  // Read in small batches (not all 90 at once): a single Promise.all over 90
+  // matchday docs spiked peak memory enough to OOM the instance at 512 MiB and
+  // reset the sitemap request. Batching caps peak memory to BATCH docs, and we
+  // fold each batch into the id set and drop it before fetching the next.
   const ymds = Array.from({ length: days }, (_, i) => {
     const d = new Date(now);
     d.setUTCDate(d.getUTCDate() - (i + 1));
     return d.toISOString().slice(0, 10);
   });
-  const docs = await Promise.all(ymds.map(ymd => getMatchdayDoc(ymd)));
 
+  const BATCH = 15;
   const ids = new Set<string>();
-  for (const doc of docs) {
-    if (!doc) continue;
-    for (const c of doc.competitions ?? []) {
-      for (const m of c.matches ?? []) {
-        if (m?.id) ids.add(String(m.id));
+  for (let i = 0; i < ymds.length; i += BATCH) {
+    const batch = await Promise.all(ymds.slice(i, i + BATCH).map(ymd => getMatchdayDoc(ymd)));
+    for (const doc of batch) {
+      if (!doc) continue;
+      for (const c of doc.competitions ?? []) {
+        for (const m of c.matches ?? []) {
+          if (m?.id) ids.add(String(m.id));
+        }
       }
     }
   }
